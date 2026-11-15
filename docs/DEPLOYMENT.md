@@ -5,7 +5,7 @@
 | Variable | Required | Purpose |
 |---|---|---|
 | `OIMS_ENV` | yes | `production` on servers (`development` locally) |
-| `SECRET_KEY` | yes | ≥ 32 random characters; signs sessions and reset links. Changing it signs everyone out. |
+| `SECRET_KEY` | yes | ≥ 32 random characters; signs sessions and reset links and encrypts two-step sign-in keys. Changing it signs everyone out **and disables everyone's two-step sign-in** (they must set it up again). |
 | `DATABASE_URL` | yes | PostgreSQL URL (`postgres://` and `postgresql://` both accepted) |
 | `PUBLIC_BASE_URL` | recommended | e.g. `https://oims.holido.org`; used in emailed links |
 | `SESSION_COOKIE_SECURE` | — | `true` (default) in production — requires HTTPS |
@@ -13,6 +13,12 @@
 | `OIMS_SETUP_TOKEN` | first run only | Enables the one-time `/setup` page. Remove after use. |
 | `OIMS_SUPERADMIN_EMAIL` / `_NAME` / `_PASSWORD` | first run only | For the CLI setup method. Remove after use. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_USE_TLS`, `MAIL_FROM` | recommended | Outgoing email for invitations and password resets |
+| `STORAGE_BACKEND` | yes | `local` (files on a persistent disk) or `s3` (S3-compatible object storage) |
+| `UPLOAD_ROOT` | with `local` | Absolute path on a persistent disk, e.g. `/var/data/uploads` |
+| `S3_BUCKET`, `S3_ENDPOINT_URL`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PREFIX` | with `s3` | Object storage. Leave `S3_ENDPOINT_URL` blank for AWS; set it for Cloudflare R2, Backblaze B2, DigitalOcean Spaces or MinIO. |
+| `S3_SERVER_SIDE_ENCRYPTION` | — | `true` (default) asks the store to encrypt files at rest; set `false` if your provider rejects it |
+| `MAX_UPLOAD_MB` | — | Largest file accepted, default 25 |
+| `REQUIRE_PLATFORM_2FA` | — | `true` (default in production): HOLIDO staff must use two-step sign-in |
 | `RATELIMIT_STORAGE_URI` | multi-instance | `redis://…` when running more than one instance (default is per-process memory) |
 | `LOGIN_MAX_FAILURES`, `LOGIN_LOCKOUT_MINUTES`, `PASSWORD_MIN_LENGTH` | — | Security tuning (defaults 5, 15, 12) |
 | `ALLOW_PUBLIC_REGISTRATION` | — | `false` to hide the public registration form |
@@ -27,16 +33,50 @@ inviting real users.
 
 1. Push this repository to GitHub.
 2. In Render choose **New → Blueprint** and select the repository; Render reads `render.yaml`
-   (web service + PostgreSQL). Check the plan names in `render.yaml` against Render's current offer.
+   (web service with a 10 GB persistent disk for documents, an hourly reminders job, and PostgreSQL).
+   Check the plan names in `render.yaml` against Render's current offer.
 3. Fill in the variables marked `sync: false` (`PUBLIC_BASE_URL`, SMTP settings, and for the first
    deploy `OIMS_SETUP_TOKEN` — a long random value).
-4. Deploy. `preDeployCommand` runs `flask --app wsgi db upgrade` before each release.
+4. Deploy. `preDeployCommand` runs the database migrations and `oims sync-roles` before each release.
 5. Open `https://<your-service>/setup`, enter the token and create the HOLIDO Super Admin.
+   You are then asked to set up two-step sign-in with an authenticator app — **save the recovery codes**.
 6. **Delete `OIMS_SETUP_TOKEN`** from Render. The page also locks itself once a Super Admin exists.
 7. Health check: `GET /healthz` returns `{"status": "ok", "database": "ok"}`.
 
 Alternative first-run method: open a Render Shell and run
 `OIMS_SUPERADMIN_EMAIL=… OIMS_SUPERADMIN_PASSWORD=… flask --app wsgi oims create-superadmin`.
+
+## Document storage
+
+Uploaded files are stored under random names (`org-<id>/<random>`) and are only ever served through
+OIMS after a permission check. Every upload is checked by its content, not just its name: PDF, Word,
+Excel, PowerPoint, OpenDocument, CSV, text and common images are accepted; anything else is refused.
+
+- **Persistent disk (default in `render.yaml`)** — simplest. Files survive deploys. A Render disk
+  attaches to a single instance, so you cannot scale the web service to several instances, and
+  deploys have a few seconds of downtime. Back up the disk (see below).
+- **S3-compatible object storage** — set `STORAGE_BACKEND=s3` and the `S3_*` variables, and remove
+  the `disk` block from `render.yaml`. Recommended once you need more than one web instance. Turn on
+  bucket versioning so deleted or overwritten files can be recovered. Keep the bucket private.
+
+Changing backend later requires copying the existing files across (keys stay the same).
+
+## Scheduled reminders
+
+`flask --app wsgi oims send-reminders` creates in-app notifications (and emails, if SMTP is set) for
+tasks due today/tomorrow and overdue tasks, meetings in the next 24 hours, documents expiring within
+30 days and correspondence replies due within 2 days. Each reminder is sent once per item and person,
+so running it more often never repeats a reminder. `render.yaml` runs it hourly as a Cron Job;
+on other hosts use any scheduler (cron, systemd timer).
+
+## Two-step sign-in
+
+- HOLIDO platform staff must use an authenticator app (`REQUIRE_PLATFORM_2FA=true`). Organization
+  users may turn it on from **My account → Two-step sign-in**.
+- Each person gets 10 single-use recovery codes. If someone loses both their phone and their codes,
+  confirm their identity first, then: a **Super Admin** resets HOLIDO staff from **Platform staff**; an
+  **organization administrator** resets their own members from **Users → (person)**. The person is
+  signed out and sets it up again at next sign-in. Both actions are recorded in the audit log.
 
 ## Database migrations
 
@@ -62,9 +102,13 @@ flask --app wsgi oims sync-roles                 # after adding permissions in a
   pg_restore --no-owner --dbname "$TARGET_DATABASE_URL" oims-YYYY-MM-DD.dump
   ```
 
-- Test a restore at least once per quarter. Organization logos are stored in the database in
-  Phase 1, so a database backup is complete. From Phase 2, uploaded documents go to object storage,
-  which needs its own backup/versioning policy.
+- Test a restore at least once per quarter.
+- **Documents are not in the database.** Back up the storage as well:
+  - persistent disk: Render takes daily disk snapshots; also copy `/var/data/uploads` off-site
+    regularly (for example `tar` + upload from a Render Shell, or `rclone` to another bucket);
+  - object storage: enable bucket versioning and, ideally, replication to a second bucket.
+- Restore the database and the files from the **same point in time**; a document whose file is
+  missing returns "410 Gone" on download rather than failing silently.
 
 ## Logging and monitoring
 
@@ -76,6 +120,6 @@ flask --app wsgi oims sync-roles                 # after adding permissions in a
 
 ## Routine maintenance
 
-- Rotate `SECRET_KEY` only when necessary (it signs everyone out).
+- Rotate `SECRET_KEY` only when necessary (it signs everyone out and resets two-step sign-in).
 - Review platform staff accounts and the audit log monthly.
 - Keep dependencies updated (`pip list --outdated`), run `pytest`, then deploy.

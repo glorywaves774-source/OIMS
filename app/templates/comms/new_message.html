@@ -1,0 +1,15 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, checklist %}
+{% block title %}New message{% endblock %}
+{% block page_title %}New message{% endblock %}
+{% block content %}
+<form method="post" novalidate>
+  {{ form.hidden_tag() }}
+  <section class="panel">
+    {{ checklist(form.recipients, empty='There is nobody else in this organization yet.') }}
+    {{ field(form.subject) }}
+    {{ field(form.body, required=True, attrs={'rows': 5}) }}
+  </section>
+  <div class="toolbar mb-4"><button class="btn btn-primary" type="submit" data-loading>Send</button><a class="btn btn-light" href="{{ url_for('comms.inbox') }}">Cancel</a></div>
+</form>
+{% endblock %}

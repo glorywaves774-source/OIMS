@@ -352,6 +352,9 @@ def staff_action(user_id, action):
         user.platform_role = None
         user.session_version += 1
         audit.record("platform.staff_removed", f"{user.email} removed from {label}", entity=user)
+    elif action == "reset-2fa":
+        user.reset_two_factor()
+        audit.record("platform.staff_2fa_reset", f"Two-step sign-in reset for {user.email}", entity=user)
     elif action == "force-signout":
         user.session_version += 1
         audit.record("platform.staff_signed_out", f"{user.email} signed out of all sessions", entity=user)

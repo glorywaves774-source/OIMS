@@ -2,8 +2,24 @@
 
 A multi-tenant SaaS platform owned and operated by **HOLIDO — Holistic Development Organization**.
 
-**Current release:** `0.1.0-phase1` (Phase 1 — Foundation). See [CHANGELOG.md](CHANGELOG.md) and
+**Current release:** `0.2.0-phase2` (Phase 2 — Office information management). See [CHANGELOG.md](CHANGELOG.md) and
 [docs/STATUS.md](docs/STATUS.md) for what is complete and what comes next.
+
+## What Phase 2 adds
+
+| Area | Delivered |
+|---|---|
+| Departments | Create, close/reopen, head of department, responsibilities, staff and activity per department |
+| Staff & HR | Staff register (with or without an OIMS sign-in), directory, employment details, emergency contacts, HR notes, training, performance reviews, transfers (automatic when the department changes), exit with clearance and sign-in suspension, staff documents |
+| Leave & attendance | Configurable leave types and entitlements, requests counted in working days, overlap and balance checks, approval by department head or HR, who's-away list; daily attendance register |
+| Documents | Folders, categories, versions, approval workflow, sharing (everyone / department / chosen people), expiry dates, archive, download history, storage quotas; files checked by content and kept on a persistent disk or S3-compatible storage |
+| Correspondence | Incoming, outgoing and memos with automatic reference numbers (IN/2026/0001), assignment, forwarding with instructions, approval, reply deadlines, confidentiality, attachments, routing history, archive |
+| Meetings | Scheduling in the organization's time zone, invitations and responses, agenda, attendance, minutes, decisions, action points that become tasks, printable report |
+| Tasks | Assignment, priorities, deadlines, status, comments, attachments, overdue highlighting |
+| Communication | In-app notifications (plus email when configured), announcements to everyone or a department, private internal messages |
+| Calendar | Personal, departmental and organizational month view and agenda: meetings, deadlines, leave, expiring documents |
+| Reminders | Hourly job for due/overdue tasks, upcoming meetings, expiring documents and reply deadlines — each sent once |
+| Security | Two-step sign-in with authenticator apps and recovery codes (required for HOLIDO staff), admin reset; department-level and own-record permission scopes now enforced |
 
 ## What Phase 1 provides
 
@@ -71,10 +87,15 @@ app/
   security.py        password policy, tokens, headers, email
   services.py        business operations (registration, approval, invitations…)
   navigation.py      sidebar and phone tab bar per person
-  blueprints/        public, auth, setup, account, platform (HOLIDO), workspace (/o/<org>)
+  blueprints/        public, auth, setup, account, platform (HOLIDO), workspace (/o/<org>),
+                     people (departments, staff, leave, attendance), documents, correspondence,
+                     meetings, tasks, comms (notifications, announcements, messages, calendar)
+  storage.py         local-disk and S3 file storage, upload checks
+  notify.py          notifications, reference numbers   reminders.py  scheduled reminders
+  twofactor.py       two-step sign-in
   templates/ static/ interface (Bootstrap 5 self-hosted; css/app.css, dark.css, mobile.css)
 migrations/          Alembic migrations
-tests/               63 automated tests
+tests/               110 automated tests
 docs/                architecture, deployment, status
 ```
 

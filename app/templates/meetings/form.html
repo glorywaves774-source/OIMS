@@ -1,0 +1,24 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, checklist %}
+{% block title %}{{ meeting.title if meeting else 'Schedule a meeting' }}{% endblock %}
+{% block page_title %}{{ 'Edit meeting' if meeting else 'Schedule a meeting' }}{% endblock %}
+{% block content %}
+<form method="post" novalidate>
+  {{ form.hidden_tag() }}
+  <section class="panel">
+    <div class="row g-3">
+      <div class="col-md-8">{{ field(form.title, required=True) }}</div>
+      <div class="col-md-4">{{ field(form.meeting_type) }}</div>
+      <div class="col-md-6">{{ field(form.starts_at, required=True, help='Time zone: ' ~ tenant.timezone) }}</div>
+      <div class="col-md-6">{{ field(form.ends_at) }}</div>
+      <div class="col-md-6">{{ field(form.location) }}</div>
+      <div class="col-md-6">{{ field(form.online_link, attrs={'inputmode': 'url', 'placeholder': 'https://'}) }}</div>
+      <div class="col-md-6">{{ field(form.department_id) }}</div>
+      <div class="col-12">{{ field(form.agenda, attrs={'rows': 5}, help='One item per line.') }}</div>
+    </div>
+  </section>
+  <section class="panel">{{ checklist(form.participants, help='Each person gets an invitation in OIMS (and by email if they allow it). You are included automatically.') }}</section>
+  <div class="toolbar mb-4"><button class="btn btn-primary" type="submit" data-loading>{{ 'Save changes' if meeting else 'Schedule and invite' }}</button>
+    <a class="btn btn-light" href="{{ url_for('meetings.detail', meeting_id=meeting.id) if meeting else url_for('meetings.index') }}">Cancel</a></div>
+</form>
+{% endblock %}

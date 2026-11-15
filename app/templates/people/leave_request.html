@@ -1,0 +1,16 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}Request leave{% endblock %}
+{% block page_title %}Request leave{% endblock %}
+{% block content %}
+<section class="panel">
+  <p class="text-muted">Working days (Monday to Friday) are counted automatically. Your approver is notified.</p>
+  <form method="post" novalidate class="col-lg-7 px-0">
+    {{ form.hidden_tag() }}
+    {{ field(form.leave_type_id, required=True) }}
+    <div class="row g-2"><div class="col-sm-6">{{ field(form.start_date, required=True) }}</div><div class="col-sm-6">{{ field(form.end_date, required=True) }}</div></div>
+    {{ field(form.reason, attrs={'rows': 3}) }}
+    <div class="toolbar"><button class="btn btn-primary" type="submit" data-loading>Send request</button><a class="btn btn-light" href="{{ url_for('leave.index') }}">Cancel</a></div>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import status, dt, pager %}
+{% block title %}Documents{% endblock %}
+{% block page_title %}Documents{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Documents and records</h2>
+  <p>{% if used is not none %}{{ human_size(used) }} stored{% if tenant.subscription and tenant.subscription.plan.max_storage_mb %} of {{ tenant.subscription.plan.max_storage_mb }} MB{% endif %} · {% endif %}You see documents shared with you, your department or everyone.</p></div>
+  <div class="toolbar">
+    {% if can('documents.manage') and not support_request %}<a class="btn btn-light" href="{{ url_for('documents.organize') }}"><i class="bi bi-folder-plus me-1"></i>Folders & categories</a>{% endif %}
+    {% if can('documents.upload') and not support_request %}<a class="btn btn-primary" href="{{ url_for('documents.upload', folder=folder.id if folder else None) }}"><i class="bi bi-upload me-1"></i>Upload</a>{% endif %}
+  </div></div>
+<section class="panel panel-flush">
+  <form class="filters px-3 pt-3" method="get" role="search">
+    {% if folder %}<input type="hidden" name="folder" value="{{ folder.id }}">{% endif %}
+    <input class="form-control" type="search" name="q" value="{{ q }}" placeholder="Search all documents" aria-label="Search documents">
+    <select class="form-select" name="category" data-autosubmit aria-label="Category"><option value="">All categories</option>
+      {% for c in categories %}<option value="{{ c.id }}"{% if c.id == category %} selected{% endif %}>{{ c.name }}</option>{% endfor %}</select>
+    <select class="form-select" name="status" data-autosubmit aria-label="Status"><option value="">Current documents</option>
+      {% for s in ['approved', 'pending_approval', 'rejected', 'archived'] %}<option value="{{ s }}"{% if s == status %} selected{% endif %}>{{ s|replace('_', ' ')|capitalize }}</option>{% endfor %}</select>
+    <button class="btn btn-soft" type="submit">Search</button>
+  </form>
+  {% if not q %}
+  <nav class="px-3 pt-2 small" aria-label="Folder path">
+    <a href="{{ url_for('documents.index') }}"><i class="bi bi-house"></i> All folders</a>
+    {% for c in crumbs %} / {% if loop.last %}<strong translate="no">{{ c.name }}</strong>{% else %}<a href="{{ url_for('documents.index', folder=c.id) }}" translate="no">{{ c.name }}</a>{% endif %}{% endfor %}
+  </nav>
+  {% if subfolders %}<div class="d-flex flex-wrap gap-2 px-3 pt-3">{% for f in subfolders %}<a class="btn btn-light" href="{{ url_for('documents.index', folder=f.id) }}" translate="no"><i class="bi bi-folder2 me-1"></i>{{ f.name }}</a>{% endfor %}</div>{% endif %}
+  {% endif %}
+  {% if page.items %}
+  <div class="table-scroll mt-2"><table class="table">
+    <thead><tr><th>Document</th><th>Category</th><th>Status</th><th>Updated</th><th>Expires</th><th></th></tr></thead>
+    <tbody>{% for d in page.items %}{% set v = d.current %}<tr>
+      <td><i class="bi {{ file_icon(v.mime_type if v else '') }} me-1"></i><a href="{{ url_for('documents.detail', doc_id=d.id) }}" translate="no">{{ d.title }}</a>
+        <span class="cell-sub">{% if v %}v{{ v.version_no }} · {{ human_size(v.size_bytes) }} · {% endif %}<span translate="no">{{ d.owner.full_name if d.owner else '' }}</span></span></td>
+      <td>{{ d.category.name if d.category else '—' }}</td>
+      <td>{{ status(d.status) }}</td>
+      <td class="date">{{ dt(d.updated_at, '%d %b %Y') }}</td>
+      <td class="date">{{ dt(d.expiry_date, '%d %b %Y') if d.expiry_date else '—' }}</td>
+      <td>{% if v %}<a class="btn btn-sm btn-light" href="{{ url_for('documents.download', doc_id=d.id) }}" title="Download"><i class="bi bi-download"></i><span class="visually-hidden">Download {{ d.title }}</span></a>{% endif %}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {{ pager(page, 'documents.index', q=q, folder=folder.id if folder else '', status=status, category=category or '') }}
+  {% else %}<div class="empty"><i class="bi bi-folder2-open"></i>{{ 'No documents match.' if q or status or category else 'This folder has no documents yet.' }}</div>{% endif %}
+</section>
+{% endblock %}

@@ -6,7 +6,7 @@ from werkzeug.security import check_password_hash
 from app import audit
 from app.extensions import db, limiter
 from app.forms import ActionForm, ForgotPasswordForm, LoginForm, SetPasswordForm
-from app.models import Membership, Organization, User
+from app.models import Membership, Organization, User, utcnow
 from app.security import (external_url, is_safe_next, make_password_token, password_problems,
                           read_password_token, send_email)
 
@@ -59,16 +59,68 @@ def login():
             problem = _access_problem(user)
             if problem:
                 flash(problem, "warning")
-            else:
-                user.register_successful_login()
-                session.clear()
-                login_user(user, remember=form.remember.data)
-                session.permanent = True
-                audit.record("auth.login", "Signed in", entity=user, actor=user)
-                db.session.commit()
+            elif user.has_2fa:
+                # Password is right; the second step decides whether the person signs in.
                 nxt = request.args.get("next")
-                return redirect(nxt if is_safe_next(nxt) else url_for("account.home"))
+                session.clear()
+                session["2fa_uid"] = user.id
+                session["2fa_version"] = user.session_version
+                session["2fa_remember"] = bool(form.remember.data)
+                session["2fa_next"] = nxt if is_safe_next(nxt) else None
+                session["2fa_started"] = utcnow().timestamp()
+                return redirect(url_for("auth.two_factor"))
+            else:
+                return _complete_login(user, form.remember.data, request.args.get("next"))
     return render_template("auth/login.html", form=form)
+
+
+def _complete_login(user, remember, nxt, method="password"):
+    user.register_successful_login()
+    session.clear()
+    login_user(user, remember=remember)
+    session.permanent = True
+    audit.record("auth.login", "Signed in" + (" with two-step sign-in" if method != "password" else ""),
+                 entity=user, actor=user, details={"method": method})
+    db.session.commit()
+    return redirect(nxt if is_safe_next(nxt) else url_for("account.home"))
+
+
+@bp.route("/two-step", methods=["GET", "POST"])
+@limiter.limit("10 per minute", methods=["POST"])
+def two_factor():
+    from app.forms import TwoFactorForm
+    from app.twofactor import verify_user_code
+
+    uid = session.get("2fa_uid")
+    started = session.get("2fa_started") or 0
+    user = db.session.get(User, uid) if uid else None
+    if (user is None or not user.has_2fa or session.get("2fa_version") != user.session_version
+            or utcnow().timestamp() - started > 300):
+        session.clear()
+        flash("Please sign in again.", "info")
+        return redirect(url_for("auth.login"))
+    form = TwoFactorForm()
+    if form.validate_on_submit():
+        cfg = current_app.config
+        if user.is_locked():
+            session.clear()
+            flash("This account is temporarily locked after repeated failed sign-ins.", "danger")
+            return redirect(url_for("auth.login"))
+        method = verify_user_code(user, form.code.data)
+        if method:
+            if method == "recovery":
+                audit.record("auth.recovery_code_used", f"Recovery code used ({len(user.recovery_codes or [])} left)",
+                             entity=user, actor=user)
+            return _complete_login(user, session.get("2fa_remember"), session.get("2fa_next"), method)
+        locked = user.register_failed_login(cfg["LOGIN_MAX_FAILURES"], cfg["LOGIN_LOCKOUT_MINUTES"])
+        audit.record("auth.locked" if locked else "auth.2fa_failed", "Wrong two-step code", entity=user, actor=user)
+        db.session.commit()
+        if locked:
+            session.clear()
+            flash("This account is temporarily locked after repeated failed sign-ins.", "danger")
+            return redirect(url_for("auth.login"))
+        form.code.errors.append("That code is not correct. Check your authenticator app and try again.")
+    return render_template("auth/two_factor.html", form=form)
 
 
 @bp.route("/logout", methods=["POST"])

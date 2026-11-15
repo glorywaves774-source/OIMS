@@ -10,11 +10,12 @@
     <div class="table-scroll"><table class="table"><thead><tr><th>Name</th><th>Role</th><th>Last sign-in</th><th></th></tr></thead><tbody>
       {% for u in people %}<tr>
         <td translate="no">{{ u.full_name }}<span class="cell-sub">{{ u.email }}</span></td>
-        <td class="nowrap">{{ u.platform_role_label }}</td>
+        <td class="nowrap">{{ u.platform_role_label }}<span class="cell-sub">{{ 'Two-step on' if u.has_2fa else 'Two-step not set up' }}</span></td>
         <td class="date">{{ dt(u.last_login_at) }}</td>
         <td class="nowrap">{% if u.id != current_user.id %}
           <div class="d-flex gap-1">
           <form method="post" action="{{ url_for('platform.staff_action', user_id=u.id, action='force-signout') }}" data-confirm="Sign {{ u.full_name }} out of all devices?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit" title="Sign out everywhere"><i class="bi bi-box-arrow-right"></i></button></form>
+          {% if u.has_2fa %}<form method="post" action="{{ url_for('platform.staff_action', user_id=u.id, action='reset-2fa') }}" data-confirm="Reset {{ u.full_name }}'s two-step sign-in? They will be signed out and must set it up again at next sign-in."><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit" title="Reset two-step sign-in"><i class="bi bi-shield-x"></i><span class="visually-hidden">Reset two-step sign-in</span></button></form>{% endif %}
           <form method="post" action="{{ url_for('platform.staff_action', user_id=u.id, action='remove') }}" data-confirm="Remove {{ u.full_name }}'s platform access?" data-confirm-variant="btn-danger" data-confirm-label="Remove"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form>
           </div>{% else %}<span class="small text-muted">You</span>{% endif %}</td>
       </tr>{% endfor %}

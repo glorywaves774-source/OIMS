@@ -1,14 +1,9 @@
-# Render Blueprint: web service + managed PostgreSQL.
-# Secrets marked sync:false are entered in the Render dashboard, never committed.
-services:
-  - type: web
-    name: oims
-    runtime: python
-    plan: starter
-    buildCommand: pip install -r requirements.txt
-    preDeployCommand: flask --app wsgi db upgrade
-    startCommand: gunicorn wsgi:app --workers 3 --timeout 60 --access-logfile -
-    healthCheckPath: /healthz
+# Render Blueprint: web service, hourly reminders job and managed PostgreSQL.
+# Values marked sync:false are entered in the Render dashboard, never committed.
+# Check plan names against Render's current offer before applying.
+
+envVarGroups:
+  - name: oims-settings
     envVars:
       - key: OIMS_ENV
         value: production
@@ -16,15 +11,15 @@ services:
         value: 3.12.7
       - key: SECRET_KEY
         generateValue: true
-      - key: DATABASE_URL
-        fromDatabase:
-          name: oims-db
-          property: connectionString
       - key: SESSION_COOKIE_SECURE
         value: "true"
+      - key: REQUIRE_PLATFORM_2FA
+        value: "true"
+      - key: STORAGE_BACKEND
+        value: local                 # "s3" for object storage; see docs/DEPLOYMENT.md
+      - key: UPLOAD_ROOT
+        value: /var/data/uploads     # on the persistent disk below
       - key: PUBLIC_BASE_URL
-        sync: false
-      - key: OIMS_SETUP_TOKEN
         sync: false
       - key: SMTP_HOST
         sync: false
@@ -34,6 +29,42 @@ services:
         sync: false
       - key: MAIL_FROM
         sync: false
+
+services:
+  - type: web
+    name: oims
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    preDeployCommand: flask --app wsgi db upgrade && flask --app wsgi oims sync-roles
+    startCommand: gunicorn wsgi:app --workers 3 --timeout 60 --access-logfile -
+    healthCheckPath: /healthz
+    disk:
+      name: oims-files
+      mountPath: /var/data
+      sizeGB: 10
+    envVars:
+      - fromGroup: oims-settings
+      - key: DATABASE_URL
+        fromDatabase:
+          name: oims-db
+          property: connectionString
+      - key: OIMS_SETUP_TOKEN
+        sync: false
+
+  - type: cron
+    name: oims-reminders
+    runtime: python
+    plan: starter
+    schedule: "5 * * * *"          # hourly, at minute 5 (UTC)
+    buildCommand: pip install -r requirements.txt
+    startCommand: flask --app wsgi oims send-reminders
+    envVars:
+      - fromGroup: oims-settings
+      - key: DATABASE_URL
+        fromDatabase:
+          name: oims-db
+          property: connectionString
 
 databases:
   - name: oims-db

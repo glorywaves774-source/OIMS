@@ -1,0 +1,26 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import ldt, dt %}
+{% block title %}Meeting report{% endblock %}
+{% block page_title %}Meeting report{% endblock %}
+{% block content %}
+<div class="toolbar mb-3"><a class="btn btn-light" href="{{ url_for('meetings.detail', meeting_id=m.id) }}"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  <button class="btn btn-primary" type="button" data-print><i class="bi bi-printer me-1"></i>Print / save as PDF</button></div>
+<article class="report-page">
+  <p class="mb-1" translate="no">{{ tenant.name }}</p>
+  <h1 translate="no">{{ m.title }}</h1>
+  <p>{{ ldt(m.starts_at, '%A %d %B %Y, %H:%M') }}{% if m.ends_at %}–{{ ldt(m.ends_at, '%H:%M') }}{% endif %} · <span translate="no">{{ m.location or 'Online' }}</span> · Status: {{ m.status }}</p>
+  <h2 class="h5 mt-4">Attendance</h2>
+  <table><thead><tr><th>Name</th><th>Invitation</th><th>Attended</th></tr></thead><tbody>
+    {% for p in m.participants %}<tr><td translate="no">{{ p.user.full_name }}</td><td>{{ p.response }}</td><td>{{ 'Yes' if p.attended else ('No' if p.attended is not none else 'Not recorded') }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% if m.agenda %}<h2 class="h5 mt-4">Agenda</h2><p class="prewrap" translate="no">{{ m.agenda }}</p>{% endif %}
+  <h2 class="h5 mt-4">Minutes</h2><p class="prewrap" translate="no">{{ m.minutes or 'Not recorded.' }}</p>
+  <h2 class="h5 mt-4">Decisions</h2>
+  {% if m.decisions %}<ol>{% for d in m.decisions %}<li class="prewrap" translate="no">{{ d.text }}</li>{% endfor %}</ol>{% else %}<p>None recorded.</p>{% endif %}
+  <h2 class="h5 mt-4">Action points</h2>
+  {% if actions %}<table><thead><tr><th>Action</th><th>Responsible</th><th>Deadline</th><th>Status</th></tr></thead><tbody>
+    {% for t in actions %}<tr><td translate="no">{{ t.title }}</td><td translate="no">{{ t.assigned_to.full_name if t.assigned_to else '—' }}</td><td>{{ dt(t.due_date, '%d %b %Y') }}</td><td>{{ t.status|replace('_', ' ') }}</td></tr>{% endfor %}
+  </tbody></table>{% else %}<p>None recorded.</p>{% endif %}
+  <p class="small mt-4 mb-0">Generated from OIMS on {{ ldt(now_utc(), '%d %b %Y %H:%M') }}.</p>
+</article>
+{% endblock %}

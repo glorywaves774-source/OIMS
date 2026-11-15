@@ -41,6 +41,20 @@ class LoginForm(FlaskForm):
     remember = BooleanField("Keep me signed in on this device")
 
 
+class TwoFactorForm(FlaskForm):
+    code = StringField("Code from your authenticator app (or a recovery code)",
+                       validators=[DataRequired(), Length(max=20)], filters=[_strip])
+
+
+class TwoFactorSetupForm(FlaskForm):
+    code = StringField("6-digit code from the app", validators=[DataRequired(), Length(min=6, max=7)], filters=[_strip])
+
+
+class TwoFactorDisableForm(FlaskForm):
+    password = PasswordField("Your password", validators=[DataRequired(), Length(max=200)])
+    code = StringField("Current 6-digit code", validators=[DataRequired(), Length(max=20)], filters=[_strip])
+
+
 class ForgotPasswordForm(FlaskForm):
     email = StringField("Email", validators=[DataRequired(), Email(), Length(max=255)], filters=[_lower])
 
@@ -65,6 +79,7 @@ class SetupForm(FlaskForm):
 class ProfileForm(FlaskForm):
     full_name = StringField("Full name", validators=[DataRequired(), Length(max=200)], filters=[_strip])
     phone = StringField("Phone", validators=[Optional(), Length(max=50)], filters=[_strip])
+    email_notifications = BooleanField("Email me about assignments, approvals and reminders")
 
 
 # --- Organizations ----------------------------------------------------------------

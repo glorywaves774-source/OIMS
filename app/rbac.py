@@ -1,8 +1,11 @@
 """Permission catalog, default organizational role templates and checks.
 
-Permissions are ``module.action`` codes. Each phase adds its modules to CATALOG;
-``flask oims sync-roles`` grants newly added permissions to existing system roles
-according to their templates.
+Permissions are ``module.action`` codes, each granted with a scope:
+``organization`` (everything in the organization), ``department`` (records of the
+person's own department) or ``own`` (records the person created or is assigned to).
+
+Each phase adds its modules to CATALOG; ``flask oims sync-roles`` grants newly added
+permissions to existing standard roles according to their templates.
 """
 from fnmatch import fnmatch
 from functools import wraps
@@ -11,27 +14,64 @@ from flask import abort, g
 
 from app.models import Role, RolePermission
 
+ORG, DEPT, OWN = "organization", "department", "own"
+SCOPE_WIDTH = {OWN: 1, DEPT: 2, ORG: 3}
+
 # module -> (label, [(action, label), ...])
 CATALOG = {
     "dashboard": ("Dashboard", [("view", "View the workspace dashboard")]),
     "organization": ("Organization profile & settings", [
         ("view", "View organization profile"),
-        ("manage", "Edit profile, logo and workspace settings"),
+        ("manage", "Edit profile, logo, workspace settings and office lists"),
     ]),
     "users": ("Users & memberships", [
         ("view", "View users"),
         ("invite", "Invite users"),
         ("manage", "Change roles, suspend and remove users"),
     ]),
-    "roles": ("Roles & permissions", [
-        ("view", "View roles"),
-        ("manage", "Create and edit custom roles"),
-    ]),
+    "roles": ("Roles & permissions", [("view", "View roles"), ("manage", "Create and edit custom roles")]),
     "audit": ("Audit log", [("view", "View the organization audit log")]),
     "support": ("HOLIDO support access", [
         ("view", "View support access requests"),
         ("approve", "Approve, deny or revoke support access"),
     ]),
+    "departments": ("Departments", [("view", "View departments"), ("manage", "Create and edit departments")]),
+    "staff": ("Staff & HR", [
+        ("view", "View the staff directory"),
+        ("records", "View HR records (contracts, leave, attendance, training, performance, exit)"),
+        ("manage", "Register staff and maintain HR records"),
+    ]),
+    "leave": ("Leave", [
+        ("request", "Request leave for myself"),
+        ("approve", "Approve or reject leave requests"),
+        ("manage", "Configure leave types"),
+    ]),
+    "attendance": ("Attendance", [("record", "Record attendance")]),
+    "documents": ("Documents & records", [
+        ("view", "View documents shared with me"),
+        ("upload", "Upload documents and new versions of my documents"),
+        ("approve", "Approve or reject documents"),
+        ("manage", "Manage all documents, folders and categories"),
+    ]),
+    "correspondence": ("Correspondence", [
+        ("view", "View correspondence"),
+        ("create", "Register letters and memos"),
+        ("approve", "Approve correspondence"),
+        ("manage", "Assign, forward, close and archive any correspondence"),
+    ]),
+    "meetings": ("Meetings", [
+        ("view", "View meetings"),
+        ("create", "Schedule meetings"),
+        ("manage", "Edit any meeting and record minutes"),
+    ]),
+    "tasks": ("Tasks", [
+        ("view", "View tasks"),
+        ("create", "Create and assign tasks"),
+        ("manage", "Edit, reassign and close any task"),
+    ]),
+    "calendar": ("Calendar", [("view", "View calendars")]),
+    "announcements": ("Announcements", [("view", "Read announcements"), ("manage", "Publish announcements")]),
+    "messages": ("Internal messages", [("use", "Send and receive internal messages")]),
 }
 
 ALL_PERMISSIONS = [f"{m}.{a}" for m, (_, actions) in CATALOG.items() for a, _ in actions]
@@ -40,47 +80,67 @@ READ_ONLY_ACTIONS = {"view"}
 
 ADMIN_ROLE_NAME = "Organization Administrator"
 
-# Role templates from the specification. Patterns are matched against the catalog,
-# so permissions added in later phases (e.g. "programmes.*") apply automatically.
+# Everyone with a standard role gets the basic office tools.
+BASE = ["dashboard.view", "organization.view", "departments.view", "staff.view", "leave.request",
+        "documents.view", "documents.upload", "meetings.view@own", "tasks.view@own", "tasks.create",
+        "calendar.view", "announcements.view", "messages.use"]
+
+# "pattern@scope" — later entries override earlier ones. Patterns for modules that do not
+# exist yet (e.g. "programmes.*") take effect when those modules are added.
 ROLE_TEMPLATES = [
     (ADMIN_ROLE_NAME, "Full control of the organization workspace.", None),
     ("Executive Director", "Organization-wide oversight and approvals.",
-     ["*.view", "support.approve", "programmes.*", "projects.*", "finance.approve", "reports.*"]),
+     BASE + ["*.view", "support.approve", "documents.approve", "correspondence.*", "leave.approve",
+             "meetings.*", "tasks.*", "announcements.manage", "programmes.*", "projects.*",
+             "finance.approve", "reports.*"]),
     ("Programme Director", "Leads programmes and their projects.",
-     ["dashboard.view", "organization.view", "users.view", "programmes.*", "projects.*", "meal.*", "reports.*"]),
+     BASE + ["users.view", "meetings.*", "tasks.*", "programmes.*", "projects.*", "meal.*", "reports.*"]),
     ("Project Manager", "Manages assigned projects.",
-     ["dashboard.view", "organization.view", "users.view", "projects.*", "tasks.*", "reports.view"]),
+     BASE + ["users.view", "meetings.create", "meetings.view", "tasks.*", "projects.*", "reports.view"]),
     ("Programme Officer", "Supports programme implementation.",
-     ["dashboard.view", "organization.view", "programmes.view", "programmes.edit", "projects.view", "tasks.*"]),
+     BASE + ["programmes.view", "programmes.edit", "projects.view", "meetings.create"]),
     ("Project Officer", "Supports project implementation.",
-     ["dashboard.view", "organization.view", "projects.view", "projects.edit", "tasks.*"]),
+     BASE + ["projects.view", "projects.edit", "meetings.create"]),
     ("MEAL Officer", "Monitoring, evaluation, accountability and learning.",
-     ["dashboard.view", "organization.view", "meal.*", "beneficiaries.*", "programmes.view", "projects.view", "reports.*"]),
+     BASE + ["meal.*", "beneficiaries.*", "programmes.view", "projects.view", "reports.*"]),
     ("Finance Officer", "Budgets, expenditure and financial reporting.",
-     ["dashboard.view", "organization.view", "finance.*", "programmes.view", "projects.view", "reports.*"]),
+     BASE + ["finance.*", "programmes.view", "projects.view", "reports.*"]),
     ("HR Officer", "Staff administration.",
-     ["dashboard.view", "organization.view", "users.view", "staff.*", "departments.view"]),
+     BASE + ["users.view", "staff.*", "leave.*", "attendance.record", "departments.*", "announcements.manage"]),
     ("Procurement Officer", "Procurement and suppliers.",
-     ["dashboard.view", "organization.view", "procurement.*", "assets.view"]),
+     BASE + ["procurement.*", "assets.view"]),
     ("Records Officer", "Documents, records and correspondence.",
-     ["dashboard.view", "organization.view", "documents.*", "correspondence.*"]),
+     BASE + ["documents.*", "correspondence.*"]),
     ("Department Head", "Leads a department.",
-     ["dashboard.view", "organization.view", "users.view", "departments.view", "staff.view", "tasks.*"]),
+     BASE + ["users.view", "staff.records@department", "leave.approve@department", "attendance.record@department",
+             "tasks.*@department", "tasks.create", "meetings.create", "meetings.view@department",
+             "correspondence.view@department", "documents.approve"]),
     ("Field Officer", "Field implementation and data collection.",
-     ["dashboard.view", "organization.view", "tasks.view", "tasks.edit", "meal.collect"]),
-    ("Staff Member", "Standard staff access.",
-     ["dashboard.view", "organization.view", "tasks.view"]),
+     BASE + ["meal.collect"]),
+    ("Staff Member", "Standard staff access.", BASE),
     ("Read-only / Auditor", "Read-only access to all records, including the audit log.",
      ["*.view"]),
 ]
 
 
-def expand_patterns(patterns):
-    return [code for code in ALL_PERMISSIONS if any(fnmatch(code, p) for p in patterns)]
+def expand_template(patterns):
+    """Return {code: scope} for a template's patterns (later patterns override earlier ones)."""
+    result = {}
+    for entry in patterns:
+        pattern, _, scope = entry.partition("@")
+        scope = scope or ORG
+        for code in ALL_PERMISSIONS:
+            if fnmatch(code, pattern):
+                result[code] = scope
+    return result
+
+
+def expand_patterns(patterns):  # kept for backwards compatibility
+    return list(expand_template(patterns))
 
 
 def seed_default_roles(organization):
-    """Create the system roles for a newly approved organization. Returns the admin role."""
+    """Create/refresh the standard roles of an organization. Returns the admin role."""
     from app.extensions import db
 
     existing = {r.name: r for r in Role.query.filter_by(organization_id=organization.id).all()}
@@ -93,11 +153,17 @@ def seed_default_roles(organization):
         if patterns is None:
             role.is_admin = True
             admin_role = role
-        else:
-            have = {p.permission_code for p in role.permissions}
-            for code in expand_patterns(patterns):
-                if code not in have:
-                    role.permissions.append(RolePermission(permission_code=code))
+            continue
+        wanted = expand_template(patterns)
+        have = {p.permission_code: p for p in role.permissions}
+        for code, scope in wanted.items():
+            if code in have:
+                have[code].scope = scope
+            else:
+                role.permissions.append(RolePermission(permission_code=code, scope=scope))
+        for code, rp in have.items():  # standard roles always match their template exactly
+            if code not in wanted:
+                role.permissions.remove(rp)
     db.session.flush()
     return admin_role
 
@@ -105,12 +171,16 @@ def seed_default_roles(organization):
 # --- Request-time checks ---------------------------------------------------
 
 def effective_permissions():
-    """Set of permission codes for the current workspace request (set by the org blueprint)."""
-    return g.get("permissions", frozenset())
+    """{code: scope} for the current workspace request (set by the workspace blueprint)."""
+    return g.get("permissions") or {}
 
 
 def can(code):
     return code in effective_permissions()
+
+
+def scope_of(code):
+    return effective_permissions().get(code)
 
 
 def require_permission(*codes):
@@ -131,11 +201,11 @@ def require_permission(*codes):
 
 def permissions_for_role(role):
     if role is None:
-        return frozenset()
+        return {}
     if role.is_admin:
-        return frozenset(ALL_PERMISSIONS)
-    return frozenset(c for c in role.permission_map() if c in PERMISSION_LABELS)
+        return {c: ORG for c in ALL_PERMISSIONS}
+    return {c: s for c, s in role.permission_map().items() if c in PERMISSION_LABELS}
 
 
 def read_only_permissions():
-    return frozenset(c for c in ALL_PERMISSIONS if c.split(".")[1] in READ_ONLY_ACTIONS)
+    return {c: ORG for c in ALL_PERMISSIONS if c.split(".")[1] in READ_ONLY_ACTIONS}

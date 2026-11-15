@@ -1,0 +1,35 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import status, pager %}
+{% block title %}Staff directory{% endblock %}
+{% block page_title %}Staff directory{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Staff directory</h2><p>{{ page.total }} {{ 'person' if page.total == 1 else 'people' }}</p></div>
+  {% if can('staff.manage') and not support_request %}<a class="btn btn-primary" href="{{ url_for('staff.edit') }}"><i class="bi bi-person-plus me-1"></i>Register staff</a>{% endif %}</div>
+<section class="panel panel-flush">
+  <form class="filters px-3 pt-3" method="get" role="search">
+    <input class="form-control" type="search" name="q" value="{{ q }}" placeholder="Name, staff ID, position or email" aria-label="Search staff">
+    <select class="form-select" name="department" data-autosubmit aria-label="Department">
+      {% for v, l in departments %}<option value="{{ v or '' }}"{% if v == dept %} selected{% endif %}>{{ l }}</option>{% endfor %}
+    </select>
+    <select class="form-select" name="status" data-autosubmit aria-label="Status">
+      <option value="">Current staff</option>
+      {% for s in statuses %}<option value="{{ s }}"{% if s == status %} selected{% endif %}>{{ s|replace('_', ' ')|capitalize }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-soft" type="submit">Search</button>
+  </form>
+  {% if page.items %}
+  <div class="table-scroll"><table class="table">
+    <thead><tr><th>Name</th><th>Staff ID</th><th>Position</th><th>Department</th><th>Status</th><th>Contact</th></tr></thead>
+    <tbody>{% for s in page.items %}<tr>
+      <td><a href="{{ url_for('staff.detail', staff_id=s.id) }}" translate="no">{{ s.full_name }}</a></td>
+      <td class="code" translate="no">{{ s.employee_number }}</td>
+      <td translate="no">{{ s.position or '—' }}</td>
+      <td translate="no">{{ s.department.name if s.department else '—' }}</td>
+      <td>{{ status(s.status) }}</td>
+      <td class="nowrap" translate="no">{% if s.phone %}<a href="tel:{{ s.phone }}">{{ s.phone }}</a>{% elif s.email %}<a href="mailto:{{ s.email }}">{{ s.email }}</a>{% else %}—{% endif %}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {{ pager(page, 'staff.index', q=q, department=dept or '', status=status) }}
+  {% else %}<div class="empty"><i class="bi bi-person-vcard"></i>{{ 'No one matches these filters.' if q or dept or status else 'No staff registered yet.' }}</div>{% endif %}
+</section>
+{% endblock %}

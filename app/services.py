@@ -121,6 +121,26 @@ def platform_create_organization(form, actor):
     return org, user, link
 
 
+DEFAULT_LEAVE_TYPES = [("Annual leave", 15), ("Sick leave", None), ("Maternity leave", None),
+                       ("Paternity leave", None), ("Compassionate leave", None), ("Study leave", None),
+                       ("Unpaid leave", None)]
+DEFAULT_DOC_CATEGORIES = [("Policies & procedures", True), ("Contracts & agreements", True), ("Reports", False),
+                          ("Minutes", False), ("Correspondence", False), ("HR records", False),
+                          ("Financial records", False), ("Templates & forms", False), ("Other", False)]
+
+
+def seed_office_defaults(org):
+    """Starter lists an organization can edit: leave types and document categories (only if empty)."""
+    from app.models import DocumentCategory, LeaveType
+    if not LeaveType.query.filter_by(organization_id=org.id).count():
+        for name, days in DEFAULT_LEAVE_TYPES:
+            db.session.add(LeaveType(organization_id=org.id, name=name, days_per_year=days))
+    if not DocumentCategory.query.filter_by(organization_id=org.id).count():
+        for name, approval in DEFAULT_DOC_CATEGORIES:
+            db.session.add(DocumentCategory(organization_id=org.id, name=name, requires_approval=approval))
+    db.session.flush()
+
+
 def approve_organization(org, actor):
     """Activate an organization, create its roles and activate pending memberships.
 
@@ -130,6 +150,7 @@ def approve_organization(org, actor):
     if org.status not in (Organization.PENDING, Organization.REJECTED):
         raise ServiceError("Only pending organizations can be approved.")
     admin_role = seed_default_roles(org)
+    seed_office_defaults(org)
     org.status = Organization.ACTIVE
     org.status_reason = None
     org.approved_at = utcnow()

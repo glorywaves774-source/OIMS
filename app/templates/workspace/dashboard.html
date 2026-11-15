@@ -1,54 +1,88 @@
 {% extends "layout_app.html" %}
-{% from "macros.html" import audit_rows, dt %}
+{% from "macros.html" import audit_rows, dt, ldt, status, priority %}
 {% block title %}Dashboard{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
 {% block content %}
 <div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ tenant.name }}</h2>
-  <p>{% if g.membership %}Signed in as {{ g.membership.role.name if g.membership.role else 'member' }}{% else %}HOLIDO support view{% endif %}
+  <p>{% if g.membership %}Hello, <span translate="no">{{ current_user.full_name.split()[0] }}</span> · {{ g.membership.role.name if g.membership.role else 'member' }}{% else %}HOLIDO support view{% endif %}
   {% if tenant.subscription %} · {{ tenant.subscription.plan.name }} plan ({{ tenant.subscription.status|replace('_', ' ') }}){% endif %}</p></div>
-  {% if can('users.invite') and not support_request %}<a class="btn btn-primary" href="{{ url_for('workspace.user_invite') }}"><i class="bi bi-person-plus me-1"></i>Add a person</a>{% endif %}
-</div>
-
-<div class="stat-grid">
-  <a class="stat glass text-reset text-decoration-none" href="{{ url_for('workspace.users') if can('users.view') else '#' }}"><div class="stat-icon"><i class="bi bi-people"></i></div><div><div class="stat-value">{{ stats.members_active }}</div><div class="stat-label">Active users</div></div></a>
-  <div class="stat glass"><div class="stat-icon amber"><i class="bi bi-envelope-paper"></i></div><div><div class="stat-value">{{ stats.members_invited }}</div><div class="stat-label">Invitations not yet accepted</div></div></div>
-  <div class="stat glass"><div class="stat-icon red"><i class="bi bi-person-slash"></i></div><div><div class="stat-value">{{ stats.members_suspended }}</div><div class="stat-label">Suspended users</div></div></div>
-  <a class="stat glass text-reset text-decoration-none" href="{{ url_for('workspace.roles') if can('roles.view') else '#' }}"><div class="stat-icon"><i class="bi bi-shield-lock"></i></div><div><div class="stat-value">{{ stats.roles }}</div><div class="stat-label">Roles</div></div></a>
+  {% if not support_request %}<div class="toolbar">
+    {% if can('tasks.create') %}<a class="btn btn-primary" href="{{ url_for('tasks.new') }}"><i class="bi bi-plus-lg me-1"></i>Task</a>{% endif %}
+    {% if can('meetings.create') %}<a class="btn btn-soft" href="{{ url_for('meetings.edit') }}"><i class="bi bi-calendar-plus me-1"></i>Meeting</a>{% endif %}
+    {% if can('documents.upload') %}<a class="btn btn-soft" href="{{ url_for('documents.upload') }}"><i class="bi bi-upload me-1"></i>Upload</a>{% endif %}
+  </div>{% endif %}
 </div>
 
 {% if pending_support %}
 <div class="alert alert-warning d-flex flex-wrap gap-2 align-items-center justify-content-between">
   <span><i class="bi bi-life-preserver me-1"></i>HOLIDO support has asked for access to this workspace ({{ pending_support|length }} pending).</span>
-  <a class="btn btn-sm btn-primary" href="{{ url_for('workspace.support') }}">Review</a>
+  <a class="btn btn-sm btn-primary" href="{{ url_for('workspace.support') }}">Review</a></div>
+{% endif %}
+{% if pending_approvals %}
+<div class="alert alert-info d-flex flex-wrap gap-3 align-items-center"><strong><i class="bi bi-hourglass-split me-1"></i>Waiting for your approval:</strong>
+  {% if pending_approvals.documents %}<a href="{{ url_for('documents.index', status='pending_approval') }}">{{ pending_approvals.documents }} document{{ 's' if pending_approvals.documents > 1 }}</a>{% endif %}
+  {% if pending_approvals.leave %}<a href="{{ url_for('leave.index') }}">{{ pending_approvals.leave }} leave request{{ 's' if pending_approvals.leave > 1 }}</a>{% endif %}
+  {% if pending_approvals.correspondence %}<a href="{{ url_for('correspondence.index', status='awaiting_approval') }}">{{ pending_approvals.correspondence }} letter{{ 's' if pending_approvals.correspondence > 1 }}</a>{% endif %}
 </div>
+{% endif %}
+
+<div class="stat-grid">
+  {% if stats.staff is defined %}<a class="stat glass text-reset text-decoration-none" href="{{ url_for('staff.index') }}"><div class="stat-icon"><i class="bi bi-person-vcard"></i></div><div><div class="stat-value">{{ stats.staff }}</div><div class="stat-label">Staff</div></div></a>{% endif %}
+  {% if stats.departments is defined %}<a class="stat glass text-reset text-decoration-none" href="{{ url_for('departments.index') }}"><div class="stat-icon"><i class="bi bi-diagram-3"></i></div><div><div class="stat-value">{{ stats.departments }}</div><div class="stat-label">Active departments</div></div></a>{% endif %}
+  <a class="stat glass text-reset text-decoration-none" href="{{ url_for('tasks.index') }}"><div class="stat-icon amber"><i class="bi bi-check2-square"></i></div><div><div class="stat-value">{{ stats.my_open_tasks }}</div><div class="stat-label">My open tasks{% if stats.my_overdue %} · <span class="overdue">{{ stats.my_overdue }} overdue</span>{% endif %}</div></div></a>
+  {% if can('meetings.view') %}<a class="stat glass text-reset text-decoration-none" href="{{ url_for('meetings.index') }}"><div class="stat-icon"><i class="bi bi-calendar-event"></i></div><div><div class="stat-value">{{ stats.meetings }}</div><div class="stat-label">Meetings in the next 14 days</div></div></a>{% endif %}
+</div>
+
+{% if announcements %}
+<section class="panel"><div class="panel-header"><h2>Announcements</h2><a class="small" href="{{ url_for('comms.announcements') }}">All</a></div>
+  {% for a in announcements %}<div class="py-2 border-bottom-soft"><strong translate="no">{% if a.pinned %}<i class="bi bi-pin-angle-fill text-muted me-1"></i>{% endif %}{{ a.title }}</strong> <span class="small text-muted">{{ dt(a.created_at, '%d %b') }}</span>
+    <div class="small text-muted text-truncate" translate="no">{{ a.body[:180] }}</div></div>{% endfor %}
+</section>
 {% endif %}
 
 <div class="grid-2 mb-4">
   <section class="panel">
-    <div class="panel-header"><h2>Getting started</h2></div>
-    <ol class="mb-0 ps-3">
-      <li class="mb-2">Complete the <a href="{{ url_for('workspace.settings') }}">organization profile</a>: logo, contacts, currency and fiscal year.</li>
-      <li class="mb-2">Review the standard <a href="{{ url_for('workspace.roles') }}">roles</a>, or create custom ones.</li>
-      <li class="mb-2"><a href="{{ url_for('workspace.users') }}">Add your colleagues</a> and give each the right role.</li>
-      <li>Office, programme, project, MEAL and finance modules will appear in the menu as each phase is released.</li>
-    </ol>
+    <div class="panel-header"><h2>My tasks</h2><a class="small" href="{{ url_for('tasks.index') }}">All tasks</a></div>
+    {% if my_tasks %}<ul class="list-plain mb-0">{% for t in my_tasks %}<li class="py-2 border-bottom-soft d-flex flex-wrap justify-content-between gap-2">
+      <span><a href="{{ url_for('tasks.detail', task_id=t.id) }}" translate="no">{{ t.title }}</a> {% if t.priority in ('high', 'urgent') %}{{ priority(t.priority) }}{% endif %}</span>
+      <span class="small nowrap{% if t.due_date and t.due_date < today %} overdue{% endif %}">{{ dt(t.due_date, '%d %b') if t.due_date else 'No deadline' }}</span></li>{% endfor %}</ul>
+    {% else %}<p class="text-muted mb-0">Nothing assigned to you.</p>{% endif %}
   </section>
   <section class="panel">
-    <div class="panel-header"><h2>Your organization</h2></div>
-    <dl class="kv">
-      <dt>Type</dt><dd>{{ tenant.org_type }}</dd>
-      <dt>Location</dt><dd>{{ [tenant.district, tenant.region, tenant.country]|select|join(', ') }}</dd>
-      <dt>Currency</dt><dd>{{ tenant.currency }}</dd>
-      <dt>Fiscal year starts</dt><dd>{{ ['January','February','March','April','May','June','July','August','September','October','November','December'][tenant.fiscal_year_start_month - 1] }}</dd>
-      <dt>Active since</dt><dd>{{ dt(tenant.approved_at, '%d %b %Y') }}</dd>
-    </dl>
+    <div class="panel-header"><h2>Upcoming meetings</h2>{% if can('meetings.view') %}<a class="small" href="{{ url_for('meetings.index') }}">All meetings</a>{% endif %}</div>
+    {% if meetings %}<ul class="list-plain mb-0">{% for m in meetings %}<li class="py-2 border-bottom-soft"><a href="{{ url_for('meetings.detail', meeting_id=m.id) }}" translate="no">{{ m.title }}</a>
+      <span class="cell-sub">{{ ldt(m.starts_at, '%a %d %b, %H:%M') }} · <span translate="no">{{ m.location or 'Online' }}</span></span></li>{% endfor %}</ul>
+    {% else %}<p class="text-muted mb-0">No meetings in the next two weeks.</p>{% endif %}
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Upcoming deadlines</h2><a class="small" href="{{ url_for('comms.calendar') }}">Calendar</a></div>
+    {% if deadlines %}<ul class="list-plain mb-0">{% for d, kind, title, url in deadlines %}<li class="py-2 border-bottom-soft d-flex justify-content-between gap-2">
+      <span><span class="badge-status st-ended me-1">{{ kind }}</span><a href="{{ url }}" translate="no">{{ title }}</a></span><span class="small nowrap{% if d < today %} overdue{% endif %}">{{ d.strftime('%d %b') }}</span></li>{% endfor %}</ul>
+    {% else %}<p class="text-muted mb-0">No deadlines coming up.</p>{% endif %}
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Correspondence for me</h2>{% if can('correspondence.view') or can('correspondence.create') %}<a class="small" href="{{ url_for('correspondence.index', mine=1) }}">Register</a>{% endif %}</div>
+    {% if correspondence %}<ul class="list-plain mb-0">{% for c in correspondence %}<li class="py-2 border-bottom-soft"><a href="{{ url_for('correspondence.detail', item_id=c.id) }}"><span class="code">{{ c.reference_no }}</span> <span translate="no">{{ c.subject }}</span></a>
+      <span class="cell-sub">{{ c.status|replace('_', ' ') }}{% if c.response_due %} · reply by {{ dt(c.response_due, '%d %b') }}{% endif %}</span></li>{% endfor %}</ul>
+    {% else %}<p class="text-muted mb-0">No letters waiting for you.</p>{% endif %}
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Recent documents</h2>{% if can('documents.view') %}<a class="small" href="{{ url_for('documents.index') }}">Library</a>{% endif %}</div>
+    {% if documents %}<ul class="list-plain mb-0">{% for d in documents %}<li class="py-2 border-bottom-soft"><i class="bi {{ file_icon(d.current.mime_type if d.current else '') }} me-1"></i><a href="{{ url_for('documents.detail', doc_id=d.id) }}" translate="no">{{ d.title }}</a>
+      <span class="cell-sub">{{ dt(d.updated_at, '%d %b %Y') }}</span></li>{% endfor %}</ul>
+    {% else %}<p class="text-muted mb-0">No documents yet.</p>{% endif %}
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Unread notifications</h2><a class="small" href="{{ url_for('comms.notifications') }}">All</a></div>
+    {% if notes %}<ul class="list-plain mb-0">{% for n in notes %}<li class="py-2 border-bottom-soft"><a href="{{ url_for('comms.open_notification', note_id=n.id) }}" translate="no">{{ n.title }}</a><span class="cell-sub">{{ dt(n.created_at, '%d %b, %H:%M') }}</span></li>{% endfor %}</ul>
+    {% else %}<p class="text-muted mb-0">You're all caught up.</p>{% endif %}
   </section>
 </div>
 
-{% if can('audit.view') %}
+{% if can('audit.view') and recent %}
 <section class="panel panel-flush">
   <div class="panel-header"><h2>Recent activity</h2><a class="small" href="{{ url_for('workspace.audit_log') }}">Full audit log</a></div>
-  {% if recent %}{{ audit_rows(recent) }}{% else %}<div class="empty">No activity yet.</div>{% endif %}
+  {{ audit_rows(recent) }}
 </section>
 {% endif %}
 {% endblock %}

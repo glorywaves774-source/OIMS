@@ -1,0 +1,118 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt %}
+{% block title %}{{ staff.full_name }}{% endblock %}
+{% block page_title %}<span translate="no">{{ staff.full_name }}</span>{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ staff.full_name }}</h2>
+  <p><span translate="no">{{ staff.position or 'No position recorded' }}{% if staff.department %} · {{ staff.department.name }}{% endif %}</span> · {{ status(staff.status) }}</p></div>
+  <div class="toolbar">
+    <a class="btn btn-light" href="{{ url_for('staff.index') }}"><i class="bi bi-arrow-left me-1"></i>Directory</a>
+    {% if staff.user_id and staff.user_id != current_user.id and can('messages.use') and not support_request %}<a class="btn btn-soft" href="{{ url_for('comms.new_message', to=staff.user_id) }}"><i class="bi bi-chat-dots me-1"></i>Message</a>{% endif %}
+    {% if manage and not support_request %}<a class="btn btn-soft" href="{{ url_for('staff.edit', staff_id=staff.id) }}"><i class="bi bi-pencil me-1"></i>Edit</a>{% endif %}
+  </div></div>
+
+{% if records %}
+<nav class="tabs-scroll" aria-label="Sections">
+  <a href="#profile">Profile</a><a href="#leave">Leave</a><a href="#attendance">Attendance</a><a href="#training">Training</a>
+  <a href="#performance">Performance</a><a href="#transfers">Transfers</a><a href="#documents">Documents</a>{% if manage or staff.status == 'exited' %}<a href="#exit">Exit</a>{% endif %}
+</nav>
+{% endif %}
+
+<section class="panel" id="profile">
+  <div class="panel-header"><h2>Profile</h2></div>
+  <dl class="kv">
+    <dt>Staff ID</dt><dd translate="no">{{ staff.employee_number }}</dd>
+    <dt>Email</dt><dd translate="no">{% if staff.email %}<a href="mailto:{{ staff.email }}">{{ staff.email }}</a>{% else %}—{% endif %}</dd>
+    <dt>Phone</dt><dd translate="no">{% if staff.phone %}<a href="tel:{{ staff.phone }}">{{ staff.phone }}</a>{% else %}—{% endif %}</dd>
+    <dt>Work location</dt><dd translate="no">{{ staff.work_location or '—' }}</dd>
+    {% if records %}
+    <dt>Employment type</dt><dd>{{ staff.employment_type or '—' }}</dd>
+    <dt>Start date</dt><dd>{{ dt(staff.start_date, '%d %b %Y') }}</dd>
+    <dt>Contract ends</dt><dd>{{ dt(staff.contract_end_date, '%d %b %Y') }}</dd>
+    <dt>OIMS sign-in</dt><dd translate="no">{{ staff.user.email if staff.user else 'Not linked' }}</dd>
+    <dt>Emergency contact</dt><dd translate="no">{% set ec = [staff.emergency_name, ('(' ~ staff.emergency_relationship ~ ')') if staff.emergency_relationship else None, staff.emergency_phone]|select|list %}{{ ec|join(' · ') if ec else '—' }}</dd>
+    {% if staff.notes %}<dt>HR notes</dt><dd class="prewrap" translate="no">{{ staff.notes }}</dd>{% endif %}
+    {% endif %}
+  </dl>
+</section>
+
+{% if records %}
+<section class="panel panel-flush" id="leave">
+  <div class="panel-header"><h2>Leave</h2>{% if staff.user_id == current_user.id and not support_request %}<a class="btn btn-sm btn-soft" href="{{ url_for('leave.request_leave') }}">Request leave</a>{% endif %}</div>
+  {% if leave %}<div class="table-scroll"><table class="table"><thead><tr><th>Type</th><th>From</th><th>To</th><th class="text-end">Days</th><th>Status</th></tr></thead><tbody>
+    {% for r in leave %}<tr><td>{{ r.leave_type.name }}</td><td class="date">{{ dt(r.start_date, '%d %b %Y') }}</td><td class="date">{{ dt(r.end_date, '%d %b %Y') }}</td><td class="num">{{ r.days }}</td><td>{{ status(r.status) }}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="text-muted px-3 pb-3 mb-0">No leave recorded.</p>{% endif %}
+</section>
+
+<section class="panel panel-flush" id="attendance">
+  <div class="panel-header"><h2>Attendance (last 60 days)</h2></div>
+  {% if attendance %}<div class="table-scroll"><table class="table"><thead><tr><th>Date</th><th>Status</th><th>Note</th></tr></thead><tbody>
+    {% for a in attendance %}<tr><td class="date">{{ dt(a.date, '%a %d %b %Y') }}</td><td>{{ status(a.status) }}</td><td>{{ a.note or '' }}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="text-muted px-3 pb-3 mb-0">No attendance recorded.</p>{% endif %}
+</section>
+
+<section class="panel" id="training">
+  <div class="panel-header"><h2>Training</h2></div>
+  {% if training %}<div class="table-scroll mb-3"><table class="table"><thead><tr><th>Training</th><th>Provider</th><th>Dates</th><th>Outcome</th></tr></thead><tbody>
+    {% for t in training %}<tr><td>{{ t.title }}</td><td>{{ t.provider or '—' }}</td><td class="date">{{ dt(t.start_date, '%d %b %Y') }}{% if t.end_date %} – {{ dt(t.end_date, '%d %b %Y') }}{% endif %}</td><td>{{ t.outcome or '—' }}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="text-muted">No training recorded.</p>{% endif %}
+  {% if manage and not support_request %}
+  <details><summary class="btn btn-sm btn-soft">Add training</summary>
+    <form method="post" action="{{ url_for('staff.add_training', staff_id=staff.id) }}" class="mt-3" novalidate>{{ training_form.hidden_tag() }}
+      <div class="row g-2"><div class="col-md-6">{{ field(training_form.title, required=True) }}</div><div class="col-md-6">{{ field(training_form.provider) }}</div>
+        <div class="col-md-3">{{ field(training_form.start_date) }}</div><div class="col-md-3">{{ field(training_form.end_date) }}</div><div class="col-md-6">{{ field(training_form.outcome) }}</div></div>
+      <button class="btn btn-primary" type="submit">Save training</button></form></details>
+  {% endif %}
+</section>
+
+<section class="panel" id="performance">
+  <div class="panel-header"><h2>Performance reviews</h2></div>
+  {% for r in reviews %}
+    <div class="perm-module"><div class="d-flex flex-wrap justify-content-between gap-2"><strong>{{ r.period }}</strong><span class="text-muted small">{% if r.rating %}Rating {{ r.rating }}/5 · {% endif %}{{ r.reviewer.full_name if r.reviewer else '' }} · {{ dt(r.created_at, '%d %b %Y') }}</span></div>
+      {% if r.summary %}<p class="prewrap mb-1 mt-2">{{ r.summary }}</p>{% endif %}{% if r.goals %}<p class="prewrap mb-0 small"><strong>Goals:</strong> {{ r.goals }}</p>{% endif %}</div>
+  {% else %}<p class="text-muted">No reviews recorded.</p>{% endfor %}
+  {% if manage and not support_request %}
+  <details><summary class="btn btn-sm btn-soft">Add a review</summary>
+    <form method="post" action="{{ url_for('staff.add_review', staff_id=staff.id) }}" class="mt-3" novalidate>{{ review_form.hidden_tag() }}
+      <div class="row g-2"><div class="col-md-6">{{ field(review_form.period, required=True, attrs={'placeholder': 'e.g. January–June 2026'}) }}</div><div class="col-md-6">{{ field(review_form.rating) }}</div>
+        <div class="col-12">{{ field(review_form.summary, attrs={'rows': 3}) }}</div><div class="col-12">{{ field(review_form.goals, attrs={'rows': 2}) }}</div></div>
+      <button class="btn btn-primary" type="submit">Save review</button></form></details>
+  {% endif %}
+</section>
+
+<section class="panel" id="transfers">
+  <div class="panel-header"><h2>Transfers</h2></div>
+  {% if transfers %}<div class="table-scroll mb-3"><table class="table"><thead><tr><th>Effective</th><th>From</th><th>To</th><th>Reason</th></tr></thead><tbody>
+    {% for t in transfers %}<tr><td class="date">{{ dt(t.effective_date, '%d %b %Y') }}</td><td translate="no">{{ t.from_department.name if t.from_department else '—' }}{% if t.from_position %}<span class="cell-sub">{{ t.from_position }}</span>{% endif %}</td><td translate="no">{{ t.to_department.name if t.to_department else '—' }}{% if t.to_position %}<span class="cell-sub">{{ t.to_position }}</span>{% endif %}</td><td>{{ t.reason or '' }}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="text-muted">No transfers recorded.</p>{% endif %}
+  {% if manage and not support_request %}
+  <details><summary class="btn btn-sm btn-soft">Record a transfer</summary>
+    <form method="post" action="{{ url_for('staff.transfer', staff_id=staff.id) }}" class="mt-3" novalidate>{{ transfer_form.hidden_tag() }}
+      <div class="row g-2"><div class="col-md-4">{{ field(transfer_form.to_department_id) }}</div><div class="col-md-4">{{ field(transfer_form.to_position) }}</div><div class="col-md-4">{{ field(transfer_form.effective_date, required=True) }}</div>
+        <div class="col-12">{{ field(transfer_form.reason) }}</div></div>
+      <button class="btn btn-primary" type="submit">Save transfer</button></form></details>
+  {% endif %}
+</section>
+
+<section class="panel panel-flush" id="documents">
+  <div class="panel-header"><h2>Staff documents</h2>{% if manage and can('documents.upload') and not support_request %}<a class="btn btn-sm btn-soft" href="{{ url_for('documents.upload', related_type='staff', related_id=staff.id) }}"><i class="bi bi-paperclip me-1"></i>Add document</a>{% endif %}</div>
+  {% if documents %}<ul class="list-plain px-3 pb-3 mb-0">{% for d in documents %}<li class="py-2 border-bottom-soft d-flex flex-wrap justify-content-between gap-2"><span><i class="bi {{ file_icon(d.current.mime_type if d.current else '') }} me-1"></i><a href="{{ url_for('documents.detail', doc_id=d.id) }}" translate="no">{{ d.title }}</a><span class="cell-sub">{{ dt(d.created_at, '%d %b %Y') }}{% if d.expiry_date %} · expires {{ dt(d.expiry_date, '%d %b %Y') }}{% endif %}</span></span></li>{% endfor %}</ul>
+  {% else %}<p class="text-muted px-3 pb-3 mb-0">No documents (contracts, certificates, IDs) on file. Only people who can see HR records can open them.</p>{% endif %}
+</section>
+
+{% if staff.status == 'exited' %}
+<section class="panel" id="exit"><div class="panel-header"><h2>Exit</h2></div>
+  <dl class="kv"><dt>Exit date</dt><dd>{{ dt(staff.exit_date, '%d %b %Y') }}</dd><dt>Type</dt><dd>{{ staff.exit_type }}</dd>
+    <dt>Clearance</dt><dd>{{ 'Completed' if staff.exit_clearance_done else 'Not completed' }}</dd><dt>Notes</dt><dd class="prewrap">{{ staff.exit_reason or '—' }}</dd></dl></section>
+{% elif manage and not support_request %}
+<section class="panel" id="exit"><div class="panel-header"><h2>Exit</h2></div>
+  <details><summary class="btn btn-sm btn-outline-danger">Record exit</summary>
+    <form method="post" action="{{ url_for('staff.record_exit', staff_id=staff.id) }}" class="mt-3" novalidate data-confirm="Record that {{ staff.full_name }} has left? The record becomes read-only." data-confirm-variant="btn-danger" data-confirm-label="Record exit">{{ exit_form.hidden_tag() }}
+      <div class="row g-2"><div class="col-md-4">{{ field(exit_form.exit_date, required=True) }}</div><div class="col-md-4">{{ field(exit_form.exit_type) }}</div>
+        <div class="col-12">{{ field(exit_form.exit_reason, attrs={'rows': 2}) }}</div></div>
+      {{ field(exit_form.exit_clearance_done) }}{{ field(exit_form.remove_access) }}
+      <button class="btn btn-danger" type="submit">Record exit</button></form></details>
+</section>
+{% endif %}
+{% endif %}
+{% endblock %}

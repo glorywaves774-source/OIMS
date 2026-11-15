@@ -1,0 +1,77 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, ldt, dt, attachments %}
+{% block title %}{{ m.title }}{% endblock %}
+{% block page_title %}<span translate="no">{{ m.title }}</span>{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ m.title }}</h2>
+  <p>{{ ldt(m.starts_at, '%A %d %B %Y, %H:%M') }}{% if m.ends_at %}–{{ ldt(m.ends_at, '%H:%M') }}{% endif %} · {{ status(m.status) }}</p></div>
+  <div class="toolbar"><a class="btn btn-light" href="{{ url_for('meetings.index') }}"><i class="bi bi-arrow-left me-1"></i>Meetings</a>
+    <a class="btn btn-light" href="{{ url_for('meetings.report', meeting_id=m.id) }}"><i class="bi bi-file-earmark-text me-1"></i>Report</a>
+    {% if manage and m.status == 'scheduled' %}<a class="btn btn-soft" href="{{ url_for('meetings.edit', meeting_id=m.id) }}"><i class="bi bi-pencil me-1"></i>Edit</a>
+      <form method="post" action="{{ url_for('meetings.cancel', meeting_id=m.id) }}" data-confirm="Cancel this meeting and notify everyone?" data-confirm-variant="btn-danger" data-confirm-label="Cancel meeting"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-danger" type="submit">Cancel meeting</button></form>{% endif %}</div></div>
+
+{% if mine and m.status == 'scheduled' and not ro and mine.user_id != m.organizer_id %}
+<div class="alert alert-info d-flex flex-wrap gap-2 align-items-center justify-content-between">
+  <span>Your response: <strong>{{ mine.response }}</strong></span>
+  <span class="d-flex gap-2">
+    <form method="post" action="{{ url_for('meetings.rsvp', meeting_id=m.id, answer='accepted') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-primary" type="submit">Attend</button></form>
+    <form method="post" action="{{ url_for('meetings.rsvp', meeting_id=m.id, answer='declined') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit">Decline</button></form></span>
+</div>
+{% endif %}
+
+<div class="grid-2 mb-4">
+  <section class="panel">
+    <div class="panel-header"><h2>Details</h2></div>
+    <dl class="kv">
+      <dt>Type</dt><dd>{{ m.meeting_type or '—' }}</dd>
+      <dt>Venue</dt><dd translate="no">{{ m.location or '—' }}</dd>
+      {% if m.online_link %}<dt>Online</dt><dd><a href="{{ m.online_link }}" target="_blank" rel="noopener noreferrer">Join link</a></dd>{% endif %}
+      <dt>Organizer</dt><dd translate="no">{{ m.organizer.full_name if m.organizer else '—' }}</dd>
+      <dt>Department</dt><dd translate="no">{{ m.department.name if m.department else '—' }}</dd>
+    </dl>
+    {% if m.agenda %}<h3 class="fs-6 mt-3">Agenda</h3><p class="prewrap mb-0" translate="no">{{ m.agenda }}</p>{% endif %}
+  </section>
+  <section class="panel" id="attendance">
+    <div class="panel-header"><h2>Participants ({{ m.participants|length }})</h2></div>
+    {% if manage %}
+    <form method="post" action="{{ url_for('meetings.attendance', meeting_id=m.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <p class="small text-muted">Tick who attended, then save.</p>
+      <div class="checklist mb-2">{% for p in m.participants %}<label class="form-check checklist-item"><input class="form-check-input" type="checkbox" name="present" value="{{ p.user_id }}"{% if p.attended %} checked{% endif %}> <span class="form-check-label" translate="no">{{ p.user.full_name }}</span> <span class="ms-auto small text-muted">{{ p.response }}</span></label>{% endfor %}</div>
+      <button class="btn btn-soft btn-sm" type="submit">Save attendance</button>
+    </form>
+    {% else %}
+    <ul class="list-plain mb-0">{% for p in m.participants %}<li class="py-1 d-flex justify-content-between gap-2"><span translate="no">{{ p.user.full_name }}</span><span class="small text-muted">{% if p.attended is not none %}{{ 'attended' if p.attended else 'absent' }}{% else %}{{ p.response }}{% endif %}</span></li>{% endfor %}</ul>
+    {% endif %}
+  </section>
+</div>
+
+<section class="panel" id="minutes">
+  <div class="panel-header"><h2>Minutes</h2></div>
+  {% if manage %}
+  <form method="post" action="{{ url_for('meetings.minutes', meeting_id=m.id) }}" novalidate>{{ minutes_form.hidden_tag() }}
+    {{ field(minutes_form.minutes, label='Minutes of the meeting', attrs={'rows': 8}) }}<button class="btn btn-primary" type="submit">Save minutes</button></form>
+  {% elif m.minutes %}<p class="prewrap mb-0" translate="no">{{ m.minutes }}</p>
+  {% else %}<p class="text-muted mb-0">Minutes have not been recorded yet.</p>{% endif %}
+</section>
+
+<div class="grid-2 mb-4">
+  <section class="panel" id="decisions">
+    <div class="panel-header"><h2>Decisions</h2></div>
+    {% if m.decisions %}<ol class="mb-3">{% for d in m.decisions %}<li class="prewrap mb-1" translate="no">{{ d.text }}</li>{% endfor %}</ol>{% else %}<p class="text-muted">No decisions recorded.</p>{% endif %}
+    {% if manage %}<form method="post" action="{{ url_for('meetings.decision', meeting_id=m.id) }}" novalidate>{{ decision_form.hidden_tag() }}
+      {{ field(decision_form.text, label='Record a decision', attrs={'rows': 2}) }}<button class="btn btn-soft" type="submit">Add decision</button></form>{% endif %}
+  </section>
+  <section class="panel" id="actions">
+    <div class="panel-header"><h2>Action points</h2></div>
+    {% if actions %}<ul class="list-plain mb-3">{% for t in actions %}<li class="py-2 border-bottom-soft d-flex flex-wrap justify-content-between gap-2">
+      <span><a href="{{ url_for('tasks.detail', task_id=t.id) }}" translate="no">{{ t.title }}</a><span class="cell-sub" translate="no">{{ t.assigned_to.full_name if t.assigned_to else '' }}{% if t.due_date %} · due {{ dt(t.due_date, '%d %b %Y') }}{% endif %}</span></span>{{ status(t.status) }}</li>{% endfor %}</ul>
+    {% else %}<p class="text-muted">No action points yet.</p>{% endif %}
+    {% if manage %}<form method="post" action="{{ url_for('meetings.action_point', meeting_id=m.id) }}" novalidate>{{ ap_form.hidden_tag() }}
+      {{ field(ap_form.title) }}<div class="row g-2"><div class="col-sm-7">{{ field(ap_form.assigned_to_id) }}</div><div class="col-sm-5">{{ field(ap_form.due_date) }}</div></div>
+      <button class="btn btn-soft" type="submit">Add action point</button></form>{% endif %}
+  </section>
+</div>
+
+{{ attachments(files, 'meeting', m.id, manage or (mine is not none)) }}
+{% endblock %}

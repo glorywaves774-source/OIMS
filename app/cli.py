@@ -51,10 +51,24 @@ def register_cli(app):
         """Grant newly added catalog permissions to every organization's system roles."""
         from app.models import Organization
         from app.rbac import seed_default_roles
+        from app.services import seed_office_defaults
 
         count = 0
         for org in Organization.query.filter(Organization.status != Organization.PENDING).all():
             seed_default_roles(org)
+            seed_office_defaults(org)
             count += 1
         db.session.commit()
         click.echo(f"System roles synchronized for {count} organization(s).")
+
+    @oims.command("send-reminders")
+    def send_reminders():
+        """Create reminder notifications (and emails). Run hourly from a scheduler / cron job."""
+        from flask import current_app
+
+        from app.reminders import run_reminders
+
+        base = current_app.config.get("PUBLIC_BASE_URL") or "http://localhost"
+        with current_app.test_request_context("/", base_url=base):
+            totals = run_reminders()
+        click.echo(", ".join(f"{k}: {v}" for k, v in totals.items()))

@@ -1,0 +1,17 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}Announcement{% endblock %}
+{% block page_title %}{{ 'Edit announcement' if ann else 'New announcement' }}{% endblock %}
+{% block content %}
+<section class="panel">
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    {{ field(form.title, required=True) }}
+    {{ field(form.body, required=True, attrs={'rows': 6}) }}
+    <div class="row g-3"><div class="col-md-6">{{ field(form.department_id) }}</div><div class="col-md-6">{{ field(form.expires_on) }}</div></div>
+    {{ field(form.pinned) }}
+    <div class="toolbar"><button class="btn btn-primary" type="submit" data-loading>{{ 'Save' if ann else 'Publish' }}</button>
+      <a class="btn btn-light" href="{{ url_for('comms.announcements') }}">Cancel</a></div>
+  </form>
+</section>
+{% endblock %}

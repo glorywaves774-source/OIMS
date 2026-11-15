@@ -1,0 +1,20 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import dt %}
+{% block title %}Announcements{% endblock %}
+{% block page_title %}Announcements{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Announcements</h2><p>Organization-wide and departmental news.</p></div>
+  {% if can('announcements.manage') and not support_request %}<a class="btn btn-primary" href="{{ url_for('comms.announcement_edit') }}"><i class="bi bi-megaphone me-1"></i>New announcement</a>{% endif %}</div>
+{% for a in rows %}
+<article class="panel">
+  <div class="panel-header"><h2 translate="no">{% if a.pinned %}<i class="bi bi-pin-angle-fill text-muted me-1" title="Pinned"></i>{% endif %}{{ a.title }}</h2>
+    <span class="small text-muted">{{ a.department.name if a.department else 'Everyone' }} · {{ dt(a.created_at, '%d %b %Y') }}</span></div>
+  <div class="prewrap" translate="no">{{ a.body }}</div>
+  <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mt-3">
+    <span class="small text-muted">— <span translate="no">{{ a.author.full_name if a.author else '' }}</span>{% if a.expires_on %} · shown until {{ dt(a.expires_on, '%d %b %Y') }}{% endif %}</span>
+    {% if can('announcements.manage') and not support_request %}<span class="d-flex gap-1"><a class="btn btn-sm btn-light" href="{{ url_for('comms.announcement_edit', ann_id=a.id) }}">Edit</a>
+      <form method="post" action="{{ url_for('comms.announcement_delete', ann_id=a.id) }}" data-confirm="Remove this announcement?" data-confirm-variant="btn-danger" data-confirm-label="Remove"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form></span>{% endif %}
+  </div>
+</article>
+{% else %}<section class="panel empty"><i class="bi bi-megaphone"></i>No announcements.</section>{% endfor %}
+{% endblock %}

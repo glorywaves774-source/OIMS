@@ -39,6 +39,12 @@ class User(UserMixin, TimestampMixin, db.Model):
     password_changed_at = db.Column(db.DateTime(timezone=True))
     # Bumped on password change / forced sign-out to invalidate existing sessions.
     session_version = db.Column(db.Integer, nullable=False, default=1)
+    # Two-step sign-in (TOTP). The secret is encrypted at rest; recovery codes are hashed.
+    totp_secret_enc = db.Column(db.String(300))
+    totp_enabled_at = db.Column(db.DateTime(timezone=True))
+    totp_last_counter = db.Column(db.BigInteger)
+    recovery_codes = db.Column(db.JSON)
+    email_notifications = db.Column(db.Boolean, nullable=False, default=True)
 
     memberships = db.relationship(
         "Membership", back_populates="user", foreign_keys="Membership.user_id", lazy="selectin"
@@ -101,6 +107,17 @@ class User(UserMixin, TimestampMixin, db.Model):
             m for m in self.memberships
             if m.status == Membership.ACTIVE and m.organization.status == Organization.ACTIVE
         ]
+
+    def reset_two_factor(self):
+        self.totp_secret_enc = None
+        self.totp_enabled_at = None
+        self.totp_last_counter = None
+        self.recovery_codes = None
+        self.session_version = (self.session_version or 0) + 1
+
+    @property
+    def has_2fa(self):
+        return self.totp_enabled_at is not None and bool(self.totp_secret_enc)
 
     @property
     def initials(self):

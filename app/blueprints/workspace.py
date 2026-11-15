@@ -1,91 +1,24 @@
 """An organization's own workspace. Every route here runs inside a tenant context."""
 from datetime import timedelta
 
-from flask import (Blueprint, abort, flash, g, redirect, render_template, request, session,
+from flask import (abort, flash, g, redirect, render_template, request, session,
                    url_for)
-from flask_login import current_user, login_required
+from flask_login import current_user
 from sqlalchemy import or_, select
 
 from app import audit
 from app.extensions import db
 from app.forms import (SCOPE_CHOICES, ActionForm, InviteUserForm, MembershipForm,
                        OrganizationSettingsForm, RoleForm)
-from app.models import (AuditLog, Membership, Organization, Role, RolePermission,
+from app.models import (AuditLog, Membership, Role, RolePermission,
                         SupportAccessRequest, User, utcnow)
-from app.rbac import (CATALOG, PERMISSION_LABELS, can, permissions_for_role,
-                      read_only_permissions, require_permission)
+from app.rbac import CATALOG, PERMISSION_LABELS, can, require_permission
 from app.services import ServiceError, active_admin_count, apply_org_fields, invite_user
-from app.tenancy import clear_tenant, set_tenant, tenant_get_or_404
+from app.blueprints.tenant import page_arg, workspace_blueprint
+from app.tenancy import tenant_get_or_404
 
-bp = Blueprint("workspace", __name__, url_prefix="/o/<org_slug>")
-
-
-@bp.url_value_preprocessor
-def _pull_slug(endpoint, values):
-    g.org_slug = values.pop("org_slug", None) if values else None
-
-
-@bp.url_defaults
-def _add_slug(endpoint, values):
-    if "org_slug" not in values and g.get("org_slug"):
-        values["org_slug"] = g.org_slug
-
-
-@bp.before_request
-@login_required
-def _enter_tenant():
-    clear_tenant()
-    org = Organization.query.filter_by(slug=g.org_slug).first()
-    if org is None:
-        abort(404)
-
-    # 1. HOLIDO support access: read-only, time-limited, audited.
-    req_id = session.get("support_request_id")
-    if req_id and current_user.is_platform_staff:
-        req = db.session.get(SupportAccessRequest, req_id)
-        if req and req.organization_id == org.id and req.requested_by_id == current_user.id:
-            if not req.is_live():
-                session.pop("support_request_id", None)
-                flash("Your support access has expired.", "warning")
-                return redirect(url_for("platform.organization_detail", org_id=org.id))
-            if request.method not in ("GET", "HEAD"):
-                abort(403)
-            g.support_request = req
-            _activate(org, None, read_only_permissions())
-            return None
-
-    # 2. Members of the organization.
-    m = Membership.query.filter_by(organization_id=org.id, user_id=current_user.id).first()
-    if m is None or m.status != Membership.ACTIVE:
-        abort(404)  # do not reveal that the organization exists
-    if org.status != Organization.ACTIVE:
-        return render_template("workspace/unavailable.html", org=org), 403
-    _activate(org, m, permissions_for_role(m.role))
-    return None
-
-
-@bp.after_request
-def _audit_support_views(response):
-    """Every page HOLIDO support opens inside a tenant workspace is recorded."""
-    req = g.get("support_request")
-    if req is not None and response.status_code < 400:
-        audit.record("support.viewed", f"Viewed {request.path}", entity=req, organization_id=req.organization_id)
-        db.session.commit()
-    return response
-
-
-def _activate(org, membership, permissions):
-    g.tenant = org
-    g.membership = membership
-    g.permissions = permissions
-    set_tenant(org.id)
-
-
-def _page():
-    try:
-        return max(1, int(request.args.get("page", 1)))
-    except ValueError:
-        return 1
+bp = workspace_blueprint("workspace", __name__)
+_page = page_arg
 
 
 # --- Dashboard ----------------------------------------------------------------------
@@ -93,26 +26,76 @@ def _page():
 @bp.route("/")
 @require_permission("dashboard.view")
 def dashboard():
+    from datetime import date, timedelta
+
+    from app.blueprints.comms import visible_announcements
+    from app.blueprints.documents import visible_stmt
+    from app.blueprints.meetings import visible_meetings_stmt
+    from app.models import (Correspondence, Department, Document, Meeting, Notification, StaffProfile, Task)
+
     org = g.tenant
-    status_counts = {}
-    for status, in db.session.execute(select(Membership.status).where(Membership.organization_id == org.id)):
-        status_counts[status] = status_counts.get(status, 0) + 1
-    stats = {
-        "members_active": status_counts.get(Membership.ACTIVE, 0),
-        "members_invited": status_counts.get(Membership.INVITED, 0),
-        "members_suspended": status_counts.get(Membership.SUSPENDED, 0),
-        "roles": Role.query.filter_by(organization_id=org.id).count(),
-    }
+    today = date.today()
+    stats = {}
+    if can("staff.view"):
+        stats["staff"] = StaffProfile.query.filter(StaffProfile.organization_id == org.id,
+                                                   StaffProfile.status != "exited").count()
+    if can("departments.view"):
+        stats["departments"] = Department.query.filter_by(organization_id=org.id, is_active=True).count()
+    my_tasks = (Task.query.filter(Task.organization_id == org.id, Task.assigned_to_id == current_user.id,
+                                  Task.status.in_(Task.OPEN))
+                .order_by(Task.due_date.is_(None), Task.due_date).limit(6).all())
+    stats["my_open_tasks"] = Task.query.filter(Task.organization_id == org.id, Task.assigned_to_id == current_user.id,
+                                               Task.status.in_(Task.OPEN)).count()
+    stats["my_overdue"] = Task.query.filter(Task.organization_id == org.id, Task.assigned_to_id == current_user.id,
+                                            Task.status.in_(Task.OPEN), Task.due_date < today).count()
+    meetings = []
+    if can("meetings.view"):
+        meetings = db.session.execute(visible_meetings_stmt().where(
+            Meeting.starts_at >= utcnow(), Meeting.starts_at <= utcnow() + timedelta(days=14),
+            Meeting.status == "scheduled").order_by(Meeting.starts_at).limit(5)).scalars().all()
+    stats["meetings"] = len(meetings)
+    correspondence = (Correspondence.query.filter(Correspondence.organization_id == org.id,
+                                                  Correspondence.assigned_to_id == current_user.id,
+                                                  Correspondence.status.notin_(("responded", "closed")),
+                                                  Correspondence.archived.is_(False))
+                      .order_by(Correspondence.response_due.is_(None), Correspondence.response_due).limit(5).all())
+    documents = []
+    if can("documents.view"):
+        documents = db.session.execute(visible_stmt().where(Document.status == "approved")
+                                       .order_by(Document.updated_at.desc()).limit(5)).scalars().all()
+    deadlines = sorted(
+        [(t.due_date, "Task", t.title, url_for("tasks.detail", task_id=t.id)) for t in my_tasks if t.due_date] +
+        [(c.response_due, "Reply", f"{c.reference_no} {c.subject}", url_for("correspondence.detail", item_id=c.id))
+         for c in correspondence if c.response_due],
+        key=lambda x: x[0])[:6]
+    notes = (Notification.query.filter(Notification.organization_id == org.id, Notification.user_id == current_user.id,
+                                       Notification.read_at.is_(None))
+             .order_by(Notification.created_at.desc()).limit(5).all())
+    announcements = visible_announcements(limit=3) if can("announcements.view") else []
     pending_support = []
     if can("support.view"):
         pending_support = SupportAccessRequest.query.filter_by(
             organization_id=org.id, status=SupportAccessRequest.PENDING).all()
+    pending_approvals = {}
+    if can("documents.approve"):
+        pending_approvals["documents"] = Document.query.filter_by(organization_id=org.id, status="pending_approval").count()
+    if can("leave.approve"):
+        from app.blueprints.people import _approvable_stmt
+        from app.models import LeaveRequest
+        pending_approvals["leave"] = len(db.session.execute(_approvable_stmt().where(
+            LeaveRequest.status == "pending")).scalars().all())
+    if can("correspondence.approve"):
+        pending_approvals["correspondence"] = Correspondence.query.filter_by(
+            organization_id=org.id, status="awaiting_approval").count()
     recent = []
     if can("audit.view"):
         recent = (AuditLog.query.filter_by(organization_id=org.id)
-                  .order_by(AuditLog.created_at.desc()).limit(8).all())
-    return render_template("workspace/dashboard.html", stats=stats, pending_support=pending_support,
-                           recent=recent)
+                  .order_by(AuditLog.created_at.desc()).limit(6).all())
+    return render_template("workspace/dashboard.html", stats=stats, my_tasks=my_tasks, meetings=meetings,
+                           correspondence=correspondence, documents=documents, deadlines=deadlines, notes=notes,
+                           announcements=announcements, pending_support=pending_support,
+                           pending_approvals={k: v for k, v in pending_approvals.items() if v}, recent=recent,
+                           today=today)
 
 
 # --- Users ----------------------------------------------------------------------------
@@ -200,6 +183,11 @@ def user_action(membership_id, action):
         else:
             m.status = Membership.SUSPENDED
             audit.record("user.suspended", f"{m.user.email} suspended", entity=m)
+    elif action == "reset-2fa":
+        if m.user.is_platform_staff:
+            abort(403)  # HOLIDO staff are managed by HOLIDO
+        m.user.reset_two_factor()
+        audit.record("user.2fa_reset", f"Two-step sign-in reset for {m.user.email}", entity=m)
     elif action == "reactivate":
         m.status = Membership.ACTIVE if m.user.has_password else Membership.INVITED
         audit.record("user.reactivated", f"{m.user.email} reactivated", entity=m)

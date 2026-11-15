@@ -1,0 +1,54 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, dt %}
+{% block title %}Two-step sign-in{% endblock %}
+{% block page_title %}Two-step sign-in{% endblock %}
+{% block content %}
+{% if codes %}
+<section class="panel">
+  <div class="alert alert-warning"><strong>Save these recovery codes now.</strong> Each works once if you lose your phone. They will not be shown again.</div>
+  <ul class="recovery-codes list-plain" id="rc">{% for c in codes %}<li>{{ c }}</li>{% endfor %}</ul>
+  <button class="btn btn-soft btn-sm" type="button" data-copy="rc">Copy codes</button>
+</section>
+{% endif %}
+{% if enabled %}
+<section class="panel">
+  <div class="panel-header"><h2><i class="bi bi-shield-check text-success me-1"></i>Two-step sign-in is on</h2></div>
+  <p>Since {{ dt(current_user.totp_enabled_at, '%d %b %Y') }}. When you sign in you'll be asked for a code from your authenticator app. You have <strong>{{ remaining }}</strong> recovery code{{ '' if remaining == 1 else 's' }} left.</p>
+  <div class="grid-2">
+    <form method="post" action="{{ url_for('account.two_factor_regenerate') }}" novalidate class="perm-module">{{ regen_form.hidden_tag() }}
+      <strong class="d-block mb-2">Create new recovery codes</strong>
+      {{ field(regen_form.code, attrs={'inputmode': 'numeric', 'autocomplete': 'one-time-code'}) }}
+      <button class="btn btn-soft" type="submit">Create new codes</button></form>
+    {% if required %}
+      <div class="perm-module"><strong>Required for HOLIDO staff</strong><p class="small text-muted mb-0">Two-step sign-in protects the platform console and cannot be turned off for your account.</p></div>
+    {% else %}
+    <form method="post" action="{{ url_for('account.two_factor_disable') }}" novalidate class="perm-module" data-confirm="Turn off two-step sign-in? Your account will be protected by your password only." data-confirm-variant="btn-danger" data-confirm-label="Turn off">{{ disable_form.hidden_tag() }}
+      <strong class="d-block mb-2">Turn off</strong>
+      {{ field(disable_form.password, attrs={'autocomplete': 'current-password'}) }}
+      {{ field(disable_form.code, attrs={'inputmode': 'numeric', 'autocomplete': 'one-time-code'}) }}
+      <button class="btn btn-outline-danger" type="submit">Turn off two-step sign-in</button></form>
+    {% endif %}
+  </div>
+</section>
+{% else %}
+<section class="panel">
+  {% if required %}<div class="alert alert-warning">HOLIDO platform staff must use two-step sign-in. Set it up to continue.</div>{% endif %}
+  <p>Two-step sign-in asks for a 6-digit code from an authenticator app on your phone (Google Authenticator, Microsoft Authenticator, Authy or similar) each time you sign in.</p>
+  <ol>
+    <li>Open your authenticator app and add an account.</li>
+    <li>Scan this code, or type the key below.</li>
+    <li>Enter the 6-digit code the app shows.</li>
+  </ol>
+  <div class="d-flex flex-wrap gap-4 align-items-start">
+    <div class="qr-box"><img src="{{ qr }}" alt="QR code for your authenticator app"></div>
+    <div class="flex-grow-1">
+      <label class="form-label" for="secret">Key (if you can't scan)</label>
+      <div class="d-flex gap-2 mb-3"><input class="form-control one-time-link" id="secret" readonly value="{{ secret }}"><button class="btn btn-light" type="button" data-copy="secret">Copy</button></div>
+      <form method="post" novalidate>{{ form.hidden_tag() }}
+        {{ field(form.code, attrs={'inputmode': 'numeric', 'autocomplete': 'one-time-code'}) }}
+        <button class="btn btn-primary" type="submit" data-loading>Turn on two-step sign-in</button></form>
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

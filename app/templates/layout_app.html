@@ -42,6 +42,11 @@
       </div>
       <div class="topbar-title"><h1>{% block page_title %}{% endblock %}</h1></div>
       <div class="topbar-tools">
+        {% set hc = header_counts() %}
+        {% if tenant and not support_request %}
+        {% if can('messages.use') %}<a class="btn-icon icon-badge" href="{{ url_for('comms.inbox') }}" aria-label="Messages{% if hc.messages %}, {{ hc.messages }} unread{% endif %}" title="Messages"><i class="bi bi-chat-dots"></i>{% if hc.messages %}<span class="badge-dot">{{ hc.messages if hc.messages < 100 else '99+' }}</span>{% endif %}</a>{% endif %}
+        <a class="btn-icon icon-badge" href="{{ url_for('comms.notifications') }}" aria-label="Notifications{% if hc.notifications %}, {{ hc.notifications }} unread{% endif %}" title="Notifications"><i class="bi bi-bell"></i>{% if hc.notifications %}<span class="badge-dot">{{ hc.notifications if hc.notifications < 100 else '99+' }}</span>{% endif %}</a>
+        {% endif %}
         {{ theme_button() }}
         <div class="dropdown">
           <button class="user-chip dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu">
