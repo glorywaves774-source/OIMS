@@ -1,0 +1,41 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt %}
+{% block title %}{{ m.user.full_name }}{% endblock %}
+{% block page_title %}<span translate="no">{{ m.user.full_name }}</span>{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ m.user.full_name }}</h2><p><span translate="no">{{ m.user.email }}</span> · {{ status(m.status) }}</p></div>
+  <a class="btn btn-light" href="{{ url_for('workspace.users') }}"><i class="bi bi-arrow-left me-1"></i>All users</a></div>
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-header"><h2>Role and job title</h2></div>
+    {% if can('users.manage') and not support_request %}
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+      {{ field(form.role_id) }}
+      {{ field(form.job_title) }}
+      <button class="btn btn-primary" type="submit" data-loading>Save changes</button>
+    </form>
+    {% else %}
+    <dl class="kv"><dt>Role</dt><dd>{{ m.role.name if m.role else '—' }}</dd><dt>Job title</dt><dd translate="no">{{ m.job_title or '—' }}</dd></dl>
+    {% endif %}
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Access</h2></div>
+    <dl class="kv mb-3">
+      <dt>Member since</dt><dd>{{ dt(m.created_at, '%d %b %Y') }}</dd>
+      <dt>Last sign-in</dt><dd>{{ dt(m.user.last_login_at) }}</dd>
+      <dt>Phone</dt><dd translate="no">{{ m.user.phone or '—' }}</dd>
+    </dl>
+    {% if can('users.manage') and not support_request and m.user_id != current_user.id %}
+    <div class="toolbar">
+      {% if m.status == 'suspended' %}
+      <form method="post" action="{{ url_for('workspace.user_action', membership_id=m.id, action='reactivate') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-primary" type="submit">Reactivate</button></form>
+      {% else %}
+      <form method="post" action="{{ url_for('workspace.user_action', membership_id=m.id, action='suspend') }}" data-confirm="Suspend {{ m.user.full_name }}? They will lose access to this organization until reactivated." data-confirm-variant="btn-danger" data-confirm-label="Suspend"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-danger" type="submit">Suspend</button></form>
+      {% endif %}
+      <form method="post" action="{{ url_for('workspace.user_action', membership_id=m.id, action='remove') }}" data-confirm="Remove {{ m.user.full_name }} from this organization? Their account stays, but they lose access here." data-confirm-variant="btn-danger" data-confirm-label="Remove"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-danger" type="submit">Remove</button></form>
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

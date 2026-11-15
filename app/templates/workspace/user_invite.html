@@ -1,0 +1,18 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}Add a person{% endblock %}
+{% block page_title %}Add a person{% endblock %}
+{% block content %}
+<section class="panel">
+  <p class="text-muted">If the person already has an OIMS account (for example with another organization), they are added straight away. Otherwise they receive a link to set their password.</p>
+  <form method="post" novalidate class="col-lg-7 px-0">
+    {{ form.hidden_tag() }}
+    {{ field(form.full_name, required=True) }}
+    {{ field(form.email, required=True, attrs={'inputmode': 'email', 'autocomplete': 'off'}) }}
+    {{ field(form.role_id, required=True) }}
+    {{ field(form.job_title) }}
+    <div class="toolbar"><button class="btn btn-primary" type="submit" data-loading>Add person</button>
+      <a class="btn btn-light" href="{{ url_for('workspace.users') }}">Cancel</a></div>
+  </form>
+</section>
+{% endblock %}

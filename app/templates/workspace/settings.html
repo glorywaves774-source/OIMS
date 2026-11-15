@@ -1,0 +1,28 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}Organization settings{% endblock %}
+{% block page_title %}Organization settings{% endblock %}
+{% block content %}
+{% set locked = not editable or support_request %}
+{% if locked %}<div class="alert alert-info">You can view these settings. Only people allowed to manage the organization can change them.</div>{% endif %}
+<form method="post" enctype="multipart/form-data" novalidate>
+  {{ form.hidden_tag() }}
+  <fieldset{% if locked %} disabled{% endif %}>
+  <section class="panel">
+    {% if org.logo_data %}<div class="d-flex align-items-center gap-3 mb-3"><div class="brand-mark"><img src="{{ url_for('public.logo', slug=org.slug) }}" alt="Current logo"></div>{{ field(form.remove_logo) }}</div>{% endif %}
+    {% include "partials/org_fields.html" %}
+  </section>
+  <section class="panel">
+    <div class="form-section mb-0"><h3>Workspace preferences</h3>
+      <div class="row g-3">
+        <div class="col-md-4">{{ field(form.currency) }}</div>
+        <div class="col-md-4">{{ field(form.fiscal_year_start_month) }}</div>
+        <div class="col-md-4">{{ field(form.timezone, help='IANA name, e.g. Africa/Accra') }}</div>
+        <div class="col-12">{{ field(form.require_support_approval) }}</div>
+      </div>
+    </div>
+  </section>
+  </fieldset>
+  {% if not locked %}<div class="toolbar mb-4"><button class="btn btn-primary" type="submit" data-loading>Save settings</button></div>{% endif %}
+</form>
+{% endblock %}

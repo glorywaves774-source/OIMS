@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "macros.html" import theme_button %}
+{% block title %}Welcome{% endblock %}
+{% block body %}
+<main id="content" class="hero">
+  <div class="hero-top">
+    <div class="auth-brand mb-0"><div class="brand-mark">OI</div><div><h1 class="fs-5 mb-0">{{ app_name }}</h1><p>{{ platform_owner }}</p></div></div>
+    <div class="toolbar">{{ theme_button() }}<a class="btn btn-light" href="{{ url_for('auth.login') }}">Sign in</a>
+      {% if config.ALLOW_PUBLIC_REGISTRATION %}<a class="btn btn-primary" href="{{ url_for('public.register') }}">Register your organization</a>{% endif %}</div>
+  </div>
+  <h1>{{ app_full_name }}</h1>
+  <p class="lead">One secure workspace for each organization: office administration, programmes, projects, finance, MEAL, HR, documents, procurement and reporting — provided by HOLIDO as a multi-tenant service.</p>
+  <div class="feature-grid">
+    <div class="feature glass"><i class="bi bi-shield-lock"></i><h3>Isolated workspaces</h3><p>Each organization's records, users and settings are kept separate from every other organization.</p></div>
+    <div class="feature glass"><i class="bi bi-person-gear"></i><h3>Role-based access</h3><p>Standard roles for NGOs and institutions, plus custom roles with permissions by module, action and scope.</p></div>
+    <div class="feature glass"><i class="bi bi-journal-check"></i><h3>Accountability</h3><p>Sign-ins, administrative changes and HOLIDO support access are recorded in an audit log.</p></div>
+  </div>
+  <p class="small text-muted mt-4">Programmes, projects, MEAL, finance and reporting modules are being released in phases.</p>
+</main>
+{% endblock %}

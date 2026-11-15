@@ -1,0 +1,16 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import audit_rows, pager %}
+{% block title %}Audit log{% endblock %}
+{% block page_title %}Audit log{% endblock %}
+{% block content %}
+<section class="panel panel-flush">
+  <form class="filters px-3 pt-3" method="get" role="search">
+    <select class="form-select" name="action" data-autosubmit aria-label="Type of action">
+      {% for val, label in [('', 'All actions'), ('auth.', 'Sign-ins'), ('user.', 'Users'), ('role.', 'Roles'), ('organization.', 'Organization'), ('support.', 'HOLIDO support'), ('subscription.', 'Subscription')] %}
+      <option value="{{ val }}"{% if val == action %} selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+  </form>
+  {% if page.items %}{{ audit_rows(page.items) }}{{ pager(page, 'workspace.audit_log', action=action) }}
+  {% else %}<div class="empty"><i class="bi bi-journal"></i>No matching entries.</div>{% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "layout_auth.html" %}
+{% from "macros.html" import field %}
+{% block title %}Register your organization{% endblock %}
+{% block card_class %}wide{% endblock %}
+{% block heading %}Register your organization{% endblock %}
+{% block content %}
+<p class="text-muted">HOLIDO reviews every registration before the workspace is activated. Fields marked * are required.</p>
+<form method="post" enctype="multipart/form-data" novalidate>
+  {{ form.hidden_tag() }}
+  {% include "partials/org_fields.html" %}
+  <div class="form-section">
+    <h3>Subscription</h3>
+    {{ field(form.plan_id, help='Plans and pricing are set by HOLIDO. You can change plan later.' if plans else 'HOLIDO will agree a plan with you after approval.') }}
+  </div>
+  <div class="form-section">
+    <h3>Organization administrator (you)</h3>
+    <div class="row g-3">
+      <div class="col-md-6">{{ field(form.admin_name, required=True, attrs={'autocomplete': 'name'}) }}</div>
+      <div class="col-md-6">{{ field(form.admin_email, required=True, attrs={'autocomplete': 'username', 'inputmode': 'email'}) }}</div>
+      <div class="col-md-6">{{ field(form.password, required=True, attrs={'autocomplete': 'new-password'}, help='At least %d characters; mix letters, numbers or symbols.' % config.PASSWORD_MIN_LENGTH) }}</div>
+      <div class="col-md-6">{{ field(form.confirm, required=True, attrs={'autocomplete': 'new-password'}) }}</div>
+    </div>
+    {{ field(form.accept) }}
+  </div>
+  <div class="toolbar"><button class="btn btn-primary px-4" type="submit" data-loading>Submit registration</button>
+    <a class="btn btn-light" href="{{ url_for('auth.login') }}">Cancel</a></div>
+</form>
+{% endblock %}

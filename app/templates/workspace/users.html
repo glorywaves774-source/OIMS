@@ -1,0 +1,28 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import status, dt, pager, one_time_link %}
+{% block title %}Users{% endblock %}
+{% block page_title %}Users{% endblock %}
+{% block content %}
+{{ one_time_link(one_time) }}
+<div class="page-head"><div><h2 class="h4 mb-0">People with access</h2><p>Each person has one role in this organization.</p></div>
+  {% if can('users.invite') and not support_request %}<a class="btn btn-primary" href="{{ url_for('workspace.user_invite') }}"><i class="bi bi-person-plus me-1"></i>Add a person</a>{% endif %}</div>
+<section class="panel panel-flush">
+  <form class="filters px-3 pt-3" method="get" role="search">
+    <input class="form-control" type="search" name="q" value="{{ q }}" placeholder="Search name, email or job title" aria-label="Search users">
+    <button class="btn btn-soft" type="submit">Search</button>
+  </form>
+  {% if page.items %}
+  <div class="table-scroll"><table class="table">
+    <thead><tr><th>Name</th><th>Job title</th><th>Role</th><th>Status</th><th>Last sign-in</th></tr></thead>
+    <tbody>{% for m in page.items %}<tr>
+      <td><a href="{{ url_for('workspace.user_detail', membership_id=m.id) }}" translate="no">{{ m.user.full_name }}</a><span class="cell-sub" translate="no">{{ m.user.email }}</span></td>
+      <td translate="no">{{ m.job_title or '—' }}</td>
+      <td class="nowrap">{{ m.role.name if m.role else '—' }}</td>
+      <td>{{ status(m.status) }}</td>
+      <td class="date">{{ dt(m.user.last_login_at) }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {{ pager(page, 'workspace.users', q=q) }}
+  {% else %}<div class="empty"><i class="bi bi-people"></i>{{ 'No one matches this search.' if q else 'No users yet.' }}</div>{% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "layout_app.html" %}
+{% block title %}My workspaces{% endblock %}
+{% block page_title %}My workspaces{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Choose a workspace</h2><p>You belong to more than one organization, or you are HOLIDO staff.</p></div></div>
+{% if current_user.is_platform_staff %}
+<div class="panel"><div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
+  <div><strong>HOLIDO platform console</strong><div class="text-muted small">{{ current_user.platform_role_label }}</div></div>
+  <a class="btn btn-primary" href="{{ url_for('platform.dashboard') }}">Open console</a></div></div>
+{% endif %}
+{% for m in memberships %}
+<div class="panel"><div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
+  <div><strong translate="no">{{ m.organization.name }}</strong><div class="text-muted small">{{ m.role.name if m.role else '' }}</div></div>
+  <a class="btn btn-soft" href="{{ url_for('workspace.dashboard', org_slug=m.organization.slug) }}">Open</a></div></div>
+{% else %}
+{% if not current_user.is_platform_staff %}<div class="panel empty"><i class="bi bi-buildings"></i>You do not have access to any active organization.</div>{% endif %}
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, dt, one_time_link %}
+{% block title %}Platform staff{% endblock %}
+{% block page_title %}Platform staff{% endblock %}
+{% block content %}
+{{ one_time_link(one_time) }}
+<div class="grid-2">
+  <section class="panel panel-flush">
+    <div class="panel-header"><h2>HOLIDO platform team</h2></div>
+    <div class="table-scroll"><table class="table"><thead><tr><th>Name</th><th>Role</th><th>Last sign-in</th><th></th></tr></thead><tbody>
+      {% for u in people %}<tr>
+        <td translate="no">{{ u.full_name }}<span class="cell-sub">{{ u.email }}</span></td>
+        <td class="nowrap">{{ u.platform_role_label }}</td>
+        <td class="date">{{ dt(u.last_login_at) }}</td>
+        <td class="nowrap">{% if u.id != current_user.id %}
+          <div class="d-flex gap-1">
+          <form method="post" action="{{ url_for('platform.staff_action', user_id=u.id, action='force-signout') }}" data-confirm="Sign {{ u.full_name }} out of all devices?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit" title="Sign out everywhere"><i class="bi bi-box-arrow-right"></i></button></form>
+          <form method="post" action="{{ url_for('platform.staff_action', user_id=u.id, action='remove') }}" data-confirm="Remove {{ u.full_name }}'s platform access?" data-confirm-variant="btn-danger" data-confirm-label="Remove"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form>
+          </div>{% else %}<span class="small text-muted">You</span>{% endif %}</td>
+      </tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Add platform staff</h2></div>
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+      {{ field(form.full_name, required=True) }}
+      {{ field(form.email, required=True, attrs={'inputmode': 'email'}) }}
+      {{ field(form.platform_role, help='Support officers can view the console and request support access. Administrators also manage organizations and plans. Only Super Admins manage platform staff.') }}
+      <button class="btn btn-primary" type="submit" data-loading>Add</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

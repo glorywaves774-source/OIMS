@@ -1,0 +1,31 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import status, dt %}
+{% block title %}HOLIDO support access{% endblock %}
+{% block page_title %}HOLIDO support access{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Support access requests</h2>
+  <p>HOLIDO staff can only view this workspace (never change it), for a limited time, and every page they open is recorded in your audit log.
+  {{ 'Your approval is required.' if tenant.require_support_approval else 'You have chosen not to require approval — change this in Organization settings.' }}</p></div></div>
+<section class="panel panel-flush">
+  {% if rows %}
+  <div class="table-scroll"><table class="table">
+    <thead><tr><th>Requested</th><th>HOLIDO staff</th><th>Reason</th><th>Duration</th><th>Status</th><th>Ends</th><th></th></tr></thead>
+    <tbody>{% for r in rows %}<tr>
+      <td class="date">{{ dt(r.created_at) }}</td>
+      <td translate="no">{{ r.requested_by.full_name }}<span class="cell-sub">{{ r.requested_by.email }}</span></td>
+      <td>{{ r.reason }}</td>
+      <td class="nowrap">{{ r.duration_minutes }} min</td>
+      <td>{{ status(r.display_status) }}{% if r.decided_by %}<span class="cell-sub" translate="no">{{ r.decided_by.full_name }}</span>{% endif %}</td>
+      <td class="date">{{ dt(r.expires_at, '%d %b %H:%M') }}</td>
+      <td class="nowrap">{% if can('support.approve') and not support_request %}<div class="d-flex gap-1">
+        {% if r.status == 'pending' %}
+          <form method="post" action="{{ url_for('workspace.support_decide', req_id=r.id, action='approve') }}" data-confirm="Allow read-only access for {{ r.duration_minutes }} minutes?" data-confirm-label="Approve"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-primary" type="submit">Approve</button></form>
+          <form method="post" action="{{ url_for('workspace.support_decide', req_id=r.id, action='deny') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" type="submit">Deny</button></form>
+        {% elif r.is_live() %}
+          <form method="post" action="{{ url_for('workspace.support_decide', req_id=r.id, action='revoke') }}" data-confirm="End HOLIDO's access now?" data-confirm-variant="btn-danger" data-confirm-label="Revoke"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" type="submit">Revoke</button></form>
+        {% endif %}</div>{% endif %}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<div class="empty"><i class="bi bi-life-preserver"></i>HOLIDO has not requested access to this workspace.</div>{% endif %}
+</section>
+{% endblock %}

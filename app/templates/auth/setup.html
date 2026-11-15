@@ -1,0 +1,16 @@
+{% extends "layout_auth.html" %}
+{% from "macros.html" import field %}
+{% block title %}First-run setup{% endblock %}
+{% block heading %}Create the HOLIDO Super Admin{% endblock %}
+{% block content %}
+<p class="text-muted">This page works once. Enter the setup token from the server's <code>OIMS_SETUP_TOKEN</code> environment variable. After setup, remove that variable.</p>
+<form method="post" novalidate class="neu-input">
+  {{ form.hidden_tag() }}
+  {{ field(form.setup_token, attrs={'autocomplete': 'off'}) }}
+  {{ field(form.full_name, attrs={'autocomplete': 'name'}) }}
+  {{ field(form.email, attrs={'autocomplete': 'username', 'inputmode': 'email'}) }}
+  {{ field(form.password, attrs={'autocomplete': 'new-password'}) }}
+  {{ field(form.confirm, attrs={'autocomplete': 'new-password'}) }}
+  <button class="btn btn-primary w-100 py-2" type="submit" data-loading>Create Super Admin</button>
+</form>
+{% endblock %}

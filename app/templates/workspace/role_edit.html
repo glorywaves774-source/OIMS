@@ -1,0 +1,41 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}{{ role.name if role else 'New role' }}{% endblock %}
+{% block page_title %}{{ role.name if role else 'New custom role' }}{% endblock %}
+{% block content %}
+{% set locked = not editable or support_request %}
+{% if role and role.is_admin %}<div class="alert alert-info">The administrator role always holds every permission, including those for modules released later.</div>
+{% elif role and role.is_system %}<div class="alert alert-info">This is a standard role. To change its permissions, <a href="{{ url_for('workspace.role_edit', **{'from': role.id}) }}">duplicate it as a custom role</a>.</div>{% endif %}
+<form method="post" novalidate>
+  {{ form.hidden_tag() }}
+  <section class="panel">
+    <div class="row g-3">
+      <div class="col-md-5">{{ field(form.name, required=True, attrs={'readonly': locked}) }}</div>
+      <div class="col-md-7">{{ field(form.description, attrs={'readonly': locked}) }}</div>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Permissions</h2><span class="small text-muted">Scope limits a permission to the whole organization, the person's department, or records they own.</span></div>
+    {% for module, (label, actions) in catalog.items() %}
+    <div class="perm-module">
+      <h3>{{ label }}</h3>
+      {% for action, alabel in actions %}{% set code = module ~ '.' ~ action %}
+      <div class="perm-row">
+        <div class="form-check mb-0">
+          <input class="form-check-input" type="checkbox" name="perm" value="{{ code }}" id="p-{{ code }}"{% if code in current %} checked{% endif %}{% if locked %} disabled{% endif %}>
+          <label class="form-check-label" for="p-{{ code }}">{{ alabel }} <code class="small">{{ code }}</code></label>
+        </div>
+        <select class="form-select" name="scope__{{ code }}" aria-label="Scope for {{ alabel }}"{% if locked %} disabled{% endif %}>
+          {% for val, slabel in scopes %}<option value="{{ val }}"{% if current.get(code, 'organization') == val %} selected{% endif %}>{{ slabel }}</option>{% endfor %}
+        </select>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </section>
+  <div class="toolbar mb-4">
+    {% if not locked %}<button class="btn btn-primary" type="submit" data-loading>Save role</button>{% endif %}
+    <a class="btn btn-light" href="{{ url_for('workspace.roles') }}">Back to roles</a>
+  </div>
+</form>
+{% endblock %}

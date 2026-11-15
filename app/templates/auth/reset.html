@@ -1,0 +1,13 @@
+{% extends "layout_auth.html" %}
+{% from "macros.html" import field %}
+{% block title %}Set password{% endblock %}
+{% block heading %}{{ 'Create your password' if first_time else 'Choose a new password' }}{% endblock %}
+{% block content %}
+<p class="text-muted">For <strong translate="no">{{ user.email }}</strong>. Use at least {{ config.PASSWORD_MIN_LENGTH }} characters and mix letters, numbers or symbols.</p>
+<form method="post" novalidate class="neu-input">
+  {{ form.hidden_tag() }}
+  {{ field(form.password, attrs={'autocomplete': 'new-password'}) }}
+  {{ field(form.confirm, attrs={'autocomplete': 'new-password'}) }}
+  <button class="btn btn-primary w-100 py-2" type="submit" data-loading>Save password</button>
+</form>
+{% endblock %}

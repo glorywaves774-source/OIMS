@@ -1,0 +1,13 @@
+{% extends "layout_auth.html" %}
+{% from "macros.html" import field %}
+{% block title %}Reset password{% endblock %}
+{% block heading %}Reset your password{% endblock %}
+{% block content %}
+<p class="text-muted">Enter your sign-in email. If an account exists, we will email a link to set a new password.</p>
+<form method="post" novalidate class="neu-input">
+  {{ form.hidden_tag() }}
+  {{ field(form.email, attrs={'autocomplete': 'username', 'inputmode': 'email'}) }}
+  <button class="btn btn-primary w-100 py-2" type="submit" data-loading>Send reset link</button>
+</form>
+<div class="auth-foot"><a href="{{ url_for('auth.login') }}">Back to sign in</a></div>
+{% endblock %}

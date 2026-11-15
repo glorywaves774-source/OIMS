@@ -1,0 +1,123 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt, audit_rows, one_time_link %}
+{% block title %}{{ org.name }}{% endblock %}
+{% block page_title %}<span translate="no">{{ org.name }}</span>{% endblock %}
+{% block content %}
+{{ one_time_link(one_time) }}
+<div class="page-head">
+  <div class="d-flex gap-3 align-items-center">
+    <div class="brand-mark">{% if org.logo_data %}<img src="{{ url_for('public.logo', slug=org.slug) }}" alt="">{% else %}{{ org.name[:2]|upper }}{% endif %}</div>
+    <div><h2 class="h4 mb-0" translate="no">{{ org.name }}</h2><p>{{ org.org_type }} · {{ status(org.status) }}{% if org.status_reason %} — {{ org.status_reason }}{% endif %}</p></div>
+  </div>
+  <a class="btn btn-light" href="{{ url_for('platform.organizations') }}"><i class="bi bi-arrow-left me-1"></i>All organizations</a>
+</div>
+
+{% if can_admin %}
+<section class="panel">
+  <div class="panel-header"><h2>Status</h2></div>
+  {% if org.status == 'pending' %}
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <form method="post" action="{{ url_for('platform.organization_approve', org_id=org.id) }}" data-confirm="Approve {{ org.name }} and activate its workspace?" data-confirm-label="Approve">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-primary" type="submit"><i class="bi bi-check2-circle me-1"></i>Approve and activate</button></form>
+  </div>
+  {% endif %}
+  {% set others = allowed_actions|reject('equalto', 'approve')|list %}
+  {% if others %}
+  <form method="post" novalidate data-confirm="Change the status of {{ org.name }}? Members lose access while it is suspended, deactivated or rejected." data-confirm-variant="btn-danger">
+    {{ reason_form.hidden_tag() }}
+    {{ field(reason_form.reason, label='Reason (recorded in the audit log)', attrs={'rows': 2}) }}
+    <div class="toolbar">
+      {% for a in others %}
+        <button class="btn {{ 'btn-outline-primary' if a == 'activate' else 'btn-outline-danger' }}" type="submit" formaction="{{ url_for('platform.organization_status', org_id=org.id, action=a) }}">{{ a|capitalize }}</button>
+      {% endfor %}
+    </div>
+  </form>
+  {% endif %}
+</section>
+{% endif %}
+
+<div class="grid-2 mb-4">
+  <section class="panel">
+    <div class="panel-header"><h2>Profile</h2></div>
+    <dl class="kv">
+      <dt>Workspace address</dt><dd><code>/o/{{ org.slug }}</code></dd>
+      <dt>Registration no.</dt><dd>{{ org.registration_number or '—' }}</dd>
+      <dt>Address</dt><dd>{{ org.address or '—' }}</dd>
+      <dt>Location</dt><dd>{{ [org.district, org.region, org.country]|select|join(', ') }}</dd>
+      <dt>Telephone</dt><dd>{{ org.phone or '—' }}</dd>
+      <dt>Official email</dt><dd translate="no">{{ org.email }}</dd>
+      <dt>Website</dt><dd>{% if org.website %}<a href="{{ org.website }}" rel="noopener noreferrer" target="_blank" translate="no">{{ org.website }}</a>{% else %}—{% endif %}</dd>
+      <dt>Contact person</dt><dd translate="no">{{ org.contact_name or '—' }}{% if org.contact_email %}<br>{{ org.contact_email }}{% endif %}{% if org.contact_phone %}<br>{{ org.contact_phone }}{% endif %}</dd>
+      <dt>Description</dt><dd>{{ org.description or '—' }}</dd>
+      <dt>Registered</dt><dd>{{ dt(org.created_at) }}</dd>
+      <dt>Approved</dt><dd>{{ dt(org.approved_at) }}</dd>
+      <dt>Support approval</dt><dd>{{ 'Required' if org.require_support_approval else 'Not required' }}</dd>
+    </dl>
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Subscription</h2>{% if org.subscription %}{{ status(org.subscription.status) }}{% endif %}</div>
+    {% if org.subscription %}
+    <dl class="kv mb-3">
+      <dt>Plan</dt><dd>{{ org.subscription.plan.name }}</dd>
+      <dt>Billing cycle</dt><dd>{{ org.subscription.billing_cycle|capitalize }}</dd>
+      <dt>Started</dt><dd>{{ dt(org.subscription.starts_at, '%d %b %Y') }}</dd>
+      {% if org.subscription.trial_ends_at %}<dt>Trial ends</dt><dd>{{ dt(org.subscription.trial_ends_at, '%d %b %Y') }}</dd>{% endif %}
+      <dt>Period ends</dt><dd>{{ dt(org.subscription.current_period_end, '%d %b %Y') }}</dd>
+    </dl>
+    {% else %}<p class="text-muted">No plan assigned.</p>{% endif %}
+    {% if can_admin %}
+      {% if plan_form.plan_id.choices %}
+      <form method="post" action="{{ url_for('platform.organization_plan', org_id=org.id) }}" novalidate>
+        {{ plan_form.hidden_tag() }}
+        <div class="row g-2">
+          <div class="col-sm-6">{{ field(plan_form.plan_id) }}</div>
+          <div class="col-sm-6">{{ field(plan_form.status) }}</div>
+          <div class="col-sm-6">{{ field(plan_form.billing_cycle) }}</div>
+          <div class="col-sm-6">{{ field(plan_form.current_period_end, attrs={'type': 'date'}) }}</div>
+        </div>
+        <button class="btn btn-soft" type="submit">Save subscription</button>
+      </form>
+      {% else %}<p class="small text-muted mb-0">Create a <a href="{{ url_for('platform.plans') }}">subscription plan</a> first.</p>{% endif %}
+    {% endif %}
+  </section>
+</div>
+
+<section class="panel panel-flush">
+  <div class="panel-header"><h2>Members ({{ members|length }})</h2></div>
+  {% if members %}
+  <div class="table-scroll"><table class="table"><thead><tr><th>Name</th><th>Role</th><th>Status</th><th>Last sign-in</th></tr></thead><tbody>
+    {% for m in members %}<tr><td translate="no">{{ m.user.full_name }}<span class="cell-sub">{{ m.user.email }}</span></td><td>{{ m.role.name if m.role else '—' }}</td><td>{{ status(m.status) }}</td><td class="date">{{ dt(m.user.last_login_at) }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {% else %}<div class="empty"><i class="bi bi-people"></i>No members.</div>{% endif %}
+</section>
+
+<section class="panel">
+  <div class="panel-header"><h2>Support access</h2></div>
+  <p class="text-muted small">Read-only, time-limited access to this workspace for support. {{ 'The organization must approve each request.' if org.require_support_approval else 'This organization has chosen not to require approval; requests are granted immediately and still recorded.' }}</p>
+  {% if org.status == 'active' %}
+  <form method="post" action="{{ url_for('platform.support_request', org_id=org.id) }}" novalidate class="mb-3">
+    {{ support_form.hidden_tag() }}
+    <div class="row g-2 align-items-end">
+      <div class="col-md-8">{{ field(support_form.reason, attrs={'rows': 2}) }}</div>
+      <div class="col-md-2">{{ field(support_form.duration_minutes) }}</div>
+      <div class="col-md-2 mb-3"><button class="btn btn-outline-primary w-100" type="submit">Request</button></div>
+    </div>
+  </form>
+  {% endif %}
+  {% if support %}
+  <div class="table-scroll"><table class="table"><thead><tr><th>Requested</th><th>By</th><th>Reason</th><th>Status</th><th>Ends</th><th></th></tr></thead><tbody>
+    {% for r in support %}<tr>
+      <td class="date">{{ dt(r.created_at) }}</td><td translate="no">{{ r.requested_by.email }}</td><td>{{ r.reason }}</td>
+      <td>{{ status(r.display_status) }}</td><td class="date">{{ dt(r.expires_at, '%d %b %H:%M') }}</td>
+      <td class="nowrap">{% if r.is_live() and r.requested_by_id == current_user.id %}
+        <form method="post" action="{{ url_for('platform.support_enter', req_id=r.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-primary" type="submit">Enter workspace</button></form>{% endif %}</td>
+    </tr>{% endfor %}
+  </tbody></table></div>
+  {% endif %}
+</section>
+
+<section class="panel panel-flush">
+  <div class="panel-header"><h2>Recent activity</h2><a class="small" href="{{ url_for('platform.audit_log', org=org.id) }}">Full log</a></div>
+  {% if logs %}{{ audit_rows(logs) }}{% else %}<div class="empty">No activity yet.</div>{% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}{{ 'Edit plan' if plan.id else 'New plan' }}{% endblock %}
+{% block page_title %}{{ 'Edit plan' if plan.id else 'New plan' }}{% endblock %}
+{% block content %}
+<section class="panel">
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="row g-3">
+      <div class="col-md-6">{{ field(form.name, required=True) }}</div>
+      <div class="col-md-6">{{ field(form.code, required=True, help='Short identifier, e.g. starter') }}</div>
+      <div class="col-12">{{ field(form.description, attrs={'rows': 2}) }}</div>
+      <div class="col-md-4">{{ field(form.currency) }}</div>
+      <div class="col-md-4">{{ field(form.monthly_price, required=True, attrs={'inputmode': 'decimal'}) }}</div>
+      <div class="col-md-4">{{ field(form.annual_price, required=True, attrs={'inputmode': 'decimal'}) }}</div>
+      <div class="col-md-4">{{ field(form.trial_days, attrs={'inputmode': 'numeric'}) }}</div>
+      <div class="col-md-4">{{ field(form.max_users, attrs={'inputmode': 'numeric'}) }}</div>
+      <div class="col-md-4">{{ field(form.max_storage_mb, attrs={'inputmode': 'numeric'}) }}</div>
+      <div class="col-md-6">{{ field(form.is_public) }}</div>
+      <div class="col-md-6">{{ field(form.is_active) }}</div>
+    </div>
+    <div class="toolbar"><button class="btn btn-primary" type="submit" data-loading>Save plan</button>
+      <a class="btn btn-light" href="{{ url_for('platform.plans') }}">Cancel</a></div>
+  </form>
+</section>
+{% endblock %}

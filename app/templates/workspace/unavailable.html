@@ -1,0 +1,8 @@
+{% extends "layout_auth.html" %}
+{% block title %}Workspace unavailable{% endblock %}
+{% block heading %}Workspace unavailable{% endblock %}
+{% block content %}
+<p><strong translate="no">{{ org.name }}</strong> is currently <strong>{{ org.status }}</strong>.</p>
+<p class="text-muted">{% if org.status == 'pending' %}HOLIDO is reviewing the registration.{% else %}Please contact HOLIDO support or your organization administrator.{% endif %}</p>
+<a class="btn btn-primary" href="{{ url_for('account.workspaces') }}">My workspaces</a>
+{% endblock %}

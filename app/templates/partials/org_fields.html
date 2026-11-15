@@ -1,0 +1,31 @@
+{% from "macros.html" import field %}
+<div class="form-section">
+  <h3>Organization</h3>
+  <div class="row g-3">
+    <div class="col-md-8">{{ field(form.name, required=True) }}</div>
+    <div class="col-md-4">{{ field(form.org_type, required=True) }}</div>
+    <div class="col-md-6">{{ field(form.registration_number) }}</div>
+    <div class="col-md-6">{{ field(form.logo, attrs={'accept': 'image/png,image/jpeg,image/webp'}) }}</div>
+    <div class="col-12">{{ field(form.description, attrs={'rows': 3}) }}</div>
+  </div>
+</div>
+<div class="form-section">
+  <h3>Location and contact</h3>
+  <div class="row g-3">
+    <div class="col-12">{{ field(form.address) }}</div>
+    <div class="col-md-4">{{ field(form.country, required=True) }}</div>
+    <div class="col-md-4">{{ field(form.region) }}</div>
+    <div class="col-md-4">{{ field(form.district) }}</div>
+    <div class="col-md-4">{{ field(form.phone, attrs={'inputmode': 'tel'}) }}</div>
+    <div class="col-md-4">{{ field(form.email, required=True, attrs={'inputmode': 'email'}) }}</div>
+    <div class="col-md-4">{{ field(form.website, attrs={'inputmode': 'url', 'placeholder': 'https://'}) }}</div>
+  </div>
+</div>
+<div class="form-section">
+  <h3>Primary contact person</h3>
+  <div class="row g-3">
+    <div class="col-md-4">{{ field(form.contact_name) }}</div>
+    <div class="col-md-4">{{ field(form.contact_phone, attrs={'inputmode': 'tel'}) }}</div>
+    <div class="col-md-4">{{ field(form.contact_email, attrs={'inputmode': 'email'}) }}</div>
+  </div>
+</div>

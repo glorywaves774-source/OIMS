@@ -1,0 +1,87 @@
+{% macro field(f, label=None, required=False, help=None, attrs={}) -%}
+  {%- set is_check = f.type == 'BooleanField' -%}
+  <div class="mb-3{% if is_check %} form-check{% endif %}">
+    {% if is_check %}
+      {{ f(class_='form-check-input' + (' is-invalid' if f.errors else ''), **attrs) }}
+      <label class="form-check-label" for="{{ f.id }}">{{ label or f.label.text }}</label>
+    {% else %}
+      <label class="form-label{% if required %} req{% endif %}" for="{{ f.id }}">{{ label or f.label.text }}</label>
+      {% set cls = 'form-select' if f.type == 'SelectField' else 'form-control' %}
+      {{ f(class_=cls + (' is-invalid' if f.errors else ''), **attrs) }}
+    {% endif %}
+    {% if help %}<div class="form-text">{{ help }}</div>{% endif %}
+    {% for e in f.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+  </div>
+{%- endmacro %}
+
+{% macro status(s) -%}
+  <span class="badge-status st-{{ s }}">{{ s|replace('_', ' ') }}</span>
+{%- endmacro %}
+
+{% macro dt(value, fmt='%d %b %Y, %H:%M') -%}
+  {%- if value %}{{ value.strftime(fmt) }}{% else %}—{% endif -%}
+{%- endmacro %}
+
+{% macro flashes() -%}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="alert alert-{{ 'info' if cat == 'message' else cat }} alert-dismissible fade show" role="alert">
+        {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endwith %}
+{%- endmacro %}
+
+{% macro one_time_link(info) -%}
+  {% if info %}
+  <div class="alert alert-warning" role="alert">
+    <strong>Email is not configured, so no invitation was sent.</strong>
+    Give this one-time set-password link to <span translate="no">{{ info.email }}</span> privately. It works once and expires in 24 hours.
+    <div class="d-flex flex-wrap gap-2 align-items-center mt-2">
+      <input id="otl" class="form-control one-time-link flex-grow-1" readonly value="{{ info.link }}" aria-label="One-time link">
+      <button type="button" class="btn btn-sm btn-outline-primary" data-copy="otl">Copy</button>
+    </div>
+  </div>
+  {% endif %}
+{%- endmacro %}
+
+{% macro pager(page, endpoint) -%}
+  {% if page.pages > 1 %}
+  <nav aria-label="Pages" class="mt-3 px-3 pb-3">
+    <ul class="pagination mb-0">
+      <li class="page-item{% if not page.has_prev %} disabled{% endif %}">
+        <a class="page-link" href="{{ url_for(endpoint, page=page.prev_num, **kwargs) if page.has_prev else '#' }}">Previous</a></li>
+      {% for p in page.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+        {% if p %}<li class="page-item{% if p == page.page %} active{% endif %}"><a class="page-link" href="{{ url_for(endpoint, page=p, **kwargs) }}">{{ p }}</a></li>
+        {% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+      {% endfor %}
+      <li class="page-item{% if not page.has_next %} disabled{% endif %}">
+        <a class="page-link" href="{{ url_for(endpoint, page=page.next_num, **kwargs) if page.has_next else '#' }}">Next</a></li>
+    </ul>
+    <p class="small text-muted mt-2 mb-0">{{ page.total }} record{{ '' if page.total == 1 else 's' }}</p>
+  </nav>
+  {% endif %}
+{%- endmacro %}
+
+{% macro theme_button(extra_class='btn-icon') -%}
+  <button type="button" class="{{ extra_class }}" data-theme-toggle aria-pressed="false" title="Dark mode" aria-label="Dark mode"><i class="bi bi-moon-stars"></i></button>
+{%- endmacro %}
+
+{% macro audit_rows(rows, show_org=False) -%}
+  <div class="table-scroll">
+  <table class="table">
+    <thead><tr><th>When</th>{% if show_org %}<th>Organization</th>{% endif %}<th>Who</th><th>Action</th><th>Details</th></tr></thead>
+    <tbody>
+    {% for a in rows %}
+      <tr>
+        <td class="date">{{ dt(a.created_at) }}</td>
+        {% if show_org %}<td translate="no">{{ a.organization.name if a.organization else '—' }}</td>{% endif %}
+        <td translate="no">{{ a.actor_email or 'System / anonymous' }}{% if a.via_support_access %} <span class="badge-status st-pending">support</span>{% endif %}</td>
+        <td class="code"><code>{{ a.action }}</code></td>
+        <td>{{ a.summary or '' }}<span class="cell-sub nowrap">{{ a.ip_address or '' }}</span></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+{%- endmacro %}

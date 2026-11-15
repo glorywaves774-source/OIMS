@@ -1,0 +1,19 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import audit_rows, pager %}
+{% block title %}Audit log{% endblock %}
+{% block page_title %}Platform audit log{% endblock %}
+{% block content %}
+<section class="panel panel-flush">
+  <form class="filters px-3 pt-3" method="get" role="search">
+    <select class="form-select" name="org" aria-label="Organization">
+      <option value="">All organizations</option>
+      {% for o in orgs %}<option value="{{ o.id }}"{% if o.id == org_id %} selected{% endif %} translate="no">{{ o.name }}</option>{% endfor %}
+    </select>
+    <input class="form-control" name="action" value="{{ action }}" placeholder="Action, e.g. auth. or support." aria-label="Action">
+    <input class="form-control" name="actor" value="{{ actor }}" placeholder="Person's email" aria-label="Person">
+    <button class="btn btn-soft" type="submit">Filter</button>
+  </form>
+  {% if page.items %}{{ audit_rows(page.items, show_org=True) }}{{ pager(page, 'platform.audit_log', org=org_id or '', action=action, actor=actor) }}
+  {% else %}<div class="empty"><i class="bi bi-journal"></i>No matching entries.</div>{% endif %}
+</section>
+{% endblock %}

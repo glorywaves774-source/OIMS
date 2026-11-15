@@ -1,0 +1,24 @@
+{% extends "layout_app.html" %}
+{% block title %}Roles & permissions{% endblock %}
+{% block page_title %}Roles & permissions{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Roles</h2><p>Standard roles follow the OIMS templates and are kept up to date as modules are released. To adjust one, duplicate it as a custom role.</p></div>
+  {% if can('roles.manage') and not support_request %}<a class="btn btn-primary" href="{{ url_for('workspace.role_edit') }}"><i class="bi bi-plus-lg me-1"></i>New custom role</a>{% endif %}</div>
+<section class="panel panel-flush">
+  <div class="table-scroll"><table class="table">
+    <thead><tr><th>Role</th><th>Type</th><th class="text-end">People</th><th class="text-end">Permissions</th><th></th></tr></thead>
+    <tbody>{% for r in roles %}<tr>
+      <td><a href="{{ url_for('workspace.role_edit', role_id=r.id) }}">{{ r.name }}</a>{% if r.description %}<span class="cell-sub">{{ r.description }}</span>{% endif %}</td>
+      <td class="nowrap">{{ 'Standard' if r.is_system else 'Custom' }}</td>
+      <td class="num">{{ counts.get(r.id, 0) }}</td>
+      <td class="num">{{ 'All' if r.is_admin else r.permissions|length }}</td>
+      <td class="nowrap">{% if can('roles.manage') and not support_request %}
+        <div class="d-flex gap-1 justify-content-end">
+        {% if not r.is_admin %}<a class="btn btn-sm btn-light" href="{{ url_for('workspace.role_edit', **{'from': r.id}) }}" title="Duplicate as custom role"><i class="bi bi-copy"></i></a>{% endif %}
+        {% if not r.is_system and not counts.get(r.id) %}
+        <form method="post" action="{{ url_for('workspace.role_delete', role_id=r.id) }}" data-confirm="Delete the role {{ r.name }}?" data-confirm-variant="btn-danger" data-confirm-label="Delete"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" type="submit" title="Delete"><i class="bi bi-trash"></i></button></form>
+        {% endif %}</div>{% endif %}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+{% endblock %}

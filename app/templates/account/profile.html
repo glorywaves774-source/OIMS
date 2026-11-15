@@ -1,0 +1,27 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, dt %}
+{% block title %}My profile{% endblock %}
+{% block page_title %}My profile{% endblock %}
+{% block content %}
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-header"><h2>Personal details</h2></div>
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+      <div class="mb-3"><label class="form-label">Email (sign-in)</label><input class="form-control" value="{{ current_user.email }}" readonly translate="no"></div>
+      {{ field(form.full_name, required=True, attrs={'autocomplete': 'name'}) }}
+      {{ field(form.phone, attrs={'autocomplete': 'tel', 'inputmode': 'tel'}) }}
+      <button class="btn btn-primary" type="submit" data-loading>Save</button>
+    </form>
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Security</h2><a class="btn btn-soft btn-sm" href="{{ url_for('account.change_password') }}">Change password</a></div>
+    <dl class="kv">
+      <dt>Last sign-in</dt><dd>{{ dt(current_user.last_login_at) }}</dd>
+      <dt>Password changed</dt><dd>{{ dt(current_user.password_changed_at) }}</dd>
+      {% if current_user.is_platform_staff %}<dt>Platform role</dt><dd>{{ current_user.platform_role_label }}</dd>{% endif %}
+      <dt>Organizations</dt><dd>{% for m in current_user.active_memberships() %}<span translate="no">{{ m.organization.name }}</span> ({{ m.role.name if m.role else '—' }}){% if not loop.last %}<br>{% endif %}{% else %}—{% endfor %}</dd>
+    </dl>
+  </section>
+</div>
+{% endblock %}

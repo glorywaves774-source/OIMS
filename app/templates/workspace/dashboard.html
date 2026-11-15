@@ -1,0 +1,54 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import audit_rows, dt %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ tenant.name }}</h2>
+  <p>{% if g.membership %}Signed in as {{ g.membership.role.name if g.membership.role else 'member' }}{% else %}HOLIDO support view{% endif %}
+  {% if tenant.subscription %} · {{ tenant.subscription.plan.name }} plan ({{ tenant.subscription.status|replace('_', ' ') }}){% endif %}</p></div>
+  {% if can('users.invite') and not support_request %}<a class="btn btn-primary" href="{{ url_for('workspace.user_invite') }}"><i class="bi bi-person-plus me-1"></i>Add a person</a>{% endif %}
+</div>
+
+<div class="stat-grid">
+  <a class="stat glass text-reset text-decoration-none" href="{{ url_for('workspace.users') if can('users.view') else '#' }}"><div class="stat-icon"><i class="bi bi-people"></i></div><div><div class="stat-value">{{ stats.members_active }}</div><div class="stat-label">Active users</div></div></a>
+  <div class="stat glass"><div class="stat-icon amber"><i class="bi bi-envelope-paper"></i></div><div><div class="stat-value">{{ stats.members_invited }}</div><div class="stat-label">Invitations not yet accepted</div></div></div>
+  <div class="stat glass"><div class="stat-icon red"><i class="bi bi-person-slash"></i></div><div><div class="stat-value">{{ stats.members_suspended }}</div><div class="stat-label">Suspended users</div></div></div>
+  <a class="stat glass text-reset text-decoration-none" href="{{ url_for('workspace.roles') if can('roles.view') else '#' }}"><div class="stat-icon"><i class="bi bi-shield-lock"></i></div><div><div class="stat-value">{{ stats.roles }}</div><div class="stat-label">Roles</div></div></a>
+</div>
+
+{% if pending_support %}
+<div class="alert alert-warning d-flex flex-wrap gap-2 align-items-center justify-content-between">
+  <span><i class="bi bi-life-preserver me-1"></i>HOLIDO support has asked for access to this workspace ({{ pending_support|length }} pending).</span>
+  <a class="btn btn-sm btn-primary" href="{{ url_for('workspace.support') }}">Review</a>
+</div>
+{% endif %}
+
+<div class="grid-2 mb-4">
+  <section class="panel">
+    <div class="panel-header"><h2>Getting started</h2></div>
+    <ol class="mb-0 ps-3">
+      <li class="mb-2">Complete the <a href="{{ url_for('workspace.settings') }}">organization profile</a>: logo, contacts, currency and fiscal year.</li>
+      <li class="mb-2">Review the standard <a href="{{ url_for('workspace.roles') }}">roles</a>, or create custom ones.</li>
+      <li class="mb-2"><a href="{{ url_for('workspace.users') }}">Add your colleagues</a> and give each the right role.</li>
+      <li>Office, programme, project, MEAL and finance modules will appear in the menu as each phase is released.</li>
+    </ol>
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Your organization</h2></div>
+    <dl class="kv">
+      <dt>Type</dt><dd>{{ tenant.org_type }}</dd>
+      <dt>Location</dt><dd>{{ [tenant.district, tenant.region, tenant.country]|select|join(', ') }}</dd>
+      <dt>Currency</dt><dd>{{ tenant.currency }}</dd>
+      <dt>Fiscal year starts</dt><dd>{{ ['January','February','March','April','May','June','July','August','September','October','November','December'][tenant.fiscal_year_start_month - 1] }}</dd>
+      <dt>Active since</dt><dd>{{ dt(tenant.approved_at, '%d %b %Y') }}</dd>
+    </dl>
+  </section>
+</div>
+
+{% if can('audit.view') %}
+<section class="panel panel-flush">
+  <div class="panel-header"><h2>Recent activity</h2><a class="small" href="{{ url_for('workspace.audit_log') }}">Full audit log</a></div>
+  {% if recent %}{{ audit_rows(recent) }}{% else %}<div class="empty">No activity yet.</div>{% endif %}
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "layout_app.html" %}
+{% block title %}Subscription plans{% endblock %}
+{% block page_title %}Subscription plans{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Subscription plans</h2><p>Pricing and limits are set by HOLIDO. Online payment arrives with the billing phase.</p></div>
+  <a class="btn btn-primary" href="{{ url_for('platform.plan_edit') }}"><i class="bi bi-plus-lg me-1"></i>New plan</a></div>
+<section class="panel panel-flush">
+  {% if plans %}
+  <div class="table-scroll"><table class="table">
+    <thead><tr><th>Plan</th><th>Code</th><th class="text-end">Monthly</th><th class="text-end">Annual</th><th>Trial</th><th>Users</th><th>Storage</th><th>Organizations</th><th>Status</th></tr></thead>
+    <tbody>{% for p in plans %}<tr>
+      <td><a href="{{ url_for('platform.plan_edit', plan_id=p.id) }}">{{ p.name }}</a>{% if p.description %}<span class="cell-sub">{{ p.description }}</span>{% endif %}</td>
+      <td class="code"><code>{{ p.code }}</code></td>
+      <td class="num">{{ p.currency }} {{ '{:,.2f}'.format(p.monthly_price) }}</td>
+      <td class="num">{{ p.currency }} {{ '{:,.2f}'.format(p.annual_price) }}</td>
+      <td class="nowrap">{{ p.trial_days }} days</td>
+      <td class="nowrap">{{ p.max_users or 'Unlimited' }}</td>
+      <td class="nowrap">{{ (p.max_storage_mb ~ ' MB') if p.max_storage_mb else 'Unlimited' }}</td>
+      <td class="num">{{ usage.get(p.id, 0) }}</td>
+      <td>{% if p.is_active %}<span class="badge-status st-active">active{% if not p.is_public %} · private{% endif %}</span>{% else %}<span class="badge-status st-ended">retired</span>{% endif %}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<div class="empty"><i class="bi bi-credit-card-2-front"></i>No plans yet. Create the plans HOLIDO will offer.</div>{% endif %}
+</section>
+{% endblock %}

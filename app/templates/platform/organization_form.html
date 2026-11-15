@@ -1,0 +1,22 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}New organization{% endblock %}
+{% block page_title %}New organization{% endblock %}
+{% block content %}
+<section class="panel">
+  <p class="text-muted">The organization is created and activated immediately. Its administrator receives a set-password link by email (or you will be shown the link if email is not configured).</p>
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {{ form.hidden_tag() }}
+    {% include "partials/org_fields.html" %}
+    <div class="form-section"><h3>Subscription and administrator</h3>
+      <div class="row g-3">
+        <div class="col-md-4">{{ field(form.plan_id) }}</div>
+        <div class="col-md-4">{{ field(form.admin_name, required=True) }}</div>
+        <div class="col-md-4">{{ field(form.admin_email, required=True, attrs={'inputmode': 'email'}) }}</div>
+      </div>
+    </div>
+    <div class="toolbar"><button class="btn btn-primary" type="submit" data-loading>Create and activate</button>
+      <a class="btn btn-light" href="{{ url_for('platform.organizations') }}">Cancel</a></div>
+  </form>
+</section>
+{% endblock %}
