@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField
 from wtforms import (BooleanField, DecimalField, IntegerField, PasswordField, SelectField,
                      StringField, TextAreaField)
-from wtforms.validators import (URL, DataRequired, Email, EqualTo, Length, NumberRange,
+from wtforms.validators import (URL, DataRequired, Email, EqualTo, InputRequired, Length, NumberRange,
                                 Optional, ValidationError)
 
 from app.models import Organization, PlatformRole, RolePermission, Subscription
@@ -132,8 +132,8 @@ class PlanForm(FlaskForm):
     name = StringField("Name", validators=[DataRequired(), Length(max=120)], filters=[_strip])
     description = TextAreaField("Description", validators=[Optional(), Length(max=500)], filters=[_strip])
     currency = SelectField("Currency", choices=CURRENCIES)
-    monthly_price = DecimalField("Monthly price", places=2, validators=[DataRequired(message="Enter 0 for free"), NumberRange(min=0)], default=0)
-    annual_price = DecimalField("Annual price", places=2, validators=[DataRequired(message="Enter 0 for free"), NumberRange(min=0)], default=0)
+    monthly_price = DecimalField("Monthly price", places=2, validators=[InputRequired(message="Enter 0 for free"), NumberRange(min=0)], default=0)
+    annual_price = DecimalField("Annual price", places=2, validators=[InputRequired(message="Enter 0 for free"), NumberRange(min=0)], default=0)
     trial_days = IntegerField("Trial days", default=0, validators=[NumberRange(min=0, max=365)])
     max_users = IntegerField("User limit (blank = unlimited)", validators=[Optional(), NumberRange(min=1)])
     max_storage_mb = IntegerField("Storage limit in MB (blank = unlimited)", validators=[Optional(), NumberRange(min=1)])

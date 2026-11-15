@@ -241,7 +241,7 @@ def _enforce_user_limit(org):
     count = Membership.query.filter(Membership.organization_id == org.id,
                                     Membership.status != Membership.SUSPENDED).count()
     if count >= sub.plan.max_users:
-        raise ServiceError(f"Your plan allows {sub.plan.max_users} users. Ask HOLIDO to upgrade the plan.")
+        raise ServiceError(f"Your plan allows {sub.plan.max_users} users. Choose a larger plan on the Billing page.")
 
 
 def active_admin_count(org_id):

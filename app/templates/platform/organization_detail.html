@@ -78,9 +78,18 @@
         <button class="btn btn-soft" type="submit">Save subscription</button>
       </form>
       {% else %}<p class="small text-muted mb-0">Create a <a href="{{ url_for('platform.plans') }}">subscription plan</a> first.</p>{% endif %}
+      <p class="small text-muted mt-2 mb-0">Leave "period ends" empty for a manual arrangement: automatic invoices start once a period end (or trial end) is set.</p>
     {% endif %}
   </section>
 </div>
+
+<section class="panel panel-flush">
+  <div class="panel-header"><h2>Invoices</h2>
+    {% if can_admin and org.subscription %}<form method="post" action="{{ url_for('platform_billing.issue', org_id=org.id) }}" data-confirm="Issue the invoice for the next period now?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-soft" type="submit">Issue next invoice now</button></form>{% endif %}</div>
+  {% if invoices %}<div class="table-scroll"><table class="table"><thead><tr><th>Invoice</th><th>Period</th><th>Due</th><th class="text-end">Total</th><th>Status</th></tr></thead><tbody>
+    {% for inv in invoices %}<tr><td><a href="{{ url_for('platform_billing.invoice', iid=inv.id) }}" class="code">{{ inv.number }}</a></td><td class="date">{{ dt(inv.period_start, '%d %b %Y') }} – {{ dt(inv.period_end, '%d %b %Y') }}</td><td class="date">{{ dt(inv.due_on, '%d %b %Y') }}</td><td class="money">{{ inv.currency }} {{ '{:,.2f}'.format(inv.total) }}</td><td>{{ status(inv.status) }}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="text-muted px-3 pb-3 mb-0">No invoices.</p>{% endif %}
+</section>
 
 <section class="panel panel-flush">
   <div class="panel-header"><h2>Members ({{ members|length }})</h2></div>

@@ -1,0 +1,18 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}Billing settings{% endblock %}
+{% block page_title %}Billing settings{% endblock %}
+{% block content %}
+<section class="panel">
+  <form method="post" novalidate>{{ form.hidden_tag() }}
+    <div class="row g-2"><div class="col-md-6">{{ field(form.company_name, required=True) }}</div><div class="col-md-3">{{ field(form.company_tax_id) }}</div><div class="col-md-3">{{ field(form.company_email) }}</div></div>
+    {{ field(form.company_address, attrs={'rows': 2}) }}
+    {{ field(form.bank_details, attrs={'rows': 4}, help='Shown on the Billing page and on invoices for organizations paying by transfer.') }}
+    <div class="row g-2"><div class="col-md-3">{{ field(form.tax_label) }}</div><div class="col-md-3">{{ field(form.tax_rate, help='Added on top of plan prices.') }}</div>
+      <div class="col-md-3">{{ field(form.invoice_days_before) }}</div><div class="col-md-3">{{ field(form.grace_days) }}</div></div>
+    {{ field(form.invoice_footer, attrs={'rows': 2}) }}
+    <p class="small text-muted">Online payments use Paystack when the PAYSTACK_SECRET_KEY environment variable is set on the server (never stored here).
+      Set Paystack's webhook URL to <code>{{ url_for('billing_hooks.paystack_webhook', _external=True) }}</code>.</p>
+    <div class="toolbar"><button class="btn btn-primary" type="submit">Save</button><a class="btn btn-light" href="{{ url_for('platform_billing.index') }}">Back</a></div></form>
+</section>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt, money, meter %}
+{% block title %}Billing{% endblock %}
+{% block page_title %}Subscription & billing{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Subscription & billing</h2><p>Your OIMS plan, what you use, and your invoices from HOLIDO.</p></div></div>
+{% if not sub %}
+<section class="panel"><p class="mb-0">This workspace has no subscription yet. Please contact HOLIDO.</p></section>
+{% else %}
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-header"><h2>Plan</h2>{{ status(sub.status) }}</div>
+    <dl class="kv">
+      <dt>Plan</dt><dd><strong>{{ sub.plan.name }}</strong> · {{ 'yearly' if sub.billing_cycle == 'annual' else 'monthly' }}{% if sub.plan.monthly_price or sub.plan.annual_price %} · {{ money(sub.plan.annual_price if sub.billing_cycle == 'annual' else sub.plan.monthly_price, sub.plan.currency) }}{% else %} · free{% endif %}</dd>
+      {% if sub.status == 'trial' %}<dt>Trial ends</dt><dd>{{ dt(sub.trial_ends_at, '%d %b %Y') }}</dd>{% endif %}
+      {% if period_end and sub.status != 'trial' %}<dt>{{ 'Paid until' if sub.status == 'active' else 'Period ended' }}</dt><dd>{{ dt(period_end, '%d %b %Y') }}</dd>{% endif %}
+      {% if not period_end %}<dt>Renewal</dt><dd>Arranged directly with HOLIDO</dd>{% endif %}
+      {% if sub.pending_plan %}<dt>Next period</dt><dd>{{ sub.pending_plan.name }} · {{ 'yearly' if (sub.pending_cycle or sub.billing_cycle) == 'annual' else 'monthly' }}</dd>{% endif %}
+      {% if sub.cancel_at_period_end %}<dt>Ends</dt><dd class="overdue">{{ dt(period_end, '%d %b %Y') }} (cancelled)</dd>{% endif %}
+    </dl>
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Usage</h2></div>
+    <div class="dist-row"><span>People</span>{% if sub.plan.max_users %}{{ meter(100 * use.users / sub.plan.max_users, use.users ~ ' of ' ~ sub.plan.max_users ~ ' people') }}{% else %}<span>{{ use.users }} (no limit)</span>{% endif %}</div>
+    {% if sub.plan.max_users %}<p class="small text-muted mb-2">{{ use.users }} of {{ sub.plan.max_users }} people (active and invited)</p>{% endif %}
+    <div class="dist-row"><span>File storage</span>{% if sub.plan.max_storage_mb %}{{ meter(100 * use.storage_mb / sub.plan.max_storage_mb, use.storage_mb ~ ' of ' ~ sub.plan.max_storage_mb ~ ' MB') }}{% else %}<span>{{ use.storage_mb }} MB (no limit)</span>{% endif %}</div>
+    {% if sub.plan.max_storage_mb %}<p class="small text-muted mb-0">{{ use.storage_mb }} of {{ sub.plan.max_storage_mb }} MB</p>{% endif %}
+  </section>
+</div>
+
+<section class="panel panel-flush" id="invoices">
+  <div class="panel-header"><h2>Invoices</h2></div>
+  {% if invoices %}<div class="table-scroll"><table class="table"><thead><tr><th>Invoice</th><th>Period</th><th>Due</th><th class="text-end">Total</th><th>Status</th><th></th></tr></thead><tbody>
+    {% for inv in invoices %}<tr><td class="code">{{ inv.number }}</td><td class="date">{{ dt(inv.period_start, '%d %b %Y') }} – {{ dt(inv.period_end, '%d %b %Y') }}</td>
+      <td class="date{{ ' overdue' if inv.status == 'open' and inv.due_on < today }}">{{ dt(inv.due_on, '%d %b %Y') }}</td><td class="money">{{ money(inv.total, inv.currency) }}{% if inv.status == 'open' and inv.amount_paid %}<span class="cell-sub">{{ money(inv.balance) }} left</span>{% endif %}</td>
+      <td>{{ status(inv.status) }}</td>
+      <td class="d-flex flex-wrap gap-1"><a class="btn btn-sm btn-light" href="{{ url_for('billing.invoice_download', iid=inv.id) }}" title="Download PDF"><i class="bi bi-file-earmark-pdf"></i><span class="visually-hidden">PDF</span></a>
+        {% if inv.status == 'open' and can_manage and online %}<form method="post" action="{{ url_for('billing.pay', iid=inv.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-primary" type="submit">Pay online</button></form>{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="text-muted px-3 pb-3 mb-0">No invoices yet.</p>{% endif %}
+  {% if invoices|selectattr('status', 'equalto', 'open')|list and settings.bank_details %}
+  <div class="px-3 pb-3"><h3 class="fs-6">{{ 'Or pay' if online else 'Pay' }} by bank transfer or mobile money</h3><p class="prewrap small mb-1" translate="no">{{ settings.bank_details }}</p>
+    <p class="small text-muted mb-0">Use the invoice number as the reference. HOLIDO records the payment when it arrives, usually within one working day.</p></div>{% endif %}
+  {% if online %}<p class="small text-muted px-3 pb-3 mb-0"><i class="bi bi-shield-lock me-1"></i>Online payments are handled by Paystack (card or mobile money). OIMS never sees card details.</p>{% endif %}
+</section>
+
+{% if can_manage %}
+<section class="panel">
+  <div class="panel-header"><h2>Change plan</h2></div>
+  <div class="table-scroll"><table class="table"><thead><tr><th>Plan</th><th class="text-end">Monthly</th><th class="text-end">Yearly</th><th>People</th><th>Storage</th><th></th></tr></thead><tbody>
+    {% for p in plans %}<tr><td><strong>{{ p.name }}</strong>{% if p.description %}<span class="cell-sub">{{ p.description }}</span>{% endif %}</td>
+      <td class="money">{{ money(p.monthly_price, p.currency) }}</td><td class="money">{{ money(p.annual_price) }}</td>
+      <td>{{ p.max_users or 'No limit' }}</td><td>{{ (p.max_storage_mb ~ ' MB') if p.max_storage_mb else 'No limit' }}</td>
+      <td>{% if p.id == sub.plan_id %}<span class="badge-status st-active">Current</span>{% elif fits[p.id] %}<span class="small text-muted">Too small for current use</span>{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div>
+  <form method="post" action="{{ url_for('billing.change_plan') }}" class="d-flex flex-wrap gap-2 align-items-end mt-2" novalidate>{{ form.hidden_tag() }}
+    <div>{{ field(form.plan_id) }}</div><div>{{ field(form.billing_cycle) }}</div><div class="mb-3"><button class="btn btn-soft" type="submit">Save choice</button></div></form>
+  <p class="small text-muted mb-0">{{ 'During the trial the new plan applies straight away.' if sub.status == 'trial' else 'The new plan starts with the next period; an unpaid invoice for that period is replaced.' }}</p>
+</section>
+{% if sub.status not in ('cancelled', 'expired') and period_end %}
+<section class="panel">
+  <div class="panel-header"><h2>{{ 'Keep the subscription' if sub.cancel_at_period_end else 'Cancel the subscription' }}</h2></div>
+  {% if sub.cancel_at_period_end %}
+  <form method="post" action="{{ url_for('billing.cancel', action='resume') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-soft" type="submit">Continue the subscription</button></form>
+  {% else %}
+  <p class="small text-muted">It ends on {{ dt(period_end, '%d %b %Y') }}. After that the workspace is read-only: nothing is deleted and everything can still be exported.</p>
+  <form method="post" action="{{ url_for('billing.cancel', action='cancel') }}" data-confirm="End the subscription on {{ dt(period_end, '%d %b %Y') }}?" data-confirm-variant="btn-danger" data-confirm-label="End it"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-danger" type="submit">Cancel at the end of the period</button></form>
+  {% endif %}
+</section>
+{% endif %}
+{% endif %}
+{% endif %}
+{% endblock %}

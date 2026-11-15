@@ -58,6 +58,10 @@ class BaseConfig:
     # Support access
     SUPPORT_ACCESS_MAX_MINUTES = int(os.environ.get("SUPPORT_ACCESS_MAX_MINUTES", "120"))
 
+    # Online payments through Paystack (card and mobile money). Leave empty to accept bank transfers only.
+    PAYSTACK_SECRET_KEY = os.environ.get("PAYSTACK_SECRET_KEY") or None
+    PAYSTACK_API_BASE = os.environ.get("PAYSTACK_API_BASE", "https://api.paystack.co")
+
     # Outgoing email (real SMTP; if not configured, links are written to the server log)
     SMTP_HOST = os.environ.get("SMTP_HOST")
     SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))

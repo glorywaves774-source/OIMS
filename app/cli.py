@@ -61,6 +61,18 @@ def register_cli(app):
         db.session.commit()
         click.echo(f"System roles synchronized for {count} organization(s).")
 
+    @oims.command("billing-run")
+    def billing_run():
+        """Issue invoices, move unpaid subscriptions to past due / read-only, send payment reminders."""
+        from flask import current_app
+
+        from app.billing import run
+
+        base = current_app.config.get("PUBLIC_BASE_URL") or "http://localhost"
+        with current_app.test_request_context("/", base_url=base):
+            totals = run()
+        click.echo("Billing: " + ", ".join(f"{k}={v}" for k, v in totals.items()))
+
     @oims.command("send-reminders")
     def send_reminders():
         """Create reminder notifications (and emails). Run hourly from a scheduler / cron job."""

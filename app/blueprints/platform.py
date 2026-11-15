@@ -133,7 +133,10 @@ def organization_detail(org_id):
             plan_form.current_period_end.data = org.subscription.current_period_end.strftime("%Y-%m-%d")
     allowed_actions = [a for a, (frm, _) in STATUS_TRANSITIONS.items() if org.status in frm]
     one_time = session.pop("one_time_link", None)
+    from app.models.billing import Invoice
+    invoices = Invoice.query.filter_by(organization_id=org.id).order_by(Invoice.issued_on.desc(), Invoice.id.desc()).all()
     return render_template("platform/organization_detail.html", org=org, members=members, support=support,
+                           invoices=invoices,
                            logs=logs, plan_form=plan_form, reason_form=ReasonForm(), action_form=ActionForm(),
                            support_form=SupportRequestForm(), allowed_actions=allowed_actions,
                            one_time=one_time, can_admin=current_user.platform_role in ADMINS)

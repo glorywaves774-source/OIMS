@@ -76,6 +76,13 @@
       </form>
     </div>
     {% endif %}
+    {% set bill = g.get('billing') %}
+    {% if bill and bill.message and (bill.locked or can('billing.view')) %}
+    <div class="alert alert-{{ bill.level }} billing-banner d-flex flex-wrap gap-2 align-items-center justify-content-between" role="status">
+      <span><i class="bi {{ 'bi-lock' if bill.locked else 'bi-receipt' }} me-1"></i>{{ bill.message }}</span>
+      {% if can('billing.view') and request.blueprint != 'billing' %}<a class="btn btn-sm btn-light" href="{{ url_for('billing.index') }}">Billing</a>{% endif %}
+    </div>
+    {% endif %}
 
     <main id="content">
       {{ flashes() }}

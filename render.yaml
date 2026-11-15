@@ -1,4 +1,4 @@
-# Render Blueprint: web service, hourly reminders job and managed PostgreSQL.
+# Render Blueprint: web service, hourly reminders + billing job and managed PostgreSQL.
 # Values marked sync:false are entered in the Render dashboard, never committed.
 # Check plan names against Render's current offer before applying.
 
@@ -29,6 +29,8 @@ envVarGroups:
         sync: false
       - key: MAIL_FROM
         sync: false
+      - key: PAYSTACK_SECRET_KEY       # optional: online card / mobile money payments for subscriptions
+        sync: false
 
 services:
   - type: web
@@ -58,7 +60,7 @@ services:
     plan: starter
     schedule: "5 * * * *"          # hourly, at minute 5 (UTC)
     buildCommand: pip install -r requirements.txt
-    startCommand: flask --app wsgi oims send-reminders
+    startCommand: flask --app wsgi oims send-reminders && flask --app wsgi oims billing-run
     envVars:
       - fromGroup: oims-settings
       - key: DATABASE_URL

@@ -9,7 +9,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from app.config import CONFIGS
 from app.extensions import csrf, db, limiter, login_manager, migrate
 
-__version__ = "0.7.0-phase7"
+__version__ = "0.8.0-phase8"
 
 
 def create_app(config_name=None, overrides=None):
@@ -76,11 +76,14 @@ def create_app(config_name=None, overrides=None):
     from app.blueprints.assets import bp as assets_bp
     from app.blueprints.finance import bp as finance_bp
     from app.blueprints.analytics import bp as analytics_bp
+    from app.blueprints.billing import bp as billing_bp, hooks as billing_hooks_bp
+    from app.blueprints.platform_billing import bp as platform_billing_bp
 
     for bp in (public_bp, auth_bp, setup_bp, account_bp, platform_bp, workspace_bp, departments_bp, staff_bp,
                leave_bp, attendance_bp, documents_bp, correspondence_bp, meetings_bp, tasks_bp, comms_bp,
                programmes_bp, projects_bp, registers_bp, beneficiaries_bp, meal_bp, feedback_bp, public_feedback_bp,
-               procurement_bp, assets_bp, finance_bp, analytics_bp):
+               procurement_bp, assets_bp, finance_bp, analytics_bp,
+               billing_bp, billing_hooks_bp, platform_billing_bp):
         app.register_blueprint(bp)
 
     _register_template_globals(app)
@@ -121,7 +124,8 @@ def _register_hooks(app):
     @app.before_request
     def reset_request_scope():
         # Never let tenant context leak from one request to the next (e.g. a shared app context).
-        for key in ("tenant_id", "tenant", "membership", "permissions", "support_request", "_login_user", "my_staff"):
+        for key in ("tenant_id", "tenant", "membership", "permissions", "support_request", "_login_user", "my_staff",
+                    "billing"):
             g.pop(key, None)
 
     @app.before_request

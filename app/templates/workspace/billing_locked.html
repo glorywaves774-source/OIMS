@@ -1,0 +1,11 @@
+{% extends "layout_app.html" %}
+{% block title %}Read-only{% endblock %}
+{% block page_title %}Workspace is read-only{% endblock %}
+{% block content %}
+<section class="panel">
+  <h2 class="h5"><i class="bi bi-lock me-1"></i>Changes are paused</h2>
+  <p>{{ st.message }}</p>
+  <p class="mb-3">Nothing has been deleted. Everyone can still open and export records.</p>
+  {% if can('billing.view') %}<a class="btn btn-primary" href="{{ url_for('billing.index') }}">Go to Billing</a>{% else %}<p class="text-muted mb-0">Please tell an administrator of <span translate="no">{{ org.name }}</span>.</p>{% endif %}
+</section>
+{% endblock %}

@@ -2,8 +2,19 @@
 
 A multi-tenant SaaS platform owned and operated by **HOLIDO — Holistic Development Organization**.
 
-**Current release:** `0.7.0-phase7` (Phase 7 — Reporting and analytics). See [CHANGELOG.md](CHANGELOG.md) and
+**Current release:** `0.8.0-phase8` (Phase 8 — SaaS billing). See [CHANGELOG.md](CHANGELOG.md) and
 [docs/STATUS.md](docs/STATUS.md) for what is complete and what comes next.
+
+## What Phase 8 adds
+
+| Area | Delivered |
+|---|---|
+| Invoices | Issued automatically before each period or trial ends, numbered OIMS-YYYY-NNNNN, with tax if set, as PDF; names and prices are frozen on the invoice |
+| Paying | Online with Paystack (card and mobile money, confirmed directly with Paystack, signed webhooks, never recorded twice) when configured; bank transfer and mobile money recorded by HOLIDO staff |
+| Renewal | Paying extends the subscription; plan changes take effect from the next period (straight away during a trial); downgrades are refused when current use does not fit; cancel at the end of the period |
+| Unpaid subscriptions | Past due with a warning banner, then — after the grace period — the workspace becomes read-only (everything can still be read and exported, billing stays open) until paid |
+| Usage limits | People and file storage against the plan, shown as meters; inviting beyond the limit is refused |
+| HOLIDO console | All invoices, outstanding and received totals, subscriptions needing attention, record payments, cancel invoices, issue an invoice early, billing settings, run billing now |
 
 ## What Phase 7 adds
 
@@ -159,7 +170,7 @@ app/
                      programmes and projects (+ programme_finance, programme_reports,
                      project_extras, owner_meal and registers), beneficiaries, meal (overview and
                      data collection), feedback (+ public page), finance (overview), procurement, assets,
-                     analytics (reports centre)
+                     analytics (reports centre), billing (+ Paystack webhook), platform_billing
   storage.py         local-disk and S3 file storage, upload checks
   notify.py          notifications, reference numbers   reminders.py  scheduled reminders
   twofactor.py       two-step sign-in
@@ -170,9 +181,11 @@ app/
   procurement_logic.py  purchase and asset access rules, buying method, order and payment figures
   analytics.py       the standard reports (one data structure per report)
   analytics_export.py   CSV, Excel and PDF versions of a report; spreadsheet formula protection
+  billing.py         subscription lifecycle: invoices, renewals, grace period, read-only lock, payments
+  paystack.py        Paystack client (start, verify, webhook signature)
   templates/ static/ interface (Bootstrap 5 self-hosted; css/app.css, dark.css, mobile.css)
 migrations/          Alembic migrations
-tests/               176 automated tests
+tests/               189 automated tests
 docs/                architecture, deployment, status
 ```
 

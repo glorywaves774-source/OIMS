@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.8.0-phase8 — 15 November 2026
+
+SaaS billing.
+
+- **Invoices** are issued automatically before each period or trial ends (PDF, numbered, tax if set).
+- **Online payment** through Paystack (card and mobile money) when HOLIDO sets its key; every payment is
+  confirmed with Paystack before it counts. **Bank transfers and mobile money** are recorded by HOLIDO staff.
+- **Renewals and plan changes**: paying extends the subscription; a new plan starts with the next period
+  (straight away during a trial); a plan too small for current use is refused; subscriptions can be
+  cancelled at the end of the period.
+- **Unpaid subscriptions** get a warning banner, then after the grace period the workspace becomes
+  read-only — everything can still be read and exported — until the invoice is paid.
+- **Billing page** for organizations: plan, usage meters, invoices, paying, changing plan, cancelling.
+- **HOLIDO billing console**: invoices, totals, subscriptions needing attention, recording payments,
+  cancelling invoices, issuing early, settings, and a "run billing now" button.
+- The hourly Render job now also runs `oims billing-run`. New optional setting `PAYSTACK_SECRET_KEY`.
+- **Fix:** free plans (price 0) can now be saved on the plan form; before, "0" was rejected as missing.
+- Migration `0007`; run `oims sync-roles` (done automatically on Render) for the new billing permissions.
+
 ## 0.7.0-phase7 — 15 November 2026
 
 Reporting and analytics.
