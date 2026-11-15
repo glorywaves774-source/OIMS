@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros.html" import flashes, theme_button %}
+{% from "macros.html" import flashes, theme_button, wordmark with context %}
 {% block body %}
 {% set nav = build_nav() %}
 <div class="app-shell">
@@ -10,7 +10,7 @@
         <div class="brand-text"><strong translate="no">{{ tenant.name }}</strong><small>{{ app_name }} workspace</small></div>
       {% else %}
         <div class="brand-mark logo"><img src="{{ url_for('static', filename='img/logo.svg') }}" alt=""></div>
-        <div class="brand-text"><strong>{{ app_name }}</strong><small>HOLIDO platform</small></div>
+        <div class="brand-text"><strong>{{ wordmark() }}</strong><small>HOLIDO platform</small></div>
       {% endif %}
       <button type="button" class="btn-icon sidebar-close" id="menu-close" aria-label="Close menu"><i class="bi bi-x-lg"></i></button>
     </div>

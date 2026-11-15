@@ -206,7 +206,9 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
   box-shadow: 14px 14px 32px rgba(20, 33, 61, .12), -10px -10px 28px rgba(255, 255, 255, .8), inset 0 1px 0 rgba(255, 255, 255, .7);
 }
 .auth-card.wide { max-width: 860px; }
-.auth-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+.auth-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.auth-wordmark { font-size: 1.25rem; line-height: 1.2; }
+.auth-title { font-size: 1.35rem; margin: 0 0 14px; font-weight: 750; }
 .auth-brand h1 { font-size: 1.35rem; margin: 0; font-weight: 750; }
 .auth-brand p { margin: 0; color: var(--text-muted); font-size: .85rem; }
 .neu-input .form-control { background: var(--page-bg); border: 0; box-shadow: inset 4px 4px 10px rgba(20, 33, 61, .08), inset -4px -4px 10px rgba(255, 255, 255, .85); }
@@ -625,3 +627,8 @@ html[data-theme="dark"] .tabs-scroll a[aria-current="page"] { color: #04201d; }
 .acr-tiles span { display: block; font-size: .72rem; overflow-wrap: anywhere; }
 @media (max-width: 760px) { .acr-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (max-width: 360px) { .acr-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } .acr-tiles span { font-size: .7rem; } }
+
+/* ZENTAVA OIMS wordmark: brand bold, product lighter in teal */
+.wordmark { white-space: nowrap; }
+.wm-brand { font-weight: 800; letter-spacing: .02em; }
+.wm-product { font-weight: 600; color: var(--link); letter-spacing: .04em; }

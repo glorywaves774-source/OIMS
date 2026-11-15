@@ -9,7 +9,7 @@ from app.extensions import db
 def register_cli(app):
     @app.cli.group("oims")
     def oims():
-        """ZENTAVA administration commands."""
+        """ZENTAVA OIMS administration commands."""
 
     @oims.command("create-superadmin")
     @click.option("--email", envvar="OIMS_SUPERADMIN_EMAIL", required=True,

@@ -22,7 +22,9 @@ def _database_url():
 
 
 class BaseConfig:
-    APP_NAME = "ZENTAVA"
+    APP_NAME = "ZENTAVA OIMS"
+    BRAND_NAME = "ZENTAVA"          # the brand (wordmark, logo)
+    PRODUCT_NAME = "OIMS"           # the product shown beside the brand
     APP_FULL_NAME = "Organized. Transparent. Accountable."
     PLATFORM_OWNER = "HOLIDO — Holistic Development Organization"
 

@@ -2,10 +2,10 @@
 
 ## 0.8.1-zentava — 15 November 2026
 
-New name and brand: **ZENTAVA — Organized. Transparent. Accountable.**
+New name and brand: **ZENTAVA OIMS — Organized. Transparent. Accountable.**
 
-- The product name is ZENTAVA on every page, in emails, PDFs, spreadsheets, notifications and the
-  authenticator app label (new set-ups show "ZENTAVA"; existing codes keep working).
+- The product name is ZENTAVA OIMS on every page (a two-tone wordmark: ZENTAVA bold, OIMS in teal), in emails, PDFs, spreadsheets, notifications and the
+  authenticator app label (new set-ups show "ZENTAVA OIMS"; existing codes keep working).
 - New logo (navy bracket, gold bar, teal diamond) in the menu, on the sign-in and public pages and as the
   browser icon.
 - Brand colours: deep navy, teal, gold and light grey, tuned for readability in light and dark mode.

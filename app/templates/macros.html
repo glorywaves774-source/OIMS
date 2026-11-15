@@ -141,3 +141,7 @@
 {% macro num(v) -%}{%- if v is not none %}{{ '{:,.4f}'.format(v).rstrip('0').rstrip('.') }}{% else %}—{% endif -%}{%- endmacro %}
 
 {% macro consent_badge(state) -%}<span class="badge-status consent-{{ state }}">{{ {'given': 'Consent given', 'withdrawn': 'Consent withdrawn', 'none': 'No consent'}[state] }}</span>{%- endmacro %}
+
+{% macro wordmark() -%}
+<span class="wordmark" translate="no"><span class="wm-brand">{{ brand_name }}</span> <span class="wm-product">{{ product_name }}</span></span>
+{%- endmacro %}

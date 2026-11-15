@@ -88,7 +88,7 @@ def issue_invoice(sub, start, plan=None, cycle=None, today=None, due_on=None, no
     subtotal = price(plan, cycle).quantize(CENT)
     rate = Decimal(s.tax_rate or 0) if s.tax_label else Decimal(0)
     tax = (subtotal * rate / 100).quantize(CENT, ROUND_HALF_UP)
-    desc = (f"ZENTAVA {plan.name} plan, {'yearly' if cycle == 'annual' else 'monthly'} subscription: "
+    desc = (f"ZENTAVA OIMS {plan.name} plan, {'yearly' if cycle == 'annual' else 'monthly'} subscription: "
             f"{start:%d %b %Y} to {end - timedelta(days=1):%d %b %Y}")
     inv = Invoice(organization_id=org.id, number=_next_number(today), subscription_id=sub.id, plan_id=plan.id,
                   billing_cycle=cycle, period_start=start, period_end=end, issued_on=today,
@@ -230,7 +230,7 @@ def run(today=None):
                 sub.status = Subscription.CANCELLED
                 audit.record("billing.cancelled", "Subscription ended (cancelled at period end)", entity=sub,
                              organization_id=org.id)
-                notify(billing_admins(org), "billing", "Your ZENTAVA subscription has ended",
+                notify(billing_admins(org), "billing", "Your ZENTAVA OIMS subscription has ended",
                        "The workspace is now read-only.", "billing.index", organization_id=org.id,
                        exclude_current=False, dedupe_key=f"sub-cancel-{sub.id}-{pe}", org_slug=org.slug)
                 totals["cancelled"] += 1
@@ -260,7 +260,7 @@ def run(today=None):
                 if sub.current_period_end is None or as_date(sub.current_period_end) < pe:
                     sub.current_period_end = to_dt(pe)
                 audit.record("billing.past_due", "Payment overdue", entity=sub, organization_id=org.id)
-                notify(billing_admins(org), "billing", "ZENTAVA payment overdue",
+                notify(billing_admins(org), "billing", "ZENTAVA OIMS payment overdue",
                        f"Pay before {pe + timedelta(days=s.grace_days):%d %b %Y} to keep full access.",
                        "billing.index", organization_id=org.id, exclude_current=False,
                        dedupe_key=f"sub-pastdue-{sub.id}-{pe}", org_slug=org.slug)
@@ -269,7 +269,7 @@ def run(today=None):
                 sub.status = Subscription.EXPIRED
                 audit.record("billing.expired", "Unpaid after the grace period: workspace read-only", entity=sub,
                              organization_id=org.id)
-                notify(billing_admins(org), "billing", "ZENTAVA workspace is now read-only",
+                notify(billing_admins(org), "billing", "ZENTAVA OIMS workspace is now read-only",
                        "Pay the open invoice on the Billing page to restore full access.", "billing.index",
                        organization_id=org.id, exclude_current=False, dedupe_key=f"sub-expired-{sub.id}-{pe}",
                        org_slug=org.slug)

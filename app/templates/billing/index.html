@@ -3,7 +3,7 @@
 {% block title %}Billing{% endblock %}
 {% block page_title %}Subscription & billing{% endblock %}
 {% block content %}
-<div class="page-head"><div><h2 class="h4 mb-0">Subscription & billing</h2><p>Your ZENTAVA plan, what you use, and your invoices from HOLIDO.</p></div></div>
+<div class="page-head"><div><h2 class="h4 mb-0">Subscription & billing</h2><p>Your ZENTAVA OIMS plan, what you use, and your invoices from HOLIDO.</p></div></div>
 {% if not sub %}
 <section class="panel"><p class="mb-0">This workspace has no subscription yet. Please contact HOLIDO.</p></section>
 {% else %}
@@ -40,7 +40,7 @@
   {% if invoices|selectattr('status', 'equalto', 'open')|list and settings.bank_details %}
   <div class="px-3 pb-3"><h3 class="fs-6">{{ 'Or pay' if online else 'Pay' }} by bank transfer or mobile money</h3><p class="prewrap small mb-1" translate="no">{{ settings.bank_details }}</p>
     <p class="small text-muted mb-0">Use the invoice number as the reference. HOLIDO records the payment when it arrives, usually within one working day.</p></div>{% endif %}
-  {% if online %}<p class="small text-muted px-3 pb-3 mb-0"><i class="bi bi-shield-lock me-1"></i>Online payments are handled by Paystack (card or mobile money). ZENTAVA never sees card details.</p>{% endif %}
+  {% if online %}<p class="small text-muted px-3 pb-3 mb-0"><i class="bi bi-shield-lock me-1"></i>Online payments are handled by Paystack (card or mobile money). ZENTAVA OIMS never sees card details.</p>{% endif %}
 </section>
 
 {% if can_manage %}

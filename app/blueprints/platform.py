@@ -324,7 +324,7 @@ def staff():
             db.session.flush()
             if not user.has_password:
                 link = external_url("auth.reset_password", token=make_password_token(user))
-                if not send_email(user.email, "Your HOLIDO ZENTAVA platform account",
+                if not send_email(user.email, "Your HOLIDO ZENTAVA OIMS platform account",
                                   f"Hello {user.full_name},\n\nSet your password: {link}\n"):
                     one_time = {"email": user.email, "link": link}
             audit.record("platform.staff_added", f"{user.email} added as {user.platform_role_label}", entity=user)

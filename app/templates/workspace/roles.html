@@ -2,7 +2,7 @@
 {% block title %}Roles & permissions{% endblock %}
 {% block page_title %}Roles & permissions{% endblock %}
 {% block content %}
-<div class="page-head"><div><h2 class="h4 mb-0">Roles</h2><p>Standard roles follow the ZENTAVA templates and are kept up to date as modules are released. To adjust one, duplicate it as a custom role.</p></div>
+<div class="page-head"><div><h2 class="h4 mb-0">Roles</h2><p>Standard roles follow the ZENTAVA OIMS templates and are kept up to date as modules are released. To adjust one, duplicate it as a custom role.</p></div>
   {% if can('roles.manage') and not support_request %}<a class="btn btn-primary" href="{{ url_for('workspace.role_edit') }}"><i class="bi bi-plus-lg me-1"></i>New custom role</a>{% endif %}</div>
 <section class="panel panel-flush">
   <div class="table-scroll"><table class="table">

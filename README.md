@@ -1,4 +1,4 @@
-# ZENTAVA
+# ZENTAVA OIMS
 
 **Organized. Transparent. Accountable.**
 *Zonal Enterprise Network for Transparent Administration, Visibility and Accountability*
@@ -9,8 +9,8 @@ A multi-tenant SaaS platform owned and operated by **HOLIDO — Holistic Develop
 **Current release:** `0.8.1-zentava` (ZENTAVA brand, on top of Phase 8 — SaaS billing). See [CHANGELOG.md](CHANGELOG.md) and
 [docs/STATUS.md](docs/STATUS.md) for what is complete and what comes next.
 
-> **Name change.** The product was called OIMS (Office Information Management System) during development.
-> People now see **ZENTAVA** everywhere. Internal names are kept on purpose so existing set-ups keep working:
+> **Name.** The product is **ZENTAVA OIMS**: ZENTAVA is the brand and OIMS (Office Information Management
+> System) the product. It is shown as a two-tone wordmark, ZENTAVA in bold and OIMS in teal. Internal names are kept on purpose so existing set-ups keep working:
 > the Python package `app`, the `flask oims …` commands, the `OIMS_*` environment variables, the Render
 > service names and the database.
 

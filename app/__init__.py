@@ -1,4 +1,4 @@
-"""ZENTAVA (HOLIDO). Application factory. Internal package and CLI names stay "oims"."""
+"""ZENTAVA OIMS (HOLIDO). Application factory. Internal package and CLI names stay "oims"."""
 import logging
 import os
 
@@ -154,6 +154,8 @@ def _register_hooks(app):
             "file_icon": _file_icon,
             "app_name": app.config["APP_NAME"],
             "app_full_name": app.config["APP_FULL_NAME"],
+            "brand_name": app.config["BRAND_NAME"],
+            "product_name": app.config["PRODUCT_NAME"],
             "platform_owner": app.config["PLATFORM_OWNER"],
             "app_version": app.config["OIMS_VERSION"],
             "tenant": g.get("tenant"),

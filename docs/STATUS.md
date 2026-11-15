@@ -149,7 +149,7 @@ console errors.
 
 ## ZENTAVA rebrand ✅ complete (0.8.1-zentava)
 
-- Name, tagline, logo and colours from the ZENTAVA brand profile, in both themes, emails, PDFs and spreadsheets.
+- Name ZENTAVA OIMS (two-tone wordmark), tagline, logo and colours from the ZENTAVA brand profile, in both themes, emails, PDFs and spreadsheets.
 - Internal names kept (`flask oims`, `OIMS_*` variables) so deployment settings do not change.
 - The logo is a vector redraw; HOLIDO can drop in the original artwork as `app/static/img/logo.svg`.
 - Verified: 193 tests pass (SQLite; affected modules also on PostgreSQL); every menu page crawled at

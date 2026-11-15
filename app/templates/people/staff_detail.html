@@ -29,7 +29,7 @@
     <dt>Employment type</dt><dd>{{ staff.employment_type or '—' }}</dd>
     <dt>Start date</dt><dd>{{ dt(staff.start_date, '%d %b %Y') }}</dd>
     <dt>Contract ends</dt><dd>{{ dt(staff.contract_end_date, '%d %b %Y') }}</dd>
-    <dt>ZENTAVA sign-in</dt><dd translate="no">{{ staff.user.email if staff.user else 'Not linked' }}</dd>
+    <dt>ZENTAVA OIMS sign-in</dt><dd translate="no">{{ staff.user.email if staff.user else 'Not linked' }}</dd>
     <dt>Emergency contact</dt><dd translate="no">{% set ec = [staff.emergency_name, ('(' ~ staff.emergency_relationship ~ ')') if staff.emergency_relationship else None, staff.emergency_phone]|select|list %}{{ ec|join(' · ') if ec else '—' }}</dd>
     {% if staff.notes %}<dt>HR notes</dt><dd class="prewrap" translate="no">{{ staff.notes }}</dd>{% endif %}
     {% endif %}
