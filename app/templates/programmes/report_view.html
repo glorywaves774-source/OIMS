@@ -35,6 +35,7 @@
   <div class="kpi"><div class="v">{{ money(data.finance.spent, cur) }}</div><div class="l">Spent to date of {{ money(data.finance.budget) }}</div></div>
   <div class="kpi"><div class="v">{{ data.participants.total }}</div><div class="l">Participants ({{ data.participants.female }} female, {{ data.participants.male }} male)</div></div>
   <div class="kpi"><div class="v">{{ data.activities|length }}</div><div class="l">Activities in the period</div></div>
+  {% if data.reach %}<div class="kpi"><div class="v">{{ data.reach.total }}</div><div class="l">Registered people reached, counted once ({{ data.reach.female }} female, {{ data.reach.male }} male)</div></div>{% endif %}
 </div>
 
 <section class="panel panel-flush"><div class="panel-header"><h2>Indicator performance</h2></div>

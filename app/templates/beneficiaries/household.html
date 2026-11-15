@@ -1,0 +1,20 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import status %}
+{% block title %}{{ h.code }}{% endblock %}
+{% block page_title %}<span translate="no">{{ h.code }}</span> · Household{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ h.name }}</h2><p><span class="code">{{ h.code }}</span>{% if h.community or h.location %} · <span translate="no">{{ h.community or '' }}{{ ' · ' if h.community and h.location }}{{ h.location.label if h.location else '' }}</span>{% endif %}</p></div>
+  <a class="btn btn-light" href="{{ url_for('beneficiaries.households') }}"><i class="bi bi-arrow-left me-1"></i>Households</a></div>
+<section class="panel panel-flush">
+  <div class="panel-header"><h2>Members ({{ members|length }})</h2>{% if can_edit %}<a class="btn btn-sm btn-soft" href="{{ url_for('beneficiaries.new') }}"><i class="bi bi-person-plus me-1"></i>Register a member</a>{% endif %}</div>
+  {% if members %}
+  <div class="table-scroll"><table class="table"><thead><tr><th>Name</th><th>Relationship</th><th>Sex</th><th>Age group</th><th>Status</th><th></th></tr></thead><tbody>
+    {% for m in members %}<tr><td><a href="{{ url_for('beneficiaries.detail', bid=m.id) }}" translate="no">{{ m.full_name }}</a><span class="cell-sub code">{{ m.code }}</span></td>
+      <td>{% if h.head_id == m.id %}<strong>Head</strong>{% else %}{{ m.relationship_to_head or '—' }}{% endif %}</td>
+      <td>{{ m.sex|replace('_', ' ')|capitalize }}</td><td>{{ m.age_band }}</td><td>{{ status(m.status) }}</td>
+      <td>{% if can_edit and h.head_id != m.id %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="head_id" value="{{ m.id }}"><button class="btn btn-sm btn-light" type="submit">Make head</button></form>{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {% else %}<p class="text-muted px-3 pb-3 mb-0">No members you can see. Choose this household when registering or editing a beneficiary.</p>{% endif %}
+</section>
+{% if h.notes %}<section class="panel"><div class="panel-header"><h2>Notes</h2></div><p class="prewrap mb-0" translate="no">{{ h.notes }}</p></section>{% endif %}
+{% endblock %}

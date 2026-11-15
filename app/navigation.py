@@ -56,6 +56,16 @@ def build_nav():
             progs.append(_item("Projects", "bi-briefcase", "projects.index", "Projects", match="projects."))
         if can("programmes.view") or can("projects.view") or can("finance.view"):
             progs.append(_item("Donors & locations", "bi-geo-alt", "registers.index", "Registers"))
+        meal = []
+        if can("meal.view") or can("beneficiaries.view") or can("feedback.view"):
+            meal.append(_item("MEAL overview", "bi-graph-up-arrow", "meal.dashboard", "MEAL", match="meal.dashboard"))
+        if can("beneficiaries.view"):
+            meal.append(_item("Beneficiaries", "bi-people", "beneficiaries.index", "People", match="beneficiaries."))
+        if can("meal.view") or can("meal.collect"):
+            meal.append(_item("Data collection", "bi-ui-checks", "meal.forms", "Forms", match="meal.form"))
+        if can("feedback.view") or can("feedback.record"):
+            meal.append(_item("Feedback & complaints", "bi-chat-square-heart", "feedback.index", "Feedback",
+                              match="feedback."))
         people = []
         if can("staff.view"):
             people.append(_item("Staff directory", "bi-person-vcard", "staff.index", "Staff", match="staff."))
@@ -78,7 +88,8 @@ def build_nav():
                              match="workspace.support"))
         if can("organization.view"):
             gov.append(_item("Organization settings", "bi-building-gear", "workspace.settings", "Settings"))
-        groups = [("Workspace", home), ("Office", office), ("Programmes & projects", progs), ("People", people), ("Access", access),
+        groups = [("Workspace", home), ("Office", office), ("Programmes & projects", progs), ("MEAL & accountability", meal),
+                  ("People", people), ("Access", access),
                   ("Organization", gov)]
         # Phone tabs: the most-used destinations this person can open.
         by_ep = {i["endpoint"]: i for grp in groups for i in grp[1]}

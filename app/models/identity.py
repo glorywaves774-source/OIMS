@@ -181,6 +181,9 @@ class Organization(TimestampMixin, db.Model):
     currency = db.Column(db.String(3), nullable=False, default="GHS")
     fiscal_year_start_month = db.Column(db.Integer, nullable=False, default=1)
     timezone = db.Column(db.String(64), nullable=False, default="Africa/Accra")
+    # Accountability: a public page where community members can send feedback without signing in.
+    accept_public_feedback = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    public_feedback_intro = db.Column(db.Text)
 
     subscription = db.relationship("Subscription", uselist=False, back_populates="organization")
 

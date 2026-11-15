@@ -1,0 +1,49 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt, priority, ldt %}
+{% block title %}{{ f.code }}{% endblock %}
+{% block page_title %}<span translate="no">{{ f.code }}</span>{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ f.summary }}</h2>
+  <p><span class="code">{{ f.code }}</span> · {{ status(f.status) }} {{ priority(f.priority) }}{% if f.sensitive %} · <i class="bi bi-shield-lock"></i> Sensitive{% endif %}</p></div>
+  <a class="btn btn-light" href="{{ url_for('feedback.index') }}"><i class="bi bi-arrow-left me-1"></i>Feedback</a></div>
+{% if f.sensitive %}<div class="alert alert-secondary"><i class="bi bi-shield-lock me-1"></i>Confidential case. Opening it is recorded in the audit log. Do not share details beyond the people handling it.</div>{% endif %}
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-header"><h2>Details</h2></div>
+    <dl class="kv">
+      <dt>Type</dt><dd>{{ categories[f.category] }}</dd>
+      <dt>Received</dt><dd>{{ dt(f.received_on, '%d %b %Y') }} · {{ channels[f.channel] }}{% if f.source == 'public' %} (public page){% endif %}{% if f.received_by %} · by <span translate="no">{{ f.received_by.full_name }}</span>{% endif %}</dd>
+      <dt>Reply by</dt><dd class="{{ 'overdue' if f.due_date and f.due_date < today and f.status in ('new', 'acknowledged', 'in_progress') }}">{{ dt(f.due_date, '%d %b %Y') if f.due_date else '—' }}</dd>
+      <dt>From</dt><dd>{% if f.anonymous %}Anonymous{% else %}<span translate="no">{{ f.submitter_name or '—' }}</span>{% if f.beneficiary %} · <a href="{{ url_for('beneficiaries.detail', bid=f.beneficiary.id) }}">{{ f.beneficiary.code }}</a>{% endif %}{% endif %}</dd>
+      {% if handle %}<dt>Contact</dt><dd translate="no">{{ contact or '—' }}</dd>{% endif %}
+      <dt>Wants a reply</dt><dd>{{ 'Yes' if f.wants_response else 'No' }}</dd>
+      {% if f.owner %}<dt>About</dt><dd><a href="{{ url_for(f.owner.perm ~ '.overview', pid=f.owner.id) }}" translate="no">{{ f.owner.code }} {{ f.owner.title }}</a></dd>{% endif %}
+      {% if f.location %}<dt>Location</dt><dd translate="no">{{ f.location.label }}</dd>{% endif %}
+      <dt>Handled by</dt><dd translate="no">{{ f.assigned_to.full_name if f.assigned_to else 'Not assigned yet' }}</dd>
+    </dl>
+    <h3 class="fs-6 mt-3">What was said</h3><p class="prewrap" translate="no">{{ f.description }}</p>
+    {% if f.response %}<h3 class="fs-6">Response ({{ dt(f.responded_on, '%d %b %Y') }})</h3><p class="prewrap" translate="no">{{ f.response }}</p>{% endif %}
+    {% if f.status == 'closed' %}<p class="small text-muted mb-0">Closed {{ dt(f.closed_on, '%d %b %Y') }} · {{ satisfaction.get(f.satisfaction, '') }}</p>{% endif %}
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Handling</h2></div>
+    {% if handle %}
+      {% if f.status == 'new' %}<form method="post" class="mb-3" action="{{ url_for('feedback.act', fid=f.id, action='acknowledge') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-soft" type="submit">Acknowledge receipt</button></form>{% endif %}
+      {% if f.status != 'closed' %}
+      <form method="post" class="mb-3" action="{{ url_for('feedback.act', fid=f.id, action='assign') }}" novalidate>{{ assign_form.hidden_tag() }}
+        <div class="row g-2"><div class="col-sm-6">{{ field(assign_form.assigned_to_id, help='Sensitive cases can only go to safeguarding staff.' if f.sensitive else None) }}</div><div class="col-sm-6">{{ field(assign_form.note, attrs={'id': 'assign-note'}) }}</div></div>
+        <button class="btn btn-sm btn-soft" type="submit">Assign</button></form>
+      <details class="mb-3"{% if f.status in ('acknowledged', 'in_progress') and f.wants_response and not f.response %} open{% endif %}><summary class="btn btn-sm btn-soft">{{ 'Change the response' if f.response else 'Record the response' }}</summary>
+        <form method="post" class="mt-2" action="{{ url_for('feedback.act', fid=f.id, action='respond') }}" novalidate>{{ respond_form.hidden_tag() }}
+          {{ field(respond_form.response, attrs={'rows': 4}) }}{{ field(respond_form.responded_on) }}<button class="btn btn-sm btn-primary" type="submit">Save response</button></form></details>
+      <details class="mb-3"><summary class="btn btn-sm btn-light">Close the case</summary>
+        <form method="post" class="mt-2" action="{{ url_for('feedback.act', fid=f.id, action='close') }}" novalidate>{{ close_form.hidden_tag() }}
+          {{ field(close_form.satisfaction) }}{{ field(close_form.note, attrs={'id': 'close-note'}) }}<button class="btn btn-sm btn-primary" type="submit">Close</button></form></details>
+      {% else %}<form method="post" class="mb-3" action="{{ url_for('feedback.act', fid=f.id, action='reopen') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit">Reopen</button></form>{% endif %}
+      <form method="post" action="{{ url_for('feedback.act', fid=f.id, action='note') }}" novalidate>{{ note_form.hidden_tag() }}{{ field(note_form.note, label='Add a note to the case history', attrs={'rows': 2}) }}<button class="btn btn-sm btn-light" type="submit">Add note</button></form>
+    {% else %}<p class="text-muted mb-0">You can follow this case but not handle it.</p>{% endif %}
+  </section>
+</div>
+<section class="panel"><div class="panel-header"><h2>History</h2></div>
+  <ul class="list-plain mb-0">{% for a in f.actions %}<li class="py-2 border-bottom-soft"><strong>{{ a.action|replace('_', ' ')|capitalize }}</strong> <span class="small text-muted">· {{ ldt(a.created_at) }}{% if a.actor %} · <span translate="no">{{ a.actor.full_name }}</span>{% endif %}</span>{% if a.note %}<span class="cell-sub prewrap" translate="no">{{ a.note }}</span>{% endif %}</li>{% endfor %}</ul></section>
+{% endblock %}

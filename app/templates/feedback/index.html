@@ -1,0 +1,25 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import status, dt, pager, priority %}
+{% block title %}Feedback & complaints{% endblock %}
+{% block page_title %}Feedback & complaints{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Feedback & complaints</h2><p>{{ page.total }} case{{ '' if page.total == 1 else 's' }}</p></div>
+  <div class="toolbar">{% if can_settings %}<a class="btn btn-light" href="{{ url_for('feedback.settings') }}"><i class="bi bi-globe me-1"></i>Public page</a>{% endif %}
+    {% if can_record %}<a class="btn btn-primary" href="{{ url_for('feedback.new') }}"><i class="bi bi-plus-lg me-1"></i>Record feedback</a>{% endif %}</div></div>
+<nav class="tabs-scroll" aria-label="Whose cases">{% for v, l in [('all', 'All I can see'), ('mine', 'Assigned to me')] %}<a href="{{ url_for('feedback.index', view=v, status=status, category=category) }}"{% if view == v %} aria-current="page"{% endif %}>{{ l }}</a>{% endfor %}</nav>
+<section class="panel panel-flush">
+  <form class="filters px-3 pt-3" method="get"><input type="hidden" name="view" value="{{ view }}">
+    <select class="form-select" name="status" data-autosubmit aria-label="Status">{% for v, l in [('open', 'Open'), ('overdue', 'Past reply date'), ('new', 'New'), ('acknowledged', 'Acknowledged'), ('in_progress', 'In progress'), ('responded', 'Responded'), ('closed', 'Closed'), ('any', 'Any status')] %}<option value="{{ v }}"{% if v == status %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <select class="form-select" name="category" data-autosubmit aria-label="Type"><option value="">Any type</option>{% for v, l in categories.items() %}<option value="{{ v }}"{% if v == category %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <button class="btn btn-soft" type="submit">Filter</button></form>
+  {% if page.items %}
+  <div class="table-scroll"><table class="table"><thead><tr><th>Case</th><th>Type</th><th>Received</th><th>Reply by</th><th>Handled by</th><th>Status</th></tr></thead><tbody>
+    {% for f in page.items %}<tr><td><a href="{{ url_for('feedback.detail', fid=f.id) }}" translate="no">{{ f.summary }}</a><span class="cell-sub code">{{ f.code }}{% if f.sensitive %} · <i class="bi bi-shield-lock"></i> sensitive{% endif %}</span></td>
+      <td class="small">{{ categories[f.category].split(' (')[0] }} {{ priority(f.priority) }}</td><td class="date">{{ dt(f.received_on, '%d %b %Y') }}</td>
+      <td class="date{% if f.due_date and f.due_date < today and f.status in ('new', 'acknowledged', 'in_progress') %} overdue{% endif %}">{{ dt(f.due_date, '%d %b %Y') if f.due_date else '—' }}</td>
+      <td translate="no">{{ f.assigned_to.full_name if f.assigned_to else '—' }}</td><td>{{ status(f.status) }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {{ pager(page, 'feedback.index', view=view, status=status, category=category) }}
+  {% else %}<div class="empty"><i class="bi bi-chat-square-heart"></i>No cases here.</div>{% endif %}
+</section>
+{% endblock %}

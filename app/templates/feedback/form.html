@@ -1,0 +1,26 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}Record feedback{% endblock %}
+{% block page_title %}Record feedback{% endblock %}
+{% block content %}
+<form method="post" novalidate>{{ form.hidden_tag() }}
+<section class="panel">
+  <div class="panel-header"><h2>What was received</h2></div>
+  <div class="row g-2">
+    <div class="col-6 col-md-3">{{ field(form.received_on, required=True) }}</div><div class="col-6 col-md-3">{{ field(form.channel) }}</div>
+    <div class="col-md-4">{{ field(form.category) }}</div><div class="col-6 col-md-2">{{ field(form.priority) }}</div>
+  </div>
+  <p class="privacy-note"><i class="bi bi-shield-lock" aria-hidden="true"></i><span>Safeguarding, fraud and misconduct reports are kept confidential: only safeguarding staff are told, and they are marked high priority.</span></p>
+  {{ field(form.summary, required=True) }}{{ field(form.description, required=True, attrs={'rows': 5}) }}
+  <div class="row g-2"><div class="col-md-6">{{ field(form.owner) }}</div><div class="col-md-6">{{ field(form.location_id) }}</div></div>
+</section>
+<section class="panel">
+  <div class="panel-header"><h2>Who it came from</h2></div>
+  {{ field(form.anonymous) }}
+  <div class="row g-2"><div class="col-md-4">{{ field(form.submitter_name) }}</div><div class="col-md-4">{{ field(form.contact, attrs={'autocomplete': 'off'}) }}</div><div class="col-md-4">{{ field(form.beneficiary_code, attrs={'placeholder': 'BEN/2026/0000'}) }}</div></div>
+  {{ field(form.wants_response) }}
+  <p class="small text-muted mb-0">If the person is anonymous, the name, contact and beneficiary code are not saved.</p>
+</section>
+<div class="toolbar mb-4"><button class="btn btn-primary" type="submit" data-loading>Save</button><a class="btn btn-light" href="{{ url_for('feedback.index') }}">Cancel</a></div>
+</form>
+{% endblock %}

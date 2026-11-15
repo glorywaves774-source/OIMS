@@ -1,0 +1,17 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import status, dt %}
+{% block title %}Data collection{% endblock %}
+{% block page_title %}Data collection{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Data-collection forms</h2><p>Surveys, checklists and registers your team fills in. Answers are checked by a second person.</p></div>
+  {% if can_design %}<a class="btn btn-primary" href="{{ url_for('meal.form_new') }}"><i class="bi bi-plus-lg me-1"></i>New form</a>{% endif %}</div>
+<section class="panel panel-flush">
+  {% if rows %}
+  <div class="table-scroll"><table class="table"><thead><tr><th>Form</th><th>For</th><th class="text-end">Answers</th><th>Status</th><th></th></tr></thead><tbody>
+    {% for f in rows %}<tr><td><a href="{{ url_for('meal.form_design', fid=f.id) }}" translate="no">{{ f.title }}</a><span class="cell-sub">{{ f.fields|length }} question{{ '' if f.fields|length == 1 else 's' }}</span></td>
+      <td translate="no">{{ f.owner.code if f.owner else 'Whole organization' }}</td><td class="num"><a href="{{ url_for('meal.submissions', fid=f.id) }}">{{ counts.get(f.id, 0) }}</a></td><td>{{ status(f.status) }}</td>
+      <td>{% if collect[f.id] %}<a class="btn btn-sm btn-soft" href="{{ url_for('meal.collect', fid=f.id) }}">Fill in</a>{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {% else %}<div class="empty"><i class="bi bi-ui-checks"></i>No forms yet.</div>{% endif %}
+</section>
+{% endblock %}

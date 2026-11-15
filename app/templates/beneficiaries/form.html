@@ -1,0 +1,78 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, checklist %}
+{% block title %}{{ 'Edit ' ~ b.code if b else 'Register a beneficiary' }}{% endblock %}
+{% block page_title %}{{ 'Edit beneficiary' if b else 'Register a beneficiary' }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">{% if b %}<span translate="no">{{ b.full_name }}</span>{% else %}Register a beneficiary{% endif %}</h2>
+  <p>{% if b %}<span class="code">{{ b.code }}</span>{% else %}Check that the person is not already registered — the system will warn you about likely matches.{% endif %}</p></div>
+  <a class="btn btn-light" href="{{ url_for('beneficiaries.detail', bid=b.id) if b else url_for('beneficiaries.index') }}"><i class="bi bi-arrow-left me-1"></i>Back</a></div>
+<form method="post" novalidate>
+  {{ form.hidden_tag() }}
+  {% if matches or hidden_matches %}
+  <div class="match-list" role="alert">
+    <h3 class="fs-6 mb-2"><i class="bi bi-people me-1"></i>Possible matches</h3>
+    <ul class="list-plain mb-2">{% for m in matches %}<li class="py-1"><a href="{{ url_for('beneficiaries.detail', bid=m.id) }}" target="_blank" rel="noopener" translate="no">{{ m.full_name }}</a> <span class="code small">{{ m.code }}</span> <span class="small text-muted">· {{ m.sex|replace('_', ' ') }} · {{ m.age_band }} · <span translate="no">{{ m.community or (m.location.label if m.location else '') }}</span></span></li>{% endfor %}</ul>
+    {% if hidden_matches %}<p class="small mb-2">{{ hidden_matches }} possible match{{ 'es' if hidden_matches > 1 }} in records you cannot open. Ask a MEAL officer to check before registering.</p>{% endif %}
+    {{ field(form.confirm_new) }}
+  </div>
+  {% endif %}
+  <section class="panel">
+    <div class="panel-header"><h2>Person</h2></div>
+    <div class="row g-2">
+      <div class="col-md-4">{{ field(form.first_name, required=True) }}</div>
+      <div class="col-md-4">{{ field(form.other_names) }}</div>
+      <div class="col-md-4">{{ field(form.last_name, required=True) }}</div>
+      <div class="col-6 col-md-3">{{ field(form.sex, required=True) }}</div>
+      {% if sensitive %}<div class="col-6 col-md-3">{{ field(form.date_of_birth) }}</div>{% endif %}
+      <div class="col-6 col-md-3">{{ field(form.age_estimate, help='If the exact date is not known.') }}</div>
+      <div class="col-6 col-md-3">{{ field(form.disability) }}</div>
+      {% if sensitive %}<div class="col-md-6">{{ field(form.disability_type) }}</div>{% endif %}
+    </div>
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Where they live</h2></div>
+    <div class="row g-2">
+      <div class="col-md-4">{{ field(form.location_id) }}</div>
+      <div class="col-md-4">{{ field(form.community) }}</div>
+      <div class="col-md-4">{{ field(form.household_id, help='Add households under Beneficiaries → Households.') }}</div>
+      <div class="col-md-4">{{ field(form.relationship_to_head) }}</div>
+    </div>
+  </section>
+  {% if sensitive %}
+  <section class="panel">
+    <div class="panel-header"><h2>Personal details</h2></div>
+    <p class="privacy-note"><i class="bi bi-shield-lock" aria-hidden="true"></i><span>Phone and ID numbers are stored encrypted. Only people with access to personal details can see them, and every view is logged.</span></p>
+    <div class="row g-2">
+      <div class="col-md-4">{{ field(form.phone, attrs={'inputmode': 'tel', 'autocomplete': 'off'}) }}</div>
+      <div class="col-md-4">{{ field(form.id_type) }}</div>
+      <div class="col-md-4">{{ field(form.id_number, attrs={'autocomplete': 'off'}) }}</div>
+    </div>
+    {{ checklist(form.vulnerabilities, empty='') }}
+    {{ field(form.notes, attrs={'rows': 3}) }}
+  </section>
+  {% endif %}
+  {% if consent %}
+  <section class="panel" id="consent">
+    <div class="panel-header"><h2>Consent</h2></div>
+    <p class="small text-muted">Explain how the information will be used, then record what the person agreed to. For anyone under 18 a parent, guardian or caregiver gives consent.</p>
+    {{ consent.hidden_tag() }}
+    <div class="row g-2">
+      <div class="col-6 col-md-3">{{ field(consent.given_on, required=True) }}</div>
+      <div class="col-6 col-md-3">{{ field(consent.given_by) }}</div>
+      <div class="col-md-3">{{ field(consent.guardian_name) }}</div>
+      <div class="col-md-3">{{ field(consent.method) }}</div>
+    </div>
+    {{ checklist(consent.purposes, empty='') }}
+  </section>
+  {% if enroll_choices|length > 1 %}
+  <section class="panel">
+    <div class="panel-header"><h2>Enrol</h2></div>
+    <label class="form-label" for="enroll_owner">Programme or project</label>
+    <select class="form-select" id="enroll_owner" name="enroll_owner">{% for v, l in enroll_choices %}<option value="{{ v }}"{% if v == enroll_value %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+  </section>
+  {% endif %}
+  {% endif %}
+  <div class="toolbar mb-4"><button class="btn btn-primary" type="submit" data-loading>{{ 'Save' if b else 'Register' }}</button>
+    <a class="btn btn-light" href="{{ url_for('beneficiaries.detail', bid=b.id) if b else url_for('beneficiaries.index') }}">Cancel</a></div>
+</form>
+{% endblock %}

@@ -277,6 +277,8 @@ class Activity(TenantMixin, TimestampMixin, db.Model):
 
     workplan = db.relationship("Workplan")
     component = db.relationship("Component")
+    programme = db.relationship("Programme")
+    project = db.relationship("Project")
     result = db.relationship("ResultNode")
     budget_line = db.relationship("BudgetLine")
     location = db.relationship("Location")

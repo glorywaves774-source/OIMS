@@ -1,0 +1,17 @@
+{% extends "layout_auth.html" %}
+{% from "macros.html" import field %}
+{% block title %}Feedback · {{ org.name }}{% endblock %}
+{% block heading %}Tell us what you think{% endblock %}
+{% block card_class %}wide{% endblock %}
+{% block content %}
+<p><strong translate="no">{{ org.name }}</strong> wants to hear from you.</p>
+{% if org.public_feedback_intro %}<p class="prewrap" translate="no">{{ org.public_feedback_intro }}</p>{% endif %}
+<form method="post" novalidate>{{ form.hidden_tag() }}
+  {{ field(form.category) }}{{ field(form.message, attrs={'rows': 5}) }}{{ field(form.community) }}
+  {{ field(form.anonymous) }}
+  <div class="row g-2"><div class="col-md-6">{{ field(form.name) }}</div><div class="col-md-6">{{ field(form.contact) }}</div></div>
+  <div class="visually-hidden" aria-hidden="true">{{ form.website(tabindex='-1', autocomplete='off') }}</div>
+  <p class="small text-muted">Leave your contact if you want a reply. Reports of abuse, fraud or misconduct are seen only by the staff who handle them.</p>
+  <button class="btn btn-primary w-100" type="submit">Send</button>
+</form>
+{% endblock %}

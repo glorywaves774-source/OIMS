@@ -2,8 +2,22 @@
 
 A multi-tenant SaaS platform owned and operated by **HOLIDO — Holistic Development Organization**.
 
-**Current release:** `0.4.0-phase4` (Phase 4 — Project management). See [CHANGELOG.md](CHANGELOG.md) and
+**Current release:** `0.5.0-phase5` (Phase 5 — MEAL & beneficiaries). See [CHANGELOG.md](CHANGELOG.md) and
 [docs/STATUS.md](docs/STATUS.md) for what is complete and what comes next.
+
+## What Phase 5 adds
+
+| Area | Delivered |
+|---|---|
+| Beneficiary register | One record per person (`BEN/2026/0001`), sex, age or age group, disability, place, household; search and filters by programme/project, sex, age group, place |
+| Privacy | Phone and ID numbers encrypted in the database; personal details visible only with a separate permission and every view logged; Excel export with or without personal details (logged); people who exit or withdraw consent can be anonymized while totals stay correct |
+| Consent | What the person agreed to, how, and who gave it (a parent or guardian for children); withdrawal blocks anything new being recorded |
+| Duplicates | Warning on likely matches (same phone, same ID number, or same name and birth year) before registering; merging two records moves everything to one |
+| Enrolment & services | Enrol people in programmes and projects; record services and items received; named attendance for activity sessions |
+| People reached | Each person counted once, also across a programme and its projects; by sex, age group and disability; included in reports (screen, Excel, PDF) |
+| Data collection | Build simple forms (text, numbers, dates, choices, yes/no), publish, fill in, have answers checked by a second person, see summaries, export to Excel |
+| Feedback & complaints | Record feedback from any channel; reply deadlines by priority; assign, respond, close with a satisfaction check; reminders; sensitive reports (safeguarding, fraud, misconduct) seen only by safeguarding staff; optional public page for communities, anonymous if they wish |
+| MEAL overview | Beneficiaries by sex and age, people reached per programme and project, results and answers waiting to be checked, feedback response times and satisfaction |
 
 ## What Phase 4 adds
 
@@ -118,15 +132,18 @@ app/
                      people (departments, staff, leave, attendance), documents, correspondence,
                      meetings, tasks, comms (notifications, announcements, messages, calendar),
                      programmes and projects (+ programme_finance, programme_reports,
-                     project_extras and registers)
+                     project_extras, owner_meal and registers), beneficiaries, meal (overview and
+                     data collection), feedback (+ public page)
   storage.py         local-disk and S3 file storage, upload checks
   notify.py          notifications, reference numbers   reminders.py  scheduled reminders
   twofactor.py       two-step sign-in
   programme_logic.py programme/project access, finance, indicator, roll-up and timeline calculations
   exporting.py       report figures, Excel and PDF exports
+  meal_logic.py      beneficiary and feedback access, duplicate checks, people-reached counts
+  crypto.py          encryption of personal data and keyed indexes for duplicate checks
   templates/ static/ interface (Bootstrap 5 self-hosted; css/app.css, dark.css, mobile.css)
 migrations/          Alembic migrations
-tests/               140 automated tests
+tests/               156 automated tests
 docs/                architecture, deployment, status
 ```
 

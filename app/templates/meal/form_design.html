@@ -1,0 +1,37 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt %}
+{% block title %}{{ f.title }}{% endblock %}
+{% block page_title %}Form · <span translate="no">{{ f.title }}</span>{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ f.title }}</h2>
+  <p>{{ status(f.status) }} · <span translate="no">{{ f.owner.code ~ ' ' ~ f.owner.title if f.owner else 'Whole organization' }}</span> · {{ f.LINKS[f.beneficiary_link] }}</p></div>
+  <div class="toolbar"><a class="btn btn-light" href="{{ url_for('meal.forms') }}"><i class="bi bi-arrow-left me-1"></i>Forms</a>
+    <a class="btn btn-light" href="{{ url_for('meal.submissions', fid=f.id) }}">Answers ({{ n_subs }})</a>
+    {% if can_collect %}<a class="btn btn-primary" href="{{ url_for('meal.collect', fid=f.id) }}"><i class="bi bi-pencil-square me-1"></i>Fill in</a>{% endif %}</div></div>
+{% if f.description %}<section class="panel"><p class="prewrap mb-0" translate="no">{{ f.description }}</p></section>{% endif %}
+{% if can_design %}
+<section class="panel"><div class="toolbar">
+  {% if f.status == 'draft' %}<a class="btn btn-sm btn-light" href="{{ url_for('meal.form_edit', fid=f.id) }}"><i class="bi bi-pencil me-1"></i>Edit details</a>
+    <form method="post" action="{{ url_for('meal.form_status', fid=f.id, action='publish') }}" data-confirm="Publish? Questions cannot change once answers come in."><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-primary" type="submit">Publish</button></form>
+  {% elif f.status == 'published' %}<form method="post" action="{{ url_for('meal.form_status', fid=f.id, action='close') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit">Close (stop collecting)</button></form>
+    {% if not n_subs %}<form method="post" action="{{ url_for('meal.form_status', fid=f.id, action='draft') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit">Back to draft</button></form>{% endif %}
+  {% else %}<form method="post" action="{{ url_for('meal.form_status', fid=f.id, action='reopen') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit">Reopen</button></form>{% endif %}
+</div></section>
+{% endif %}
+<section class="panel" id="questions">
+  <div class="panel-header"><h2>Questions ({{ f.fields|length }})</h2></div>
+  {% for q in f.fields %}<div class="answer-q d-flex justify-content-between gap-2 flex-wrap">
+    <div><strong translate="no">{{ loop.index }}. {{ q.label }}</strong>{% if q.required %} <span class="text-danger" title="Required">*</span>{% endif %}
+      <span class="cell-sub">{{ types[q.field_type] }}{% if q.options %}: <span translate="no">{{ q.options|join(' · ') }}</span>{% endif %}{% if q.help_text %} — <span translate="no">{{ q.help_text }}</span>{% endif %}</span></div>
+    {% if can_design and f.status == 'draft' %}<div class="d-flex gap-1">
+      {% for a, icon, lbl in [('up', 'bi-arrow-up', 'Move up'), ('down', 'bi-arrow-down', 'Move down'), ('delete', 'bi-trash', 'Delete')] %}<form method="post" action="{{ url_for('meal.field_action', fid=f.id, qid=q.id, action=a) }}"{% if a == 'delete' %} data-confirm="Delete this question?"{% endif %}><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit" title="{{ lbl }}"><i class="bi {{ icon }}"></i><span class="visually-hidden">{{ lbl }}</span></button></form>{% endfor %}</div>{% endif %}
+  </div>{% else %}<p class="text-muted mb-0">No questions yet.</p>{% endfor %}
+  {% if can_design and f.status == 'draft' %}
+  <h3 class="fs-6 mt-4">Add a question</h3>
+  <form method="post" novalidate>{{ field_form.hidden_tag() }}
+    <div class="row g-2"><div class="col-md-8">{{ field(field_form.label, required=True) }}</div><div class="col-md-4">{{ field(field_form.field_type) }}</div></div>
+    {{ field(field_form.help_text) }}{{ field(field_form.options, attrs={'rows': 3}, help='Only for "One choice" and "Several choices".') }}{{ field(field_form.required) }}
+    <button class="btn btn-primary" type="submit">Add question</button></form>
+  {% endif %}
+</section>
+{% endblock %}

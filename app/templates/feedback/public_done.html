@@ -1,0 +1,8 @@
+{% extends "layout_auth.html" %}
+{% block title %}Thank you · {{ org.name }}{% endblock %}
+{% block heading %}Thank you{% endblock %}
+{% block content %}
+<p>Your message has reached <strong translate="no">{{ org.name }}</strong>.</p>
+{% if code %}<p>Your reference is <strong class="code">{{ code }}</strong>. Please keep it if you contact us about this again.</p>{% endif %}
+<a class="btn btn-light" href="{{ url_for('public_feedback.submit', org_slug=org.slug) }}">Send another message</a>
+{% endblock %}

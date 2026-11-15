@@ -1,0 +1,34 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import status, dt, pager, meter, num %}
+{% block title %}Answers · {{ f.title }}{% endblock %}
+{% block page_title %}Answers · <span translate="no">{{ f.title }}</span>{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ f.title }}</h2><p>{{ page.total }} answer set{{ '' if page.total == 1 else 's' }}</p></div>
+  <div class="toolbar"><a class="btn btn-light" href="{{ url_for('meal.form_design', fid=f.id) }}"><i class="bi bi-arrow-left me-1"></i>Form</a>
+    {% if can('meal.view') %}<a class="btn btn-light" href="{{ url_for('meal.submissions_export', fid=f.id) }}"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel</a>{% endif %}</div></div>
+<section class="panel">
+  <div class="panel-header"><h2>Summary</h2><span class="small text-muted">{{ summary.n }} answer sets (rejected ones left out)</span></div>
+  {% for row in summary.rows %}<div class="answer-q"><strong translate="no">{{ row.q.label }}</strong> <span class="small text-muted">· answered {{ row.answered }} of {{ row.of }}</span>
+    {% if row.counts %}{% for opt, n in row.counts.items() %}<div class="dist-row"><span class="small" translate="no">{{ opt|capitalize if row.q.field_type == 'yes_no' else opt }}</span>{{ meter(100 * n / row.answered if row.answered else 0, opt ~ ': ' ~ n) }}</div>{% endfor %}
+      {% if row.q.field_type == 'multi' %}<p class="small text-muted mb-0">People could choose more than one, so the percentages add up to more than 100.</p>{% endif %}
+    {% elif row.total is defined %}<dl class="kv mt-1"><dt>Total</dt><dd>{{ num(row.total) }}</dd><dt>Average</dt><dd>{{ num(row.average) }}</dd><dt>Lowest – highest</dt><dd>{{ num(row.low) }} – {{ num(row.high) }}</dd></dl>{% endif %}
+  </div>{% endfor %}
+</section>
+<section class="panel panel-flush">
+  <nav class="tabs-scroll px-3 pt-3" aria-label="Status">{% for v, l in [('', 'All'), ('submitted', 'To check'), ('verified', 'Checked'), ('rejected', 'Rejected')] %}<a href="{{ url_for('meal.submissions', fid=f.id, status=v) }}"{% if status == v %} aria-current="page"{% endif %}>{{ l }}</a>{% endfor %}</nav>
+  {% for s in page.items %}
+  <div class="answer-q px-3" id="s{{ s.id }}">
+    <div class="d-flex flex-wrap justify-content-between gap-2"><strong>#{{ s.id }} · {{ dt(s.collected_on, '%d %b %Y') }}</strong>
+      <span>{{ status(s.status) }}</span></div>
+    <p class="small text-muted mb-2">By <span translate="no">{{ s.collected_by.full_name if s.collected_by else '—' }}</span>{% if s.location %} · <span translate="no">{{ s.location.label }}</span>{% endif %}{% if s.beneficiary %} · {% if show_names %}<a href="{{ url_for('beneficiaries.detail', bid=s.beneficiary.id) }}">{{ s.beneficiary.code }}</a>{% else %}{{ s.beneficiary.code }}{% endif %}{% endif %}{% if s.reviewed_by %} · checked by <span translate="no">{{ s.reviewed_by.full_name }}</span>{% endif %}{% if s.review_note %} — <span translate="no">{{ s.review_note }}</span>{% endif %}</p>
+    <dl class="kv">{% for q in f.fields %}{% set v = s.answers.get(q.key) %}<dt translate="no">{{ q.label }}</dt><dd translate="no">{% if v is none %}—{% elif v is string and q.field_type == 'yes_no' %}{{ v|capitalize }}{% elif v is iterable and v is not string %}{{ v|join(', ') or '—' }}{% else %}{{ v }}{% endif %}</dd>{% endfor %}</dl>
+    {% if can_review and s.status == 'submitted' and s.collected_by_id != current_user.id %}
+    <form method="post" class="d-flex flex-wrap gap-2 mt-2" action="{{ url_for('meal.review', fid=f.id, sid=s.id, action='verify', status=status) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input class="form-control form-control-sm w-auto" name="note" maxlength="500" placeholder="Note (required to reject)" aria-label="Review note">
+      <button class="btn btn-sm btn-primary" type="submit">Mark as checked</button>
+      <button class="btn btn-sm btn-light" type="submit" formaction="{{ url_for('meal.review', fid=f.id, sid=s.id, action='reject', status=status) }}">Reject</button></form>{% endif %}
+  </div>
+  {% else %}<div class="empty"><i class="bi bi-inbox"></i>No answers here.</div>{% endfor %}
+  {{ pager(page, 'meal.submissions', fid=f.id, status=status) }}
+</section>
+{% endblock %}
