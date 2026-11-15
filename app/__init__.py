@@ -1,4 +1,4 @@
-"""OIMS — Office Information Management System (HOLIDO). Application factory."""
+"""ZENTAVA (HOLIDO). Application factory. Internal package and CLI names stay "oims"."""
 import logging
 import os
 
@@ -9,7 +9,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from app.config import CONFIGS
 from app.extensions import csrf, db, limiter, login_manager, migrate
 
-__version__ = "0.8.0-phase8"
+__version__ = "0.8.1-zentava"
 
 
 def create_app(config_name=None, overrides=None):

@@ -1,4 +1,4 @@
-# Deploying and maintaining OIMS
+# Deploying and maintaining ZENTAVA
 
 ## Environment variables
 
@@ -51,7 +51,7 @@ Alternative first-run method: open a Render Shell and run
 ## Document storage
 
 Uploaded files are stored under random names (`org-<id>/<random>`) and are only ever served through
-OIMS after a permission check. Every upload is checked by its content, not just its name: PDF, Word,
+ZENTAVA after a permission check. Every upload is checked by its content, not just its name: PDF, Word,
 Excel, PowerPoint, OpenDocument, CSV, text and common images are accepted; anything else is refused.
 
 - **Persistent disk (default in `render.yaml`)** — simplest. Files survive deploys. A Render disk

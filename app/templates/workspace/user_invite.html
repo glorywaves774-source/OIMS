@@ -4,7 +4,7 @@
 {% block page_title %}Add a person{% endblock %}
 {% block content %}
 <section class="panel">
-  <p class="text-muted">If the person already has an OIMS account (for example with another organization), they are added straight away. Otherwise they receive a link to set their password.</p>
+  <p class="text-muted">If the person already has an ZENTAVA account (for example with another organization), they are added straight away. Otherwise they receive a link to set their password.</p>
   <form method="post" novalidate class="col-lg-7 px-0">
     {{ form.hidden_tag() }}
     {{ field(form.full_name, required=True) }}

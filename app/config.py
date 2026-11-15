@@ -22,8 +22,8 @@ def _database_url():
 
 
 class BaseConfig:
-    APP_NAME = "OIMS"
-    APP_FULL_NAME = "Office Information Management System"
+    APP_NAME = "ZENTAVA"
+    APP_FULL_NAME = "Organized. Transparent. Accountable."
     PLATFORM_OWNER = "HOLIDO — Holistic Development Organization"
 
     SECRET_KEY = os.environ.get("SECRET_KEY")

@@ -168,13 +168,13 @@ def approve_organization(org, actor):
         m.role_id = admin_role.id
         if m.user.has_password:
             m.status = Membership.ACTIVE
-            send_email(m.user.email, f"{org.name} is approved on OIMS",
+            send_email(m.user.email, f"{org.name} is approved on ZENTAVA",
                        f"Hello {m.user.full_name},\n\n{org.name} has been approved. Sign in at "
                        f"{external_url('auth.login')}\n")
         else:
             m.status = Membership.INVITED
             link = external_url("auth.reset_password", token=make_password_token(m.user))
-            sent = send_email(m.user.email, f"Set up your OIMS account for {org.name}",
+            sent = send_email(m.user.email, f"Set up your ZENTAVA account for {org.name}",
                               f"Hello {m.user.full_name},\n\nSet your password to access {org.name}: {link}\n")
             if not sent:
                 link_to_show = link
@@ -221,12 +221,12 @@ def invite_user(org, form, actor):
     db.session.flush()
     link_to_show = None
     if user.has_password:
-        send_email(user.email, f"You were added to {org.name} on OIMS",
+        send_email(user.email, f"You were added to {org.name} on ZENTAVA",
                    f"Hello {user.full_name},\n\n{actor.full_name} added you to {org.name}. "
                    f"Sign in at {external_url('auth.login')}\n")
     else:
         link = external_url("auth.reset_password", token=make_password_token(user))
-        if not send_email(user.email, f"Your OIMS invitation to {org.name}",
+        if not send_email(user.email, f"Your ZENTAVA invitation to {org.name}",
                           f"Hello {user.full_name},\n\n{actor.full_name} invited you to {org.name}. "
                           f"Set your password: {link}\n\nThe link expires in 24 hours."):
             link_to_show = link

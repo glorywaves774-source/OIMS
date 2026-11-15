@@ -77,7 +77,7 @@ def test_invoice_renewal_grace_and_read_only_lock(client, app, env, db):
     assert run(app, T)["invoices"] == 1                                # 7 days before the period ends
     assert run(app, T)["invoices"] == 0                                # never twice
     inv = Invoice.query.one()
-    assert inv.number == f"OIMS-{T.year}-00001" and inv.total == Decimal("115.00") and inv.tax_amount == Decimal("15.00")
+    assert inv.number == f"ZTV-{T.year}-00001" and inv.total == Decimal("115.00") and inv.tax_amount == Decimal("15.00")
     assert inv.period_start == T + timedelta(days=7) and inv.due_on == T + timedelta(days=7)
     assert inv.bill_to["name"] == "Hope Trust" and inv.issuer["name"].startswith("HOLIDO")
     assert Notification.query.filter_by(user_id=env["admin"].id, kind="billing").count() == 1

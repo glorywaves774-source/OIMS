@@ -18,7 +18,7 @@ class Department(TenantMixin, TimestampMixin, db.Model):
 
 
 class StaffProfile(TenantMixin, TimestampMixin, db.Model):
-    """A member of staff. May or may not have an OIMS sign-in (user_id)."""
+    """A member of staff. May or may not have a ZENTAVA sign-in (user_id)."""
 
     __tablename__ = "staff_profiles"
     __table_args__ = (

@@ -1,15 +1,37 @@
-# OIMS — Office Information Management System
+# ZENTAVA
+
+**Organized. Transparent. Accountable.**
+*Zonal Enterprise Network for Transparent Administration, Visibility and Accountability*
+
 
 A multi-tenant SaaS platform owned and operated by **HOLIDO — Holistic Development Organization**.
 
-**Current release:** `0.8.0-phase8` (Phase 8 — SaaS billing). See [CHANGELOG.md](CHANGELOG.md) and
+**Current release:** `0.8.1-zentava` (ZENTAVA brand, on top of Phase 8 — SaaS billing). See [CHANGELOG.md](CHANGELOG.md) and
 [docs/STATUS.md](docs/STATUS.md) for what is complete and what comes next.
+
+> **Name change.** The product was called OIMS (Office Information Management System) during development.
+> People now see **ZENTAVA** everywhere. Internal names are kept on purpose so existing set-ups keep working:
+> the Python package `app`, the `flask oims …` commands, the `OIMS_*` environment variables, the Render
+> service names and the database.
+
+## Brand
+
+| | |
+|---|---|
+| Deep Navy `#14213D` | Main buttons, active menu item, PDF and Excel headings |
+| Teal `#0F9D8A` | Logo diamond, highlights, focus rings, charts; a darker teal `#0B7A6C` for links so they stay readable |
+| Gold `#F2B134` | Logo bar, acronym letters; a darker gold `#A87308` for small icons on white |
+| Light Grey `#F4F6F8` | Page background, logo tile |
+| Dark mode | Teal `#2EC4AE` becomes the main colour on navy surfaces; gold stays as is |
+
+The logo (`app/static/img/logo.svg`, also the browser icon) is redrawn as a vector from the brand profile.
+To use the exact original artwork, replace that file with an SVG of the same name.
 
 ## What Phase 8 adds
 
 | Area | Delivered |
 |---|---|
-| Invoices | Issued automatically before each period or trial ends, numbered OIMS-YYYY-NNNNN, with tax if set, as PDF; names and prices are frozen on the invoice |
+| Invoices | Issued automatically before each period or trial ends, numbered ZTV-YYYY-NNNNN, with tax if set, as PDF; names and prices are frozen on the invoice |
 | Paying | Online with Paystack (card and mobile money, confirmed directly with Paystack, signed webhooks, never recorded twice) when configured; bank transfer and mobile money recorded by HOLIDO staff |
 | Renewal | Paying extends the subscription; plan changes take effect from the next period (straight away during a trial); downgrades are refused when current use does not fit; cancel at the end of the period |
 | Unpaid subscriptions | Past due with a warning banner, then — after the grace period — the workspace becomes read-only (everything can still be read and exported, billing stays open) until paid |
@@ -87,7 +109,7 @@ A multi-tenant SaaS platform owned and operated by **HOLIDO — Holistic Develop
 | Area | Delivered |
 |---|---|
 | Departments | Create, close/reopen, head of department, responsibilities, staff and activity per department |
-| Staff & HR | Staff register (with or without an OIMS sign-in), directory, employment details, emergency contacts, HR notes, training, performance reviews, transfers (automatic when the department changes), exit with clearance and sign-in suspension, staff documents |
+| Staff & HR | Staff register (with or without a ZENTAVA sign-in), directory, employment details, emergency contacts, HR notes, training, performance reviews, transfers (automatic when the department changes), exit with clearance and sign-in suspension, staff documents |
 | Leave & attendance | Configurable leave types and entitlements, requests counted in working days, overlap and balance checks, approval by department head or HR, who's-away list; daily attendance register |
 | Documents | Folders, categories, versions, approval workflow, sharing (everyone / department / chosen people), expiry dates, archive, download history, storage quotas; files checked by content and kept on a persistent disk or S3-compatible storage |
 | Correspondence | Incoming, outgoing and memos with automatic reference numbers (IN/2026/0001), assignment, forwarding with instructions, approval, reply deadlines, confidentiality, attachments, routing history, archive |

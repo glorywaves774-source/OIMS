@@ -1,4 +1,4 @@
-# OIMS development status
+# ZENTAVA development status
 
 _Last updated: 15 November 2026 — release 0.3.0-phase3_
 
@@ -147,6 +147,14 @@ downgrading and upgrading again. The billing pages (organization and HOLIDO side
 320–440 px phone widths and 1440 px, in light and dark mode, with no sideways scrolling, contrast problems or
 console errors.
 
+## ZENTAVA rebrand ✅ complete (0.8.1-zentava)
+
+- Name, tagline, logo and colours from the ZENTAVA brand profile, in both themes, emails, PDFs and spreadsheets.
+- Internal names kept (`flask oims`, `OIMS_*` variables) so deployment settings do not change.
+- The logo is a vector redraw; HOLIDO can drop in the original artwork as `app/static/img/logo.svg`.
+- Verified: 193 tests pass (SQLite; affected modules also on PostgreSQL); every menu page crawled at
+  320/360/390/402/440/1440px in light and dark mode with no issues.
+
 ## Outstanding phases
 
 | Phase | Scope |
@@ -172,7 +180,7 @@ console errors.
 - **Reports are produced on request**: there are no scheduled report emails and no custom report builder yet.
 - **Large organizations**: reports are calculated when opened; with many thousands of records some may take a
   few seconds. Caching can be added in Phase 9 if needed.
-- **Payments are recorded, not made**: OIMS does not connect to banks or mobile money.
+- **Payments are recorded, not made**: ZENTAVA does not connect to banks or mobile money.
 - **One currency per order**; the finance overview shows a total per currency without conversion.
 - **Asset tags** are numbers (AST/2026/0001); printing labels or QR codes is not included yet.
 - **Head-counts and named attendance are separate**: an activity report's head-count can include people

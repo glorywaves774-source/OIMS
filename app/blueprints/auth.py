@@ -144,7 +144,7 @@ def forgot_password():
         user = User.query.filter_by(email=form.email.data).first()
         if user is not None and user.is_enabled:
             link = external_url("auth.reset_password", token=make_password_token(user))
-            send_email(user.email, "Reset your OIMS password",
+            send_email(user.email, "Reset your ZENTAVA password",
                        f"Hello {user.full_name},\n\nUse this link within 24 hours to set a new password:\n{link}\n\n"
                        "If you did not ask for this, you can ignore this email.")
             audit.record("auth.password_reset_requested", "Password reset requested", entity=user, actor=user)

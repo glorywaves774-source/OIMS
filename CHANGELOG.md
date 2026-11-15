@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.8.1-zentava — 15 November 2026
+
+New name and brand: **ZENTAVA — Organized. Transparent. Accountable.**
+
+- The product name is ZENTAVA on every page, in emails, PDFs, spreadsheets, notifications and the
+  authenticator app label (new set-ups show "ZENTAVA"; existing codes keep working).
+- New logo (navy bracket, gold bar, teal diamond) in the menu, on the sign-in and public pages and as the
+  browser icon.
+- Brand colours: deep navy, teal, gold and light grey, tuned for readability in light and dark mode.
+- The public page shows the tagline, what ZENTAVA does and what the name stands for.
+- New invoices are numbered ZTV-YYYY-NNNNN (the running number continues).
+- Internal names (`flask oims` commands, `OIMS_*` settings) are unchanged, so nothing needs reconfiguring.
+
 ## 0.8.0-phase8 — 15 November 2026
 
 SaaS billing.

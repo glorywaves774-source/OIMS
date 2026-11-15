@@ -9,7 +9,7 @@
         <div class="brand-mark">{% if tenant.logo_data %}<img src="{{ url_for('public.logo', slug=tenant.slug) }}" alt="">{% else %}{{ tenant.name[:2]|upper }}{% endif %}</div>
         <div class="brand-text"><strong translate="no">{{ tenant.name }}</strong><small>{{ app_name }} workspace</small></div>
       {% else %}
-        <div class="brand-mark">OI</div>
+        <div class="brand-mark logo"><img src="{{ url_for('static', filename='img/logo.svg') }}" alt=""></div>
         <div class="brand-text"><strong>{{ app_name }}</strong><small>HOLIDO platform</small></div>
       {% endif %}
       <button type="button" class="btn-icon sidebar-close" id="menu-close" aria-label="Close menu"><i class="bi bi-x-lg"></i></button>

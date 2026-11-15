@@ -5,7 +5,7 @@
 <div class="auth-tools">{{ theme_button() }}</div>
 <main id="content" class="auth-card {% block card_class %}{% endblock %}">
   <div class="auth-brand">
-    <div class="brand-mark">OI</div>
+    <div class="brand-mark logo"><img src="{{ url_for('static', filename='img/logo.svg') }}" alt=""></div>
     <div><h1>{% block heading %}{{ app_name }}{% endblock %}</h1><p>{{ app_full_name }} · HOLIDO</p></div>
   </div>
   {{ flashes() }}

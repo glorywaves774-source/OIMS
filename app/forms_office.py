@@ -48,7 +48,7 @@ class DepartmentForm(FlaskForm):
 class StaffForm(FlaskForm):
     full_name = StringField("Full name", validators=[DataRequired(), Length(max=200)], filters=[_strip])
     employee_number = StringField("Staff ID / employee number", validators=[DataRequired(), Length(max=40)], filters=[_strip])
-    user_id = SelectField("OIMS sign-in (optional)", coerce=opt_int, validators=[Optional()])
+    user_id = SelectField("ZENTAVA sign-in (optional)", coerce=opt_int, validators=[Optional()])
     email = StringField("Work email", validators=[Optional(), Email(), Length(max=255)], filters=[_lower])
     phone = StringField("Phone", validators=[Optional(), Length(max=50)], filters=[_strip])
     department_id = SelectField("Department", coerce=opt_int, validators=[Optional()])
@@ -94,7 +94,7 @@ class ExitForm(FlaskForm):
     exit_type = SelectField("Type of exit", choices=[(t, t) for t in StaffProfile.EXIT_TYPES])
     exit_reason = TextAreaField("Notes", validators=[Optional(), Length(max=2000)], filters=[_strip])
     exit_clearance_done = BooleanField("Clearance completed (handover, assets, final pay)")
-    remove_access = BooleanField("Also suspend their OIMS sign-in for this organization", default=True)
+    remove_access = BooleanField("Also suspend their ZENTAVA sign-in for this organization", default=True)
 
 
 class LeaveTypeForm(FlaskForm):
