@@ -42,6 +42,7 @@
       <div class="d-flex flex-wrap justify-content-between gap-2"><strong>{{ dt(r.report_date, '%A %d %b %Y') }}{% if r.location %} · <span translate="no">{{ r.location.label }}</span>{% endif %}</strong>
         <span class="small text-muted"><span translate="no">{{ r.submitted_by.full_name if r.submitted_by else '' }}</span></span></div>
       <p class="small mb-2">Participants: <strong>{{ r.participants_total }}</strong> ({{ r.participants_female }} female, {{ r.participants_male }} male{% if r.participants_youth is not none %}, {{ r.participants_youth }} young people{% endif %}{% if r.participants_disability is not none %}, {{ r.participants_disability }} with a disability{% endif %})</p>
+      {% if named is not none %}{% set n = named.get(r.id) %}<p class="small mb-2"><a href="{{ url_for(bpn ~ '.attendance', pid=prog.id, aid=act.id, rid=r.id) }}"><i class="bi bi-person-check me-1"></i>{% if n %}Named attendance: {{ n.total }} registered ({{ n.female }} female, {{ n.male }} male){% else %}Record who attended{% endif %}</a></p>{% endif %}
       <p class="prewrap mb-1" translate="no">{{ r.summary }}</p>
       {% if r.challenges %}<p class="prewrap small mb-1"><strong>Challenges:</strong> <span translate="no">{{ r.challenges }}</span></p>{% endif %}
       {% if r.recommendations %}<p class="prewrap small mb-0"><strong>Recommendations:</strong> <span translate="no">{{ r.recommendations }}</span></p>{% endif %}

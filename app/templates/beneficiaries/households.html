@@ -1,0 +1,30 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, pager %}
+{% block title %}Households{% endblock %}
+{% block page_title %}Households{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Households</h2><p>{{ page.total }} household{{ '' if page.total == 1 else 's' }}</p></div>
+  <a class="btn btn-light" href="{{ url_for('beneficiaries.index') }}"><i class="bi bi-arrow-left me-1"></i>Beneficiaries</a></div>
+<section class="panel panel-flush">
+  <form class="filters px-3 pt-3" method="get" role="search"><input class="form-control" type="search" name="q" value="{{ q }}" placeholder="Name, code or community" aria-label="Search households"><button class="btn btn-soft" type="submit">Search</button></form>
+  {% if page.items %}
+  <div class="table-scroll"><table class="table"><thead><tr><th>Household</th><th>Community</th><th class="text-end">Members</th><th>Head</th></tr></thead><tbody>
+    {% for h in page.items %}<tr><td><a href="{{ url_for('beneficiaries.household', hid=h.id) }}" translate="no">{{ h.name }}</a><span class="cell-sub code">{{ h.code }}</span></td>
+      <td translate="no">{{ h.community or (h.location.label if h.location else '—') }}</td><td class="num">{{ sizes.get(h.id, 0) }}</td>
+      <td translate="no">{{ h.head.full_name if h.head else '—' }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {{ pager(page, 'beneficiaries.households', q=q) }}
+  {% else %}<div class="empty"><i class="bi bi-house-door"></i>No households yet.</div>{% endif %}
+</section>
+{% if can_register %}
+<section class="panel">
+  <div class="panel-header"><h2>Add a household</h2></div>
+  <form method="post" action="{{ url_for('beneficiaries.household_new') }}" novalidate>{{ form.hidden_tag() }}
+    <div class="row g-2"><div class="col-md-4">{{ field(form.name, required=True, help=form.name.description) }}</div>
+      <div class="col-md-4"><label class="form-label" for="location_id">Location</label><select class="form-select" id="location_id" name="location_id">{% for v, l in locations %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
+      <div class="col-md-4">{{ field(form.community) }}</div></div>
+    {{ field(form.notes, attrs={'rows': 2}) }}
+    <button class="btn btn-primary" type="submit">Add household</button></form>
+</section>
+{% endif %}
+{% endblock %}

@@ -153,6 +153,38 @@ Programme (optional) ─ Project ─┬─ Component ─ Activity ─ Task ─ T
 - **Tasks.** A task with `project_id` (or linked to an issue or risk) is visible to anyone who can see
   that project or programme, and becomes read-only when it is archived.
 
+## MEAL & beneficiaries (Phase 5)
+
+```
+Household ─ Beneficiary ─┬─ ConsentRecord (given / withdrawn)
+                         ├─ Enrollment → Programme or Project
+                         ├─ ServiceRecord → Programme or Project (optional Activity)
+                         ├─ ActivityAttendance → ActivityReport
+                         ├─ FormSubmission → DataForm ─ FormField
+                         └─ Feedback ─ FeedbackAction
+```
+
+- **One person, one record.** People are registered once per organization and enrolled anywhere.
+  `meal_logic.reach()` takes the union of enrolments, services and attendance for an owner (and, for a
+  programme, its projects) and counts distinct people, so nobody is counted twice. Merging duplicates
+  moves every linked row to the kept record and marks the other `merged`.
+- **Personal data.** Phone and ID numbers are encrypted with a key derived from `SECRET_KEY`
+  (`app/crypto.py`). A keyed hash of the normalized value (`*_index`) finds duplicates without
+  decrypting. Exact date of birth, disability type, vulnerability and notes are shown only with
+  `beneficiaries.sensitive`; viewing them, and every export, is written to the audit log. Anonymizing
+  clears personal fields but keeps sex, birth year and place for statistics.
+- **Scope.** `beneficiaries.*` "own" covers people the person registered or who are enrolled in a
+  programme/project they manage or are on the team of; "department" adds programmes/projects of their
+  department. The scope check uses an aliased `Enrollment` so it can be combined with queries that
+  already join that table.
+- **Consent.** The most recent consent record decides: none or withdrawn blocks enrolment, services,
+  attendance and data collection about the person. Children (under 18) need a parent, guardian or caregiver.
+- **Feedback.** Safeguarding, fraud and misconduct categories are `sensitive`: visible only with
+  `feedback.sensitive`, or to the person who took the report or is assigned to it; notifications carry no
+  details; opening one is audited; only holders of `feedback.sensitive` can be assigned. Response deadlines
+  follow priority (urgent 1 day, high 3, normal 7, low 14 days). The public page (`/f/<slug>`) is off by
+  default, rate-limited, and stamps the tenant explicitly because there is no signed-in user.
+
 ## Notifications and reminders
 
 `app/notify.py::notify()` writes one in-app notification per recipient and emails those who allow it

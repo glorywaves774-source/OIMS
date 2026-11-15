@@ -346,3 +346,19 @@ html[data-theme="dark"] .tabs-scroll a[aria-current="page"] { color: #04201d; }
 .st-planned, .st-on_hold { background: rgba(90, 104, 102, .14); color: var(--text-muted); }
 .st-completed { background: rgba(31, 138, 76, .14); color: var(--success); }
 .st-postponed { background: var(--accent-soft); color: var(--warning); }
+
+/* Phase 5: MEAL & beneficiaries */
+.consent-given { background: rgba(31, 138, 76, .14); color: var(--success); }
+.consent-withdrawn { background: rgba(192, 57, 43, .12); color: var(--danger); }
+.consent-none { background: var(--accent-soft); color: var(--warning); }
+.st-merged, .st-inactive, .st-exited { background: rgba(90, 104, 102, .14); color: var(--text-muted); }
+.st-new, .st-acknowledged { background: var(--accent-soft); color: var(--warning); }
+.st-responded, .st-published { background: var(--brand-soft); color: var(--brand); }
+.privacy-note { font-size: .82rem; color: var(--text-muted); display: flex; gap: 6px; align-items: flex-start; }
+.match-list { border: 1px solid rgba(217, 145, 26, .45); background: var(--accent-soft); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 16px; }
+.answer-q { padding: 14px 0; border-bottom: 1px solid var(--border); }
+.answer-q:last-child { border-bottom: 0; }
+.attendee { display: flex; gap: 10px; align-items: center; padding: 8px 4px; border-bottom: 1px solid var(--border); }
+.attendee:last-child { border-bottom: 0; }
+.dist-row { display: grid; grid-template-columns: minmax(80px, 130px) minmax(0, 1fr); gap: 10px; align-items: center; padding: 3px 0; font-size: .9rem; }
+.dist-row .meter-wrap { width: 100%; }

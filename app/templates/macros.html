@@ -139,3 +139,5 @@
 {% macro money(v, cur='') -%}{%- if v is not none %}{{ cur ~ ' ' if cur }}{{ '{:,.2f}'.format(v) }}{% else %}—{% endif -%}{%- endmacro %}
 
 {% macro num(v) -%}{%- if v is not none %}{{ '{:,.4f}'.format(v).rstrip('0').rstrip('.') }}{% else %}—{% endif -%}{%- endmacro %}
+
+{% macro consent_badge(state) -%}<span class="badge-status consent-{{ state }}">{{ {'given': 'Consent given', 'withdrawn': 'Consent withdrawn', 'none': 'No consent'}[state] }}</span>{%- endmacro %}

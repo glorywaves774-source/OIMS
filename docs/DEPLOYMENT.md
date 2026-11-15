@@ -5,7 +5,7 @@
 | Variable | Required | Purpose |
 |---|---|---|
 | `OIMS_ENV` | yes | `production` on servers (`development` locally) |
-| `SECRET_KEY` | yes | ≥ 32 random characters; signs sessions and reset links and encrypts two-step sign-in keys. Changing it signs everyone out **and disables everyone's two-step sign-in** (they must set it up again). |
+| `SECRET_KEY` | yes | ≥ 32 random characters; signs sessions and reset links and encrypts two-step sign-in keys. Changing it signs everyone out, **disables everyone's two-step sign-in** and **makes encrypted beneficiary phone and ID numbers and feedback contacts unreadable**. Keep it stable and backed up. |
 | `DATABASE_URL` | yes | PostgreSQL URL (`postgres://` and `postgresql://` both accepted) |
 | `PUBLIC_BASE_URL` | recommended | e.g. `https://oims.holido.org`; used in emailed links |
 | `SESSION_COOKIE_SECURE` | — | `true` (default) in production — requires HTTPS |
@@ -120,6 +120,9 @@ flask --app wsgi oims sync-roles                 # after adding permissions in a
 
 ## Routine maintenance
 
-- Rotate `SECRET_KEY` only when necessary (it signs everyone out and resets two-step sign-in).
+- Do not rotate `SECRET_KEY` casually: it signs everyone out, resets two-step sign-in and makes encrypted personal
+  data (beneficiary phones and ID numbers, feedback contacts) unreadable. Store a copy in your password manager.
+- The public feedback page (`/f/<organization>`) is limited to 10 messages per hour per address; put the app behind
+  Render's proxy as documented so the limit sees real addresses.
 - Review platform staff accounts and the audit log monthly.
 - Keep dependencies updated (`pip list --outdated`), run `pytest`, then deploy.

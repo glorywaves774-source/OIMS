@@ -14,6 +14,7 @@
                  ('results', 'Results framework', url_for(bpn ~ '.results', pid=prog.id), p_see['meal.view'] or p_can['programmes.edit']),
                  ('indicators', 'Indicators', url_for(bpn ~ '.indicators', pid=prog.id), p_see['meal.view'] or p_can['meal.collect']),
                  ('workplans', 'Workplans & activities', url_for(bpn ~ '.workplans', pid=prog.id), True),
+                 ('beneficiaries', 'Beneficiaries', url_for(bpn ~ '.beneficiaries', pid=prog.id), can('beneficiaries.view')),
                  ('deliverables', 'Deliverables', url_for(bpn ~ '.deliverables', pid=prog.id) if is_proj else '', is_proj),
                  ('risks', 'Risks & issues', url_for(bpn ~ '.risks', pid=prog.id), True),
                  ('finance', 'Budget & finance', url_for(bpn ~ '.finance', pid=prog.id), p_see['finance.view']),

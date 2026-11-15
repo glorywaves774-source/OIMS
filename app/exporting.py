@@ -19,6 +19,17 @@ def _f(v):
     return float(v) if isinstance(v, Decimal) else v
 
 
+def _reach(prog, start, end):
+    """Registered people reached in the period, each counted once (programme figures include its projects)."""
+    from app.meal_logic import reach
+    r = reach(prog, start, end)
+    return {"total": r["total"], "female": r["female"], "male": r["male"], "disability": r["disability"],
+            "by_age": r["by_age"],
+            "note": "Registered beneficiaries enrolled, served or recorded at an activity in the period; "
+                    "each person is counted once" + (", including through the programme's projects."
+                                                     if prog.kind == "programme" else ".")}
+
+
 def report_data(prog, start=None, end=None, report=None):
     start = start or prog.start_date
     end = end or date.today()
@@ -65,6 +76,7 @@ def report_data(prog, start=None, end=None, report=None):
         "indicators": inds, "activities": acts, "milestones": ms,
         "participants": {"female": reached_f, "male": reached_m, "total": reached_f + reached_m,
                          "note": "Participants are counted per activity session and may include the same person more than once."},
+        "reach": _reach(prog, start, end),
         "field_challenges": challenges,
         "narrative": {k: getattr(report, k) for k in ("summary", "achievements", "challenges", "lessons", "next_steps")}
         if report else {},
@@ -125,6 +137,10 @@ def to_xlsx(data, title):
             ("Funding committed", fin["funding_committed"]), ("Funding received", fin["funding_received"]),
             ("", ""), ("Participants (female)", data["participants"]["female"]),
             ("Participants (male)", data["participants"]["male"]), ("Note", data["participants"]["note"]),
+            *([("", ""), ("People reached (registered, counted once)", data["reach"]["total"]),
+               ("  of whom female", data["reach"]["female"]), ("  of whom male", data["reach"]["male"]),
+               ("  living with a disability", data["reach"]["disability"]), ("Note", data["reach"]["note"])]
+              if data.get("reach") else []),
             ("Generated", data["generated"])]
     for r in rows:
         ws.append(list(r))
@@ -241,6 +257,11 @@ def to_pdf(data, title, org_name):
                        for i in data["indicators"]], [70 * mm, 20 * mm, 20 * mm, 20 * mm, 22 * mm, 22 * mm])]
     else:
         els.append(Paragraph("No indicators defined.", body))
+    if data.get("reach") and data["reach"]["total"]:
+        rc = data["reach"]
+        els += [Paragraph("People reached", h2),
+                Paragraph(f"{rc['total']} registered people ({rc['female']} female, {rc['male']} male, "
+                          f"{rc['disability']} living with a disability).", body), Paragraph(esc(rc["note"]), small)]
     els += [Paragraph("Activities", h2)]
     if data["activities"]:
         els += [table(["Activity", "Status", "Progress", "Female", "Male"],

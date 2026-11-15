@@ -1,0 +1,35 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import status, dt, pager, consent_badge, meter %}
+{% block title %}Beneficiaries · {{ prog.code }}{% endblock %}
+{% block page_title %}<span translate="no">{{ prog.code }}</span> · Beneficiaries{% endblock %}
+{% block content %}
+{% include "programmes/_header.html" %}
+<div class="kpi-row mb-3">
+  <div class="kpi"><div class="v">{{ totals.total }}</div><div class="l">People reached, each counted once{% if prog.kind == 'programme' %} (with its projects){% endif %}</div></div>
+  <div class="kpi"><div class="v">{{ totals.female }}</div><div class="l">Female</div></div>
+  <div class="kpi"><div class="v">{{ totals.male }}</div><div class="l">Male</div></div>
+  <div class="kpi"><div class="v">{{ totals.disability }}</div><div class="l">Living with a disability</div></div>
+</div>
+{% if own_only is not none and own_only.total != totals.total %}<p class="small text-muted">Directly through the programme: {{ own_only.total }}. The rest were reached through its projects. Someone reached by both is counted once.</p>{% endif %}
+<section class="panel">
+  <div class="panel-header"><h2>By age group</h2></div>
+  {% set bands = ['0-5', '6-14', '15-17', '18-35', '36-59', '60+', 'Unknown'] %}
+  {% for band in bands if totals.by_age.get(band) %}<div class="dist-row"><span>{{ band }}{{ ' years' if band != 'Unknown' }}</span>{{ meter(100 * totals.by_age[band] / totals.total, band ~ ': ' ~ totals.by_age[band] ~ ' people') }}</div>{% else %}<p class="text-muted mb-0">No one reached yet.</p>{% endfor %}
+  <p class="small text-muted mt-2 mb-0">Reached means enrolled, given a service, or recorded at an activity session.</p>
+</section>
+<section class="panel panel-flush">
+  <div class="panel-header"><h2>Enrolled here</h2>{% if can_enrol %}<a class="btn btn-sm btn-primary" href="{{ url_for('beneficiaries.new', owner=prog.kind ~ ':' ~ prog.id) }}"><i class="bi bi-person-plus me-1"></i>Register</a>{% endif %}</div>
+  <form class="filters px-3" method="get" role="search"><input class="form-control" type="search" name="q" value="{{ q }}" placeholder="Name or code" aria-label="Search"><button class="btn btn-soft" type="submit">Search</button></form>
+  {% if page.items %}
+  <div class="table-scroll"><table class="table"><thead><tr><th>Name</th><th>Sex</th><th>Age group</th><th>Enrolled</th><th>Status</th><th>Consent</th></tr></thead><tbody>
+    {% for b in page.items %}{% set e = enrol[b.id] %}<tr><td><a href="{{ url_for('beneficiaries.detail', bid=b.id) }}" translate="no">{{ b.full_name }}</a><span class="cell-sub code">{{ b.code }}</span></td>
+      <td>{{ b.sex|replace('_', ' ')|capitalize }}</td><td>{{ b.age_band }}</td><td class="date">{{ dt(e.enrolled_on, '%d %b %Y') }}</td><td>{{ status(e.status) }}</td><td>{{ consent_badge(b.consent_state) }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {{ pager(page, bpn ~ '.beneficiaries', pid=prog.id, q=q) }}
+  {% else %}<div class="empty"><i class="bi bi-people"></i>No one enrolled{{ ' that you can see' if q == '' }}.</div>{% endif %}
+  {% if can_enrol %}
+  <form method="post" class="d-flex flex-wrap gap-2 align-items-end px-3 pb-3" action="{{ url_for(bpn ~ '.enrol_by_code', pid=prog.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="flex-grow-1"><label class="form-label" for="enrol-code">Enrol someone already registered</label><input class="form-control" id="enrol-code" name="code" placeholder="BEN/2026/0000" required></div>
+    <button class="btn btn-soft" type="submit">Enrol</button></form>{% endif %}
+</section>
+{% endblock %}

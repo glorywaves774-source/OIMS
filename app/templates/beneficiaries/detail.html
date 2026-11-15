@@ -1,0 +1,128 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt, consent_badge, checklist, num %}
+{% block title %}{{ b.code }}{% endblock %}
+{% block page_title %}<span translate="no">{{ b.code }}</span>{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ b.full_name }}</h2>
+  <p><span class="code">{{ b.code }}</span> · {{ status(b.status) }} {{ consent_badge(b.consent_state) }}{% if b.anonymized_at %} · Personal details removed {{ dt(b.anonymized_at, '%d %b %Y') }}{% endif %}</p></div>
+  <div class="toolbar"><a class="btn btn-light" href="{{ url_for('beneficiaries.index') }}"><i class="bi bi-arrow-left me-1"></i>Beneficiaries</a>
+    {% if can_update and not b.anonymized_at %}<a class="btn btn-soft" href="{{ url_for('beneficiaries.edit', bid=b.id) }}"><i class="bi bi-pencil me-1"></i>Edit</a>{% endif %}</div></div>
+{% if b.status == 'merged' and b.merged_into %}<div class="alert alert-secondary">This record was merged into <a href="{{ url_for('beneficiaries.detail', bid=b.merged_into.id) }}">{{ b.merged_into.code }}</a>.</div>{% endif %}
+{% if b.consent_state != 'given' and b.status != 'merged' %}<div class="alert alert-warning">{% if b.consent_state == 'withdrawn' %}Consent was withdrawn on {{ dt(b.consents[0].withdrawn_on, '%d %b %Y') }}.{% else %}No consent is recorded.{% endif %} Nothing new can be recorded about this person until consent is given.</div>{% endif %}
+
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-header"><h2>Profile</h2></div>
+    <dl class="kv">
+      <dt>Sex</dt><dd>{{ b.sex|replace('_', ' ')|capitalize }}</dd>
+      <dt>Age</dt><dd>{% if b.age is not none %}{{ b.age if sensitive else '' }}{{ ' years · ' if sensitive }}{{ b.age_band }} age group{% else %}Not known{% endif %}</dd>
+      <dt>Disability</dt><dd>{{ {True: 'Yes', False: 'No'}.get(b.disability, 'Not asked') }}{% if sensitive and b.disability_type %} — <span translate="no">{{ b.disability_type }}</span>{% endif %}</dd>
+      <dt>Location</dt><dd translate="no">{{ b.location.label if b.location else '—' }}{% if b.community %} · {{ b.community }}{% endif %}</dd>
+      <dt>Household</dt><dd>{% if b.household %}<a href="{{ url_for('beneficiaries.household', hid=b.household.id) }}" translate="no">{{ b.household.code }} {{ b.household.name }}</a>{% if b.relationship_to_head %} · {{ b.relationship_to_head }}{% endif %}{% else %}—{% endif %}</dd>
+      <dt>Registered</dt><dd>{{ dt(b.registered_on, '%d %b %Y') }}{% if b.registered_by %} by <span translate="no">{{ b.registered_by.full_name }}</span>{% endif %}</dd>
+      {% if b.exit_reason %}<dt>Exit reason</dt><dd translate="no">{{ b.exit_reason }}</dd>{% endif %}
+    </dl>
+    {% if hh_members %}<h3 class="fs-6 mt-3">Others in the household</h3><ul class="list-plain mb-0">{% for m in hh_members %}<li class="py-1"><a href="{{ url_for('beneficiaries.detail', bid=m.id) }}" translate="no">{{ m.full_name }}</a> <span class="small text-muted">{{ m.relationship_to_head or '' }}</span></li>{% endfor %}</ul>{% endif %}
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Personal details</h2><i class="bi bi-shield-lock text-muted" aria-hidden="true"></i></div>
+    {% if sensitive %}
+    <dl class="kv">
+      <dt>Date of birth</dt><dd>{{ dt(b.date_of_birth, '%d %b %Y') if b.date_of_birth else '—' }}</dd>
+      <dt>Phone</dt><dd translate="no">{{ phone or '—' }}</dd>
+      <dt>ID</dt><dd translate="no">{{ (b.id_type ~ ' ' if b.id_type) ~ (id_number or '') or '—' }}</dd>
+      <dt>Vulnerability</dt><dd>{{ (b.vulnerabilities or [])|join(', ') or '—' }}</dd>
+      {% if b.notes %}<dt>Notes</dt><dd class="prewrap" translate="no">{{ b.notes }}</dd>{% endif %}
+    </dl>
+    <p class="privacy-note mt-2 mb-0"><i class="bi bi-eye" aria-hidden="true"></i><span>Your viewing of these details was recorded in the audit log.</span></p>
+    {% else %}<p class="text-muted mb-0">Phone, ID number, exact date of birth, vulnerability and notes are visible only to people allowed to see personal details.</p>{% endif %}
+  </section>
+</div>
+
+<section class="panel" id="enrolment">
+  <div class="panel-header"><h2>Programmes and projects</h2></div>
+  {% if b.enrollments %}<div class="table-scroll"><table class="table"><thead><tr><th>Programme / project</th><th>Enrolled</th><th>Status</th><th></th></tr></thead><tbody>
+    {% for e in b.enrollments %}{% set o = e.owner %}<tr>
+      <td><a href="{{ url_for(o.perm ~ '.overview', pid=o.id) }}" translate="no">{{ o.code }} {{ o.title }}</a></td>
+      <td class="date">{{ dt(e.enrolled_on, '%d %b %Y') }}{% if e.ended_on %} – {{ dt(e.ended_on, '%d %b %Y') }}{% endif %}</td>
+      <td>{{ status(e.status) }}{% if e.end_reason %}<span class="cell-sub" translate="no">{{ e.end_reason }}</span>{% endif %}</td>
+      <td>{% if e.status == 'active' and can_reg[o.kind ~ ':' ~ o.id] %}<details><summary class="btn btn-sm btn-light">End</summary>
+        <form method="post" class="mt-2" action="{{ url_for('beneficiaries.end_enrollment', bid=b.id, eid=e.id) }}" novalidate>{{ end_form.hidden_tag() }}
+          <div class="row g-2"><div class="col-sm-4">{{ field(end_form.status) }}</div><div class="col-sm-4">{{ field(end_form.ended_on, attrs={'value': today.isoformat(), 'id': 'end-on-' ~ e.id}) }}</div><div class="col-sm-4">{{ field(end_form.end_reason, attrs={'id': 'end-r-' ~ e.id}) }}</div></div>
+          <button class="btn btn-sm btn-primary" type="submit">Save</button></form></details>{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="text-muted">Not enrolled anywhere yet.</p>{% endif %}
+  {% if enroll_form.owner.choices and b.status == 'active' and b.consent_state == 'given' %}
+  <form method="post" class="d-flex flex-wrap gap-2 align-items-end mt-2" action="{{ url_for('beneficiaries.enroll', bid=b.id) }}" novalidate>{{ enroll_form.hidden_tag() }}
+    <div class="flex-grow-1">{{ field(enroll_form.owner) }}</div><div>{{ field(enroll_form.enrolled_on) }}</div><div class="mb-3"><button class="btn btn-soft" type="submit">Enrol</button></div></form>{% endif %}
+</section>
+
+<section class="panel" id="services">
+  <div class="panel-header"><h2>Services received ({{ services|length }})</h2></div>
+  {% if services %}<div class="table-scroll"><table class="table"><thead><tr><th>Date</th><th>Service or item</th><th class="text-end">Quantity</th><th>Programme / project</th><th>Recorded by</th></tr></thead><tbody>
+    {% for s in services %}<tr><td class="date">{{ dt(s.delivered_on, '%d %b %Y') }}</td><td translate="no">{{ s.service_type }}{% if s.activity %}<span class="cell-sub">{{ s.activity.title }}</span>{% endif %}{% if s.notes %}<span class="cell-sub">{{ s.notes }}</span>{% endif %}</td>
+      <td class="num">{{ num(s.quantity) if s.quantity is not none else '' }} {{ s.unit or '' }}</td><td class="code">{{ s.owner.code if s.owner else '' }}</td>
+      <td translate="no">{{ s.recorded_by.full_name if s.recorded_by else '' }}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="text-muted">No services recorded.</p>{% endif %}
+  {% if service_form.owner.choices and b.consent_state == 'given' %}
+  <details class="mt-2"><summary class="btn btn-sm btn-soft">Record a service</summary>
+    <form method="post" class="mt-3" action="{{ url_for('beneficiaries.add_service', bid=b.id) }}" novalidate>{{ service_form.hidden_tag() }}
+      <div class="row g-2"><div class="col-md-6">{{ field(service_form.owner) }}</div><div class="col-md-6">{{ field(service_form.service_type, attrs={'placeholder': 'e.g. School kit, cash transfer, training'}) }}</div>
+        <div class="col-6 col-md-3">{{ field(service_form.delivered_on) }}</div><div class="col-6 col-md-3">{{ field(service_form.quantity) }}</div><div class="col-6 col-md-3">{{ field(service_form.unit) }}</div><div class="col-md-12">{{ field(service_form.notes) }}</div></div>
+      <button class="btn btn-primary" type="submit">Save service</button></form></details>{% endif %}
+</section>
+
+{% if sessions %}
+<section class="panel"><div class="panel-header"><h2>Activity sessions attended ({{ sessions|length }})</h2></div>
+  <ul class="list-plain mb-0">{% for r in sessions %}{% set a = r.activity %}{% set o = a.project or a.programme %}<li class="py-2 border-bottom-soft"><a href="{{ url_for(o.perm ~ '.activity_detail', pid=o.id, aid=a.id) }}" translate="no">{{ a.title }}</a> <span class="small text-muted">· {{ dt(r.report_date, '%d %b %Y') }} · <span translate="no">{{ o.code }}</span></span></li>{% endfor %}</ul></section>
+{% endif %}
+
+{% if submissions %}
+<section class="panel"><div class="panel-header"><h2>Data collected</h2></div>
+  <ul class="list-plain mb-0">{% for s in submissions %}<li class="py-2 border-bottom-soft"><a href="{{ url_for('meal.submissions', fid=s.form_id) }}#s{{ s.id }}" translate="no">{{ s.form.title }}</a> <span class="small text-muted">· {{ dt(s.collected_on, '%d %b %Y') }}</span> {{ status(s.status) }}</li>{% endfor %}</ul></section>
+{% endif %}
+
+<section class="panel" id="consent">
+  <div class="panel-header"><h2>Consent history</h2></div>
+  {% if b.consents %}<ul class="list-plain">{% for c in b.consents %}<li class="py-2 border-bottom-soft">
+    <strong>{{ dt(c.given_on, '%d %b %Y') }}</strong> · {{ c.GIVERS[c.given_by] }}{% if c.guardian_name %} (<span translate="no">{{ c.guardian_name }}</span>){% endif %} · {{ c.METHODS[c.method] }}
+    <span class="cell-sub">Agreed to: {% for p in c.purposes %}{{ c.PURPOSES.get(p, p) }}{{ '; ' if not loop.last }}{% endfor %}</span>
+    {% if c.withdrawn_on %}<span class="cell-sub text-danger">Withdrawn {{ dt(c.withdrawn_on, '%d %b %Y') }}{% if c.withdrawal_note %}: <span translate="no">{{ c.withdrawal_note }}</span>{% endif %}</span>{% endif %}</li>{% endfor %}</ul>
+  {% else %}<p class="text-muted">No consent recorded.</p>{% endif %}
+  {% if can_update and not b.anonymized_at and b.status != 'merged' %}
+  <div class="toolbar">
+    <details><summary class="btn btn-sm btn-soft">{{ 'Record new consent' if b.consents else 'Record consent' }}</summary>
+      <form method="post" class="mt-3" action="{{ url_for('beneficiaries.consent', bid=b.id) }}" novalidate>{{ consent_form.hidden_tag() }}
+        <div class="row g-2"><div class="col-6 col-md-3">{{ field(consent_form.given_on) }}</div><div class="col-6 col-md-3">{{ field(consent_form.given_by) }}</div><div class="col-md-3">{{ field(consent_form.guardian_name) }}</div><div class="col-md-3">{{ field(consent_form.method) }}</div></div>
+        {{ checklist(consent_form.purposes, empty='') }}<button class="btn btn-primary" type="submit">Save consent</button></form></details>
+    {% if b.consent_state == 'given' %}<details><summary class="btn btn-sm btn-light">Withdraw consent</summary>
+      <form method="post" class="mt-3 d-flex flex-wrap gap-2 align-items-end" action="{{ url_for('beneficiaries.consent_withdraw', bid=b.id) }}" data-confirm="Record that this person withdrew consent? Nothing new can then be recorded about them." novalidate>{{ withdraw_form.hidden_tag() }}
+        <div class="flex-grow-1">{{ field(withdraw_form.note) }}</div><div class="mb-3"><button class="btn btn-outline-danger" type="submit">Withdraw</button></div></form></details>{% endif %}
+  </div>{% endif %}
+</section>
+
+{% if can_update and b.status != 'merged' %}
+<section class="panel">
+  <div class="panel-header"><h2>Status</h2></div>
+  <form method="post" class="d-flex flex-wrap gap-2 align-items-end" action="{{ url_for('beneficiaries.set_status', bid=b.id) }}" novalidate>{{ exit_form.hidden_tag() }}
+    <div>{{ field(exit_form.status) }}</div><div class="flex-grow-1">{{ field(exit_form.exit_reason, label='Reason (required to exit)') }}</div><div class="mb-3"><button class="btn btn-soft" type="submit">Update</button></div></form>
+</section>
+{% endif %}
+{% if can_manage and b.status != 'merged' %}
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-header"><h2>Merge a duplicate into this record</h2></div>
+    <p class="small text-muted">Everything recorded on the duplicate — enrolments, services, attendance, consent, data and feedback — moves here, and the duplicate is closed. The person is then counted once.</p>
+    <form method="post" class="d-flex flex-wrap gap-2 align-items-end" action="{{ url_for('beneficiaries.merge', bid=b.id) }}" data-confirm="Merge the duplicate into {{ b.code }}? This cannot be undone." novalidate>{{ merge_form.hidden_tag() }}
+      <div class="flex-grow-1">{{ field(merge_form.duplicate_code, attrs={'placeholder': 'BEN/2026/0000'}) }}</div><div class="mb-3"><button class="btn btn-soft" type="submit">Merge</button></div></form>
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Remove personal details</h2></div>
+    {% if b.anonymized_at %}<p class="text-muted mb-0">Done on {{ dt(b.anonymized_at, '%d %b %Y') }}.</p>
+    {% elif b.status == 'exited' or b.consent_state == 'withdrawn' %}
+    <p class="small text-muted">Removes the name, phone, ID, date of birth, vulnerability, notes and household. Sex, age group and place stay, so reports keep their totals.</p>
+    <form method="post" action="{{ url_for('beneficiaries.anonymize', bid=b.id) }}" data-confirm="Remove this person's personal details permanently?" data-confirm-variant="btn-danger" data-confirm-label="Remove details"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-danger" type="submit">Anonymize</button></form>
+    {% else %}<p class="text-muted mb-0">Available after the person exits or withdraws consent.</p>{% endif %}
+  </section>
+</div>
+{% endif %}
+{% endblock %}

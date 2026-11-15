@@ -1,0 +1,22 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import dt %}
+{% block title %}Attendance · {{ act.title }}{% endblock %}
+{% block page_title %}<span translate="no">{{ prog.code }}</span> · Attendance{% endblock %}
+{% block content %}
+{% include "programmes/_header.html" %}
+<section class="panel">
+  <div class="panel-header"><h2><span translate="no">{{ act.title }}</span> · {{ dt(rep.report_date, '%d %b %Y') }}</h2>
+    <a class="btn btn-sm btn-light" href="{{ url_for(bpn ~ '.activity_detail', pid=prog.id, aid=act.id) }}#reports"><i class="bi bi-arrow-left me-1"></i>Activity</a></div>
+  <p class="small text-muted">Tick the registered people who took part. Only people enrolled in this {{ prog.kind }} with current consent are listed. The head-count in the report ({{ rep.participants_total }}) can include people who are not registered.</p>
+  {% if eligible %}
+  <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="search" class="form-control mb-2 checklist-filter" placeholder="Filter names" aria-label="Filter names" data-filter-for="attendees">
+    <div class="checklist" id="attendees">
+      {% for b in eligible %}<label class="form-check checklist-item attendee"><input class="form-check-input" type="checkbox" name="beneficiary_id" value="{{ b.id }}"{% if b.id in present %} checked{% endif %}{% if not editable %} disabled{% endif %}>
+        <span class="form-check-label"><span translate="no">{{ b.full_name }}</span> <span class="small text-muted">{{ b.code }} · {{ b.sex|replace('_', ' ') }} · {{ b.age_band }}</span></span></label>{% endfor %}
+    </div>
+    {% if editable %}<button class="btn btn-primary mt-3" type="submit">Save attendance</button>{% endif %}
+  </form>
+  {% else %}<p class="text-muted mb-0">No one is enrolled in this {{ prog.kind }} yet. Enrol people on the Beneficiaries tab first.</p>{% endif %}
+</section>
+{% endblock %}

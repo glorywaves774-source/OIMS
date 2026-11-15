@@ -19,13 +19,14 @@ def run_reminders(now=None):
     now = now or utcnow()
     today = now.date()
     totals = {"tasks": 0, "overdue": 0, "meetings": 0, "documents": 0, "correspondence": 0, "activities": 0,
-              "milestones": 0, "reports": 0, "deliverables": 0, "risks": 0}
+              "milestones": 0, "reports": 0, "deliverables": 0, "risks": 0, "feedback": 0}
     for org in Organization.query.filter_by(status=Organization.ACTIVE).all():
         set_tenant(org.id)
         g.tenant = org
         try:
             _org_reminders(org, now, today, totals)
             _programme_reminders(org, today, totals)
+            _feedback_reminders(org, today, totals)
             db.session.commit()
         finally:
             clear_tenant()
@@ -133,3 +134,21 @@ def _programme_reminders(org, today, totals):
                                   f"Risk review {'overdue' if rk.review_date < today else 'due'}: {rk.title}", prog.code,
                                   f"{perm}.risks", dedupe_key=f"risk-rev-{rk.id}-{rk.review_date}",
                                   pid=prog.id, org_slug=org.slug, **kw)
+
+
+def _feedback_reminders(org, today, totals):
+    """Open feedback due tomorrow or already late: remind whoever handles it (or the handlers)."""
+    from app.models import Feedback
+    from app.programme_logic import holders
+    kw = {"organization_id": org.id, "exclude_current": False}
+    g.tenant = org
+    for f in Feedback.query.filter(Feedback.organization_id == org.id, Feedback.status.in_(Feedback.OPEN),
+                                   Feedback.due_date.isnot(None), Feedback.due_date <= today + timedelta(days=1)):
+        people = [f.assigned_to_id] if f.assigned_to_id else holders("feedback.sensitive" if f.sensitive
+                                                                     else "feedback.manage")
+        late = f.due_date < today
+        totals["feedback"] += notify(people, "reminder",
+                                     f"{'Overdue' if late else 'Reply due'}: feedback {f.code}",
+                                     None if f.sensitive else f.summary, "feedback.detail",
+                                     dedupe_key=f"fb-{f.id}-{f.due_date}-{'late' if late else 'soon'}",
+                                     fid=f.id, org_slug=org.slug, **kw)

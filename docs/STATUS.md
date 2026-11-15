@@ -71,11 +71,32 @@ Phase 3 database with existing programmes, activities and tasks, checking it mat
 downgrading and upgrading again. Every project page was crawled in Chrome at 320–440 px phone widths
 and 1440 px, in light and dark mode, with no sideways scrolling, contrast problems or console errors.
 
+## Phase 5 — MEAL & beneficiaries ✅ complete
+
+| Item | Status |
+| --- | --- |
+| Beneficiary register, households, search and filters | Done |
+| Encrypted personal details, separate permission, logged views, controlled export | Done |
+| Consent (including parent/guardian for children) and withdrawal | Done |
+| Duplicate warnings and merging | Done |
+| Enrolment in programmes and projects; services; named activity attendance | Done |
+| People reached, each counted once across programmes and their projects; in reports | Done |
+| Data-collection forms: design, publish, collect, second-person check, summary, Excel | Done |
+| Feedback and complaints: channels, deadlines, assignment, response, closure, satisfaction, reminders | Done |
+| Confidential handling of safeguarding, fraud and misconduct reports | Done |
+| Optional public feedback page with anonymous option | Done |
+| MEAL overview dashboard; new Safeguarding Focal Point role | Done |
+
+156 automated tests pass on SQLite and on PostgreSQL 16. Migration `0005` was tested by upgrading a
+Phase 4 database with existing projects, activities and activity reports, checking it matches the code,
+downgrading and upgrading again. Every new page — including the public feedback page — was crawled in
+Chrome at 320–440 px phone widths and 1440 px, in light and dark mode, with no sideways scrolling,
+contrast problems or console errors.
+
 ## Outstanding phases
 
 | Phase | Scope |
 |---|---|
-| 5 — MEAL & beneficiaries | Results frameworks, data collection, beneficiaries, consent, feedback |
 | 6 — Finance, procurement, assets | Budgets, expenditure, approvals, procurement, suppliers, assets |
 | 7 — Reporting & analytics | Dashboards, charts, PDF/Excel/CSV exports |
 | 8 — SaaS billing | Invoices, payment provider integration, renewals, usage enforcement |
@@ -91,9 +112,15 @@ and 1440 px, in light and dark mode, with no sideways scrolling, contrast proble
   combined across projects, because averaging them would be misleading.
 - **Closure checklist** cannot yet check asset handover or procurement; those records arrive in Phase 6,
   so the closure report has a written "handover of assets" section meanwhile.
-- **Beneficiary names in attendance**: activity reports record participant counts; named attendance
-  linked to beneficiary records comes with Phase 5 (MEAL & beneficiaries). Attendance sheets can be
-  attached as files meanwhile.
+- **Head-counts and named attendance are separate**: an activity report's head-count can include people
+  who are not registered; "people reached" counts only registered beneficiaries, each once.
+- **Data collection works online**: forms are filled in the browser with a connection. Offline collection
+  on phones (and import from KoBo/ODK) is not included yet.
+- **Form answers do not feed indicators automatically**; a MEAL officer reports the indicator result from
+  the summary.
+- **Public feedback page** has a hidden bot trap and a rate limit but no CAPTCHA.
+- **Encryption key** is derived from `SECRET_KEY`; changing it makes encrypted phone and ID numbers
+  unreadable (see DEPLOYMENT.md).
 - **Exchange rates**: each programme has one currency; multi-currency conversion is not supported yet.
 - **Report charts**: PDF/Excel exports contain tables, not charts; organization-wide dashboards and
   more export formats come in Phase 7.

@@ -1,0 +1,34 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import status, dt, pager, consent_badge %}
+{% block title %}Beneficiaries{% endblock %}
+{% block page_title %}Beneficiaries{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Beneficiaries</h2><p>{{ page.total }} {{ 'person' if page.total == 1 else 'people' }} · each person is registered once and counted once</p></div>
+  <div class="toolbar">
+    <a class="btn btn-light" href="{{ url_for('beneficiaries.households') }}"><i class="bi bi-house-door me-1"></i>Households</a>
+    {% if can_export %}<a class="btn btn-light" href="{{ url_for('beneficiaries.export') }}"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel</a>{% endif %}
+    {% if can_register %}<a class="btn btn-primary" href="{{ url_for('beneficiaries.new') }}"><i class="bi bi-person-plus me-1"></i>Register</a>{% endif %}</div></div>
+<section class="panel panel-flush">
+  <form class="filters px-3 pt-3" method="get" role="search">
+    <input class="form-control" type="search" name="q" value="{{ filters.q }}" placeholder="Name, code or community" aria-label="Search beneficiaries">
+    <select class="form-select" name="owner" data-autosubmit aria-label="Programme or project"><option value="">All programmes and projects</option>{% for v, l in owner_opts %}<option value="{{ v }}"{% if v == filters.owner %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <select class="form-select" name="sex" data-autosubmit aria-label="Sex"><option value="">Any sex</option>{% for v, l in sexes.items() %}<option value="{{ v }}"{% if v == filters.sex %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <select class="form-select" name="age" data-autosubmit aria-label="Age group"><option value="">Any age</option>{% for b in bands %}<option value="{{ b }}"{% if b == filters.age %} selected{% endif %}>{{ b }} years</option>{% endfor %}</select>
+    <select class="form-select" name="location" data-autosubmit aria-label="Location"><option value="">Any location</option>{% for v, l in locations %}<option value="{{ v }}"{% if v == filters.location %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <select class="form-select" name="status" data-autosubmit aria-label="Status">{% for v, l in [('active', 'Active'), ('inactive', 'Inactive'), ('exited', 'Exited'), ('any', 'Any status')] %}<option value="{{ v }}"{% if v == filters.status %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <button class="btn btn-soft" type="submit">Search</button></form>
+  {% if page.items %}
+  <div class="table-scroll"><table class="table">
+    <thead><tr><th>Name</th><th>Sex</th><th>Age group</th><th>Location</th><th>Enrolled in</th><th>Consent</th><th>Status</th></tr></thead>
+    <tbody>{% for b in page.items %}<tr>
+      <td><a href="{{ url_for('beneficiaries.detail', bid=b.id) }}" translate="no">{{ b.full_name }}</a><span class="cell-sub code">{{ b.code }}</span></td>
+      <td>{{ sexes[b.sex] }}</td><td class="nowrap">{{ b.age_band }}</td>
+      <td translate="no">{{ b.location.label if b.location else (b.community or '—') }}</td>
+      <td class="small" translate="no">{% for e in b.enrollments %}{{ e.owner.code }}{{ ', ' if not loop.last }}{% else %}—{% endfor %}</td>
+      <td>{{ consent_badge(b.consent_state) }}</td>
+      <td>{{ status(b.status) }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {{ pager(page, 'beneficiaries.index', **filters) }}
+  {% else %}<div class="empty"><i class="bi bi-people"></i>No beneficiaries match.</div>{% endif %}
+</section>
+{% endblock %}

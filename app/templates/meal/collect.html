@@ -1,0 +1,35 @@
+{% extends "layout_app.html" %}
+{% block title %}Fill in · {{ f.title }}{% endblock %}
+{% block page_title %}Fill in · <span translate="no">{{ f.title }}</span>{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ f.title }}</h2><p translate="no">{{ f.owner.code if f.owner else '' }}</p></div>
+  <a class="btn btn-light" href="{{ url_for('meal.form_design', fid=f.id) }}"><i class="bi bi-arrow-left me-1"></i>Form</a></div>
+{% if f.description %}<section class="panel"><p class="prewrap mb-0" translate="no">{{ f.description }}</p></section>{% endif %}
+<form method="post" novalidate><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<section class="panel">
+  <div class="row g-2">
+    <div class="col-6 col-md-4"><label class="form-label req" for="collected_on">Date collected</label><input class="form-control{{ ' is-invalid' if errors.get('_date') }}" type="date" id="collected_on" name="collected_on" max="{{ today.isoformat() }}" value="{{ values.get('collected_on', today.isoformat()) }}" required>{% if errors.get('_date') %}<div class="invalid-feedback">{{ errors['_date'] }}</div>{% endif %}</div>
+    <div class="col-6 col-md-4"><label class="form-label" for="location_id">Location</label><select class="form-select" id="location_id" name="location_id">{% for v, l in locations %}<option value="{{ v }}"{% if values.get('location_id') == v|string %} selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+    {% if f.beneficiary_link != 'none' %}<div class="col-md-4"><label class="form-label{{ ' req' if f.beneficiary_link == 'required' }}" for="beneficiary_code">Beneficiary code</label><input class="form-control{{ ' is-invalid' if ben_error }}" id="beneficiary_code" name="beneficiary_code" value="{{ values.get('beneficiary_code', '') }}" placeholder="BEN/2026/0000" autocomplete="off">{% if ben_error %}<div class="invalid-feedback">{{ ben_error }}</div>{% endif %}</div>{% endif %}
+  </div>
+</section>
+<section class="panel">
+  {% for q in f.fields %}{% set name = 'q_' ~ q.key %}{% set err = errors.get(q.key) %}
+  <div class="mb-3">
+    {% if q.field_type in ('choice', 'multi', 'yes_no') %}
+    <fieldset><legend class="form-label fs-6{{ ' req' if q.required }}" translate="no">{{ q.label }}</legend>
+      {% if q.help_text %}<div class="form-text mt-0 mb-1" translate="no">{{ q.help_text }}</div>{% endif %}
+      {% for v in (['yes', 'no'] if q.field_type == 'yes_no' else q.options) %}{% set l = v|capitalize if q.field_type == 'yes_no' else v %}<label class="form-check"><input class="form-check-input{{ ' is-invalid' if err }}" type="{{ 'checkbox' if q.field_type == 'multi' else 'radio' }}" name="{{ name }}" value="{{ v }}"{% if (q.field_type == 'multi' and v in values.getlist(name)) or (q.field_type != 'multi' and values.get(name) == v) %} checked{% endif %}> <span class="form-check-label" translate="no">{{ l }}</span></label>{% endfor %}
+      {% if err %}<div class="invalid-feedback">{{ err }}</div>{% endif %}</fieldset>
+    {% else %}
+    <label class="form-label{{ ' req' if q.required }}" for="{{ name }}" translate="no">{{ q.label }}</label>
+    {% if q.field_type == 'long_text' %}<textarea class="form-control{{ ' is-invalid' if err }}" id="{{ name }}" name="{{ name }}" rows="3">{{ values.get(name, '') }}</textarea>
+    {% else %}<input class="form-control{{ ' is-invalid' if err }}" id="{{ name }}" name="{{ name }}" value="{{ values.get(name, '') }}"{% if q.field_type == 'date' %} type="date"{% elif q.field_type in ('number', 'integer') %} inputmode="{{ 'decimal' if q.field_type == 'number' else 'numeric' }}"{% endif %}>{% endif %}
+    {% if q.help_text %}<div class="form-text" translate="no">{{ q.help_text }}</div>{% endif %}
+    {% if err %}<div class="invalid-feedback">{{ err }}</div>{% endif %}
+    {% endif %}
+  </div>{% endfor %}
+  <button class="btn btn-primary" type="submit" data-loading>Save answers</button>
+</section>
+</form>
+{% endblock %}

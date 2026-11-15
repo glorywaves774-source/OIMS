@@ -1,0 +1,13 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}{{ 'Edit form' if f else 'New form' }}{% endblock %}
+{% block page_title %}{{ 'Edit form' if f else 'New data-collection form' }}{% endblock %}
+{% block content %}
+<section class="panel">
+  <form method="post" novalidate>{{ form.hidden_tag() }}
+    {{ field(form.title, required=True) }}{{ field(form.description, attrs={'rows': 3}) }}
+    <div class="row g-2"><div class="col-md-6">{{ field(form.owner, help='Who can see and fill in the form follows this choice.') }}</div><div class="col-md-6">{{ field(form.beneficiary_link) }}</div></div>
+    <div class="toolbar"><button class="btn btn-primary" type="submit">{{ 'Save' if f else 'Create and add questions' }}</button>
+      <a class="btn btn-light" href="{{ url_for('meal.form_design', fid=f.id) if f else url_for('meal.forms') }}">Cancel</a></div></form>
+</section>
+{% endblock %}

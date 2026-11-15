@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.5.0-phase5 — 15 November 2026
+
+MEAL & beneficiaries.
+
+- **Beneficiary register**: each person registered once with sex, age or age group, disability, place and
+  household; enrolled in any number of programmes and projects.
+- **Privacy built in**: phone and ID numbers are encrypted; personal details need their own permission and
+  every view is logged; exports are logged; people who leave or withdraw consent can be anonymized.
+- **Consent** is recorded at registration (from a parent or guardian for children) and can be withdrawn;
+  without it nothing new can be recorded about the person.
+- **Duplicate warnings** before registering, and **merging** of duplicate records.
+- **Services** received and **named attendance** at activity sessions.
+- **People reached** — each person counted once, including across a programme and its projects — on a new
+  Beneficiaries tab and in programme and project reports.
+- **Data collection**: build forms, publish them, fill them in, have answers checked by a second person,
+  see summaries and export to Excel.
+- **Feedback & complaints**: from any channel, with reply deadlines, assignment, responses, closure with a
+  satisfaction check and reminders. Safeguarding, fraud and misconduct reports are confidential.
+- **Public feedback page** that communities can use without an account, anonymously if they wish
+  (switched off until an administrator turns it on).
+- **MEAL overview** dashboard and a new **Safeguarding Focal Point** role.
+- Field Officers can now view monitoring information for their own programmes and projects.
+- New status labels ("Inactive", "Exited", "New", "Acknowledged", "Responded", "Published") have colours.
+- Migration `0005` adds the new tables; run `oims sync-roles` (done automatically on Render) so existing
+  organizations get the new permissions and role.
+
 ## 0.4.0-phase4 — 15 November 2026
 
 Project management.

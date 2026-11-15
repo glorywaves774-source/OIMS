@@ -840,7 +840,9 @@ def activity_detail(pid, aid):
     spend = []
     if can("finance.view") and allowed("finance.view", prog):
         spend = Expenditure.query.filter_by(activity_id=act.id).order_by(Expenditure.spent_on.desc()).all()
-    return render_template("programmes/activity_detail.html", act=act, progress_form=ProgressForm(obj=act),
+    from app.blueprints.owner_meal import attendance_summary
+    named = attendance_summary([r.id for r in act.reports]) if can("beneficiaries.view") else None
+    return render_template("programmes/activity_detail.html", act=act, progress_form=ProgressForm(obj=act), named=named,
                            rep_form=rep_form, files=attachments_for("activity", act.id), spend=spend,
                            can_update=_can_update_activity(act, prog), can_report=_can_report_activity(act, prog),
                            today=date.today(), **ctx(prog, "workplans"))

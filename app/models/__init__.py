@@ -15,3 +15,5 @@ from .programmes import (Activity, ActivityReport, BudgetCategory, BudgetLine, B
                          MonitoringVisit, Programme, ProgrammeReport, ProgrammeTeamMember, ResultNode, Workplan)
 from .projects import (Component, Deliverable, Issue, Project, ProjectClosure, ProjectTeamMember,  # noqa: F401
                        RiskItem)
+from .meal import (ActivityAttendance, Beneficiary, ConsentRecord, DataForm, Enrollment, Feedback,  # noqa: F401
+                   FeedbackAction, FormField, FormSubmission, Household, ServiceRecord)
