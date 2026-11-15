@@ -12,6 +12,10 @@ New name and brand: **ZENTAVA OIMS — Organized. Transparent. Accountable.**
 - The public page shows the tagline, what ZENTAVA does and what the name stands for.
 - New invoices are numbered ZTV-YYYY-NNNNN (the running number continues).
 - Internal names (`flask oims` commands, `OIMS_*` settings) are unchanged, so nothing needs reconfiguring.
+- **Provider**: ZENTAVA OIMS is provided by **Kayron Global Tech Services** (previously HOLIDO). The name
+  appears on the public page, registration, billing, invoices and the platform console ("Kayron platform",
+  "Kayron support access"). A database update switches the invoice company name if it still had the old
+  default; invoices already issued keep the name they were issued with.
 
 ## 0.8.0-phase8 — 15 November 2026
 

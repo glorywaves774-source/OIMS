@@ -78,7 +78,7 @@
 <section class="panel panel-flush">
   <div class="panel-header"><h2>Download history</h2></div>
   <div class="table-scroll"><table class="table"><thead><tr><th>When</th><th>Who</th><th>Version</th></tr></thead><tbody>
-    {% for l in logs %}<tr><td class="date">{{ dt(l.created_at) }}</td><td translate="no">{{ l.user.full_name if l.user else '—' }}{% if l.via_support_access %} <span class="badge-status st-pending">HOLIDO support</span>{% endif %}</td><td class="code">v{{ l.version.version_no if l.version else '?' }}</td></tr>{% endfor %}
+    {% for l in logs %}<tr><td class="date">{{ dt(l.created_at) }}</td><td translate="no">{{ l.user.full_name if l.user else '—' }}{% if l.via_support_access %} <span class="badge-status st-pending">Kayron support</span>{% endif %}</td><td class="code">v{{ l.version.version_no if l.version else '?' }}</td></tr>{% endfor %}
   </tbody></table></div>
 </section>
 {% endif %}

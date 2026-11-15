@@ -10,7 +10,7 @@
         <div class="brand-text"><strong translate="no">{{ tenant.name }}</strong><small>{{ app_name }} workspace</small></div>
       {% else %}
         <div class="brand-mark logo"><img src="{{ url_for('static', filename='img/logo.svg') }}" alt=""></div>
-        <div class="brand-text"><strong>{{ wordmark() }}</strong><small>HOLIDO platform</small></div>
+        <div class="brand-text"><strong>{{ wordmark() }}</strong><small>Kayron platform</small></div>
       {% endif %}
       <button type="button" class="btn-icon sidebar-close" id="menu-close" aria-label="Close menu"><i class="bi bi-x-lg"></i></button>
     </div>
@@ -68,7 +68,7 @@
 
     {% if support_request %}
     <div class="support-banner" role="status">
-      <div><i class="bi bi-life-preserver me-1"></i><strong>HOLIDO support access — read-only.</strong>
+      <div><i class="bi bi-life-preserver me-1"></i><strong>Kayron support access — read-only.</strong>
         Every page you open is recorded. Ends {{ support_request.expires_at.strftime('%H:%M UTC') }}.</div>
       <form method="post" action="{{ url_for('platform.support_end', req_id=support_request.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

@@ -13,7 +13,7 @@ class PlatformRole:
     SUPPORT_OFFICER = "support_officer"
 
     LABELS = {
-        SUPER_ADMIN: "HOLIDO Super Admin",
+        SUPER_ADMIN: "Kayron Super Admin",
         PLATFORM_ADMIN: "Platform Administrator",
         SUPPORT_OFFICER: "Platform Support Officer",
     }

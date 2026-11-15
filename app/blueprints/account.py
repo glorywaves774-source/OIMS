@@ -145,7 +145,7 @@ def two_factor_disable():
     user = current_user._get_current_object()
     form = TwoFactorDisableForm()
     if two_factor_required(user):
-        flash("Two-step sign-in is required for HOLIDO platform staff.", "danger")
+        flash("Two-step sign-in is required for Kayron platform staff.", "danger")
     elif user.has_2fa and form.validate_on_submit():
         if not user.check_password(form.password.data) or not verify_user_code(user, form.code.data):
             flash("Your password or code is not correct.", "danger")

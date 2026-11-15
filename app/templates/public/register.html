@@ -4,13 +4,13 @@
 {% block card_class %}wide{% endblock %}
 {% block heading %}Register your organization{% endblock %}
 {% block content %}
-<p class="text-muted">HOLIDO reviews every registration before the workspace is activated. Fields marked * are required.</p>
+<p class="text-muted">Kayron Global Tech Services reviews every registration before the workspace is activated. Fields marked * are required.</p>
 <form method="post" enctype="multipart/form-data" novalidate>
   {{ form.hidden_tag() }}
   {% include "partials/org_fields.html" %}
   <div class="form-section">
     <h3>Subscription</h3>
-    {{ field(form.plan_id, help='Plans and pricing are set by HOLIDO. You can change plan later.' if plans else 'HOLIDO will agree a plan with you after approval.') }}
+    {{ field(form.plan_id, help='Plans and pricing are set by Kayron Global Tech Services. You can change plan later.' if plans else 'Kayron will agree a plan with you after approval.') }}
   </div>
   <div class="form-section">
     <h3>Organization administrator (you)</h3>

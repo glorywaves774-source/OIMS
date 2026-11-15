@@ -626,7 +626,8 @@ html[data-theme="dark"] .tabs-scroll a[aria-current="page"] { color: #04201d; }
 .acr-tiles b { display: block; color: var(--gold); font-size: 1.6rem; line-height: 1.1; font-weight: 800; }
 .acr-tiles span { display: block; font-size: .72rem; overflow-wrap: anywhere; }
 @media (max-width: 760px) { .acr-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-@media (max-width: 360px) { .acr-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } .acr-tiles span { font-size: .7rem; } }
+@media (max-width: 600px) { .acr-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 374px) { .acr-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 /* ZENTAVA OIMS wordmark: brand bold, product lighter in teal */
 .wordmark { white-space: nowrap; }

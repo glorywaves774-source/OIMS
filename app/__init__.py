@@ -1,4 +1,4 @@
-"""ZENTAVA OIMS (HOLIDO). Application factory. Internal package and CLI names stay "oims"."""
+"""ZENTAVA OIMS (Kayron). Application factory. Internal package and CLI names stay "oims"."""
 import logging
 import os
 

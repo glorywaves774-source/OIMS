@@ -73,7 +73,7 @@ def change_plan():
         abort(403)
     org, sub = g.tenant, g.tenant.subscription
     if sub is None:
-        flash("This workspace has no subscription yet. Contact HOLIDO.", "danger")
+        flash("This workspace has no subscription yet. Contact Kayron.", "danger")
         return redirect(url_for("billing.index"))
     form = ChangePlanForm()
     form.plan_id.choices = [(p.id, p.name) for p in SubscriptionPlan.query.filter_by(is_active=True)]

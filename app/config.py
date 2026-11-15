@@ -26,7 +26,7 @@ class BaseConfig:
     BRAND_NAME = "ZENTAVA"          # the brand (wordmark, logo)
     PRODUCT_NAME = "OIMS"           # the product shown beside the brand
     APP_FULL_NAME = "Organized. Transparent. Accountable."
-    PLATFORM_OWNER = "HOLIDO — Holistic Development Organization"
+    PLATFORM_OWNER = "Kayron Global Tech Services"
 
     SECRET_KEY = os.environ.get("SECRET_KEY")
     SQLALCHEMY_DATABASE_URI = _database_url()
@@ -85,7 +85,7 @@ class BaseConfig:
     S3_SERVER_SIDE_ENCRYPTION = _bool("S3_SERVER_SIDE_ENCRYPTION", True)
     MAX_CONTENT_LENGTH = int(os.environ.get("MAX_UPLOAD_MB", "25")) * 1024 * 1024
 
-    # Two-step sign-in is required for HOLIDO platform staff unless switched off.
+    # Two-step sign-in is required for Kayron platform staff unless switched off.
     REQUIRE_PLATFORM_2FA = _bool("REQUIRE_PLATFORM_2FA", True)
 
     ALLOW_PUBLIC_REGISTRATION = _bool("ALLOW_PUBLIC_REGISTRATION", True)

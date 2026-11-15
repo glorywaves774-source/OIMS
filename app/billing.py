@@ -9,7 +9,7 @@ Lifecycle of a paid plan
   cancel at period end → cancelled when the period ends (read-only)
 
 Free plans are never invoiced. A subscription with no period end and no trial end is on a manual
-arrangement with HOLIDO and is skipped by the automatic run.
+arrangement with Kayron and is skipped by the automatic run.
 """
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import ROUND_HALF_UP, Decimal
@@ -133,7 +133,7 @@ def state(org):
                           "An administrator can pay the open invoice on the Billing page to restore full access.")
     elif sub.status == Subscription.CANCELLED:
         st.update(locked=True, level="danger",
-                  message="The subscription was cancelled, so the workspace is read-only. Contact HOLIDO to restart it.")
+                  message="The subscription was cancelled, so the workspace is read-only. Contact Kayron to restart it.")
     elif sub.status == Subscription.PAST_DUE:
         lock_on = (as_date(sub.current_period_end) or today) + timedelta(days=grace)
         st.update(level="warning",

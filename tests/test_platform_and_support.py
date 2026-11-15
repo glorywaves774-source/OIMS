@@ -32,7 +32,7 @@ def test_registration_approval_lifecycle(client, db):
     data = dict(REG, plan_id=str(plan.id),
                 logo=(io.BytesIO(b"\x89PNG\r\n\x1a\n" + b"0" * 100), "logo.png"))
     r = client.post("/register", data=data, content_type="multipart/form-data")
-    assert r.status_code == 200 and b"submitted to HOLIDO" in r.data
+    assert r.status_code == 200 and b"submitted to Kayron Global Tech Services" in r.data
     org = Organization.query.one()
     assert org.status == Organization.PENDING and org.logo_mime == "image/png"
     assert org.subscription.status == Subscription.TRIAL and org.subscription.trial_ends_at is not None

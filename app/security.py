@@ -14,7 +14,7 @@ log = logging.getLogger("oims")
 
 COMMON_PASSWORDS = {
     "password1234", "123456789012", "qwertyuiop12", "letmein12345", "administrator",
-    "password123!", "welcome12345", "changeme1234", "holido123456", "oims12345678",
+    "password123!", "welcome12345", "changeme1234", "holido123456", "kayron123456", "oims12345678",
 }
 
 
@@ -84,7 +84,7 @@ def is_safe_next(target):
 # --- Access decorators -------------------------------------------------------
 
 def platform_required(*roles):
-    """Restrict a view to HOLIDO platform staff (optionally specific platform roles)."""
+    """Restrict a view to Kayron platform staff (optionally specific platform roles)."""
 
     def decorator(view):
         @wraps(view)

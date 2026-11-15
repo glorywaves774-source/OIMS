@@ -25,9 +25,9 @@ def _access_problem(user):
     if any(ms == Membership.ACTIVE and os_ == Organization.ACTIVE for ms, os_ in statuses):
         return None
     if any(os_ == Organization.PENDING for _, os_ in statuses):
-        return "Your organization's registration is awaiting approval by HOLIDO. You will be notified when it is approved."
+        return "Your organization's registration is awaiting approval by Kayron Global Tech Services. You will be notified when it is approved."
     if any(os_ == Organization.SUSPENDED for _, os_ in statuses):
-        return "Your organization's workspace is currently suspended. Please contact HOLIDO support."
+        return "Your organization's workspace is currently suspended. Please contact Kayron support."
     return "Your account does not currently have access to any active organization."
 
 

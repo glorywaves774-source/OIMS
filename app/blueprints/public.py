@@ -36,7 +36,7 @@ def register():
         abort(404)
     form = OrganizationRegistrationForm()
     plans = SubscriptionPlan.query.filter_by(is_active=True, is_public=True).order_by(SubscriptionPlan.monthly_price).all()
-    form.plan_id.choices = [(0, "Decide later with HOLIDO")] + [(p.id, p.name) for p in plans]
+    form.plan_id.choices = [(0, "Decide later with Kayron")] + [(p.id, p.name) for p in plans]
     if form.validate_on_submit():
         problems = password_problems(form.password.data, email=form.admin_email.data)
         if problems:

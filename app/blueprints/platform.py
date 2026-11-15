@@ -1,4 +1,4 @@
-"""HOLIDO platform administration (separate from organization workspaces)."""
+"""Kayron platform administration (separate from organization workspaces)."""
 from datetime import datetime, timedelta, timezone
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
@@ -230,8 +230,8 @@ def support_request(org_id):
             msg = "Support access requested. The organization's administrators must approve it."
             for m in Membership.query.filter_by(organization_id=org.id, status=Membership.ACTIVE).all():
                 if m.role and m.role.is_admin:
-                    send_email(m.user.email, "HOLIDO support access request",
-                               f"{current_user.full_name} (HOLIDO) requests read-only access to {org.name} "
+                    send_email(m.user.email, "Kayron support access request",
+                               f"{current_user.full_name} (Kayron) requests read-only access to {org.name} "
                                f"for {req.duration_minutes} minutes.\nReason: {req.reason}\n"
                                f"Review: {external_url('workspace.support', org_slug=org.slug)}\n")
         audit.record("support.requested", f"Support access requested: {req.reason[:200]}", entity=req,
@@ -315,7 +315,7 @@ def staff():
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user and user.is_platform_staff:
-            flash("This person is already HOLIDO platform staff.", "warning")
+            flash("This person is already Kayron platform staff.", "warning")
         else:
             if user is None:
                 user = User(email=form.email.data, full_name=form.full_name.data)
@@ -324,7 +324,7 @@ def staff():
             db.session.flush()
             if not user.has_password:
                 link = external_url("auth.reset_password", token=make_password_token(user))
-                if not send_email(user.email, "Your HOLIDO ZENTAVA OIMS platform account",
+                if not send_email(user.email, "Your ZENTAVA OIMS platform account",
                                   f"Hello {user.full_name},\n\nSet your password: {link}\n"):
                     one_time = {"email": user.email, "link": link}
             audit.record("platform.staff_added", f"{user.email} added as {user.platform_role_label}", entity=user)

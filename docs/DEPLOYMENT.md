@@ -18,13 +18,13 @@
 | `S3_BUCKET`, `S3_ENDPOINT_URL`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PREFIX` | with `s3` | Object storage. Leave `S3_ENDPOINT_URL` blank for AWS; set it for Cloudflare R2, Backblaze B2, DigitalOcean Spaces or MinIO. |
 | `S3_SERVER_SIDE_ENCRYPTION` | — | `true` (default) asks the store to encrypt files at rest; set `false` if your provider rejects it |
 | `MAX_UPLOAD_MB` | — | Largest file accepted, default 25 |
-| `REQUIRE_PLATFORM_2FA` | — | `true` (default in production): HOLIDO staff must use two-step sign-in |
+| `REQUIRE_PLATFORM_2FA` | — | `true` (default in production): Kayron staff must use two-step sign-in |
 | `RATELIMIT_STORAGE_URI` | multi-instance | `redis://…` when running more than one instance (default is per-process memory) |
 | `LOGIN_MAX_FAILURES`, `LOGIN_LOCKOUT_MINUTES`, `PASSWORD_MIN_LENGTH` | — | Security tuning (defaults 5, 15, 12) |
 | `ALLOW_PUBLIC_REGISTRATION` | — | `false` to hide the public registration form |
 | `TRUST_PROXY` | — | `1` (default) behind Render's proxy; `0` if exposed directly |
 | `LOG_LEVEL` | — | `INFO` by default |
-| `PAYSTACK_SECRET_KEY` | — | Turns on online subscription payments (card and mobile money) through Paystack. Leave empty to accept bank transfers recorded by HOLIDO staff only |
+| `PAYSTACK_SECRET_KEY` | — | Turns on online subscription payments (card and mobile money) through Paystack. Leave empty to accept bank transfers recorded by Kayron staff only |
 | `PAYSTACK_API_BASE` | — | Defaults to `https://api.paystack.co` |
 
 Without SMTP, invitation and set-password links are shown **once** to the administrator who created
@@ -40,7 +40,7 @@ inviting real users.
 3. Fill in the variables marked `sync: false` (`PUBLIC_BASE_URL`, SMTP settings, and for the first
    deploy `OIMS_SETUP_TOKEN` — a long random value).
 4. Deploy. `preDeployCommand` runs the database migrations and `oims sync-roles` before each release.
-5. Open `https://<your-service>/setup`, enter the token and create the HOLIDO Super Admin.
+5. Open `https://<your-service>/setup`, enter the token and create the Kayron Super Admin.
    You are then asked to set up two-step sign-in with an authenticator app — **save the recovery codes**.
 6. **Delete `OIMS_SETUP_TOKEN`** from Render. The page also locks itself once a Super Admin exists.
 7. Health check: `GET /healthz` returns `{"status": "ok", "database": "ok"}`.
@@ -76,11 +76,11 @@ on other hosts use any scheduler (cron, systemd timer).
 `flask --app wsgi oims billing-run` issues invoices before each period (or trial) ends, marks unpaid
 subscriptions past due when the period ends, makes a workspace read-only after the grace period, and
 sends payment reminders. It is safe to run hourly (nothing is issued or sent twice); `render.yaml` runs it
-right after the reminders. HOLIDO super administrators set the invoice details, bank instructions, tax,
+right after the reminders. Kayron super administrators set the invoice details, bank instructions, tax,
 lead time and grace period under **Platform → Billing → Settings**.
 
 Online payments (optional):
-1. Create a Paystack account for HOLIDO and copy the **secret key** into `PAYSTACK_SECRET_KEY` (Render
+1. Create a Paystack account for Kayron and copy the **secret key** into `PAYSTACK_SECRET_KEY` (Render
    dashboard → Environment). Use the test key first.
 2. In Paystack → Settings → API keys & webhooks, set the webhook URL to
    `https://<your domain>/billing-webhooks/paystack` (the settings page shows the exact address).
@@ -92,10 +92,10 @@ invoiced automatically — set a period end on the organization's page to start 
 
 ## Two-step sign-in
 
-- HOLIDO platform staff must use an authenticator app (`REQUIRE_PLATFORM_2FA=true`). Organization
+- Kayron platform staff must use an authenticator app (`REQUIRE_PLATFORM_2FA=true`). Organization
   users may turn it on from **My account → Two-step sign-in**.
 - Each person gets 10 single-use recovery codes. If someone loses both their phone and their codes,
-  confirm their identity first, then: a **Super Admin** resets HOLIDO staff from **Platform staff**; an
+  confirm their identity first, then: a **Super Admin** resets Kayron staff from **Platform staff**; an
   **organization administrator** resets their own members from **Users → (person)**. The person is
   signed out and sets it up again at next sign-in. Both actions are recorded in the audit log.
 
@@ -135,7 +135,7 @@ flask --app wsgi oims sync-roles                 # after adding permissions in a
 
 - Application and access logs go to standard output (visible in Render's log stream).
 - Security events (sign-ins, failures, lockouts, support access, administrative changes) are in the
-  audit log, visible to HOLIDO at **Platform → Audit log** and to each organization in its workspace.
+  audit log, visible to Kayron at **Platform → Audit log** and to each organization in its workspace.
 - Point an uptime monitor at `/healthz`. Error-tracking services (e.g. Sentry) can be added through
   an environment variable in a later phase; none is integrated yet.
 

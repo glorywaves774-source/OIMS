@@ -1,4 +1,4 @@
-"""Forms for subscription billing (organization side and HOLIDO side)."""
+"""Forms for subscription billing (organization side and Kayron side)."""
 from flask_wtf import FlaskForm
 from wtforms import DateField, DecimalField, IntegerField, SelectField, StringField, TextAreaField
 from wtforms.validators import DataRequired, Email, InputRequired, Length, NumberRange, Optional

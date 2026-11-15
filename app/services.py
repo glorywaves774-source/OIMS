@@ -81,7 +81,7 @@ def _start_subscription(org, plan_id):
 
 
 def register_organization(form):
-    """Public self-registration: organization and its administrator await HOLIDO approval."""
+    """Public self-registration: organization and its administrator await Kayron approval."""
     admin_email = form.admin_email.data
     user = User.query.filter_by(email=admin_email).first()
     if user is not None:
@@ -103,7 +103,7 @@ def register_organization(form):
 
 
 def platform_create_organization(form, actor):
-    """HOLIDO creates and activates an organization; returns (org, admin_user, set_password_link_or_None)."""
+    """Kayron creates and activates an organization; returns (org, admin_user, set_password_link_or_None)."""
     org = Organization(status=Organization.PENDING, slug=unique_slug(form.name.data))
     apply_org_fields(org, form)
     db.session.add(org)
@@ -116,7 +116,7 @@ def platform_create_organization(form, actor):
     db.session.add(Membership(organization_id=org.id, user_id=user.id, status=Membership.PENDING,
                               job_title="Organization Administrator"))
     _start_subscription(org, form.plan_id.data)
-    audit.record("organization.created", f"{org.name} created by HOLIDO", entity=org, organization_id=org.id, actor=actor)
+    audit.record("organization.created", f"{org.name} created by Kayron", entity=org, organization_id=org.id, actor=actor)
     link = approve_organization(org, actor)
     return org, user, link
 

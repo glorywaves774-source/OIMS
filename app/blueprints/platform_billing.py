@@ -1,4 +1,4 @@
-"""HOLIDO side of billing: all invoices, recording transfers, voiding, issuing, settings and the daily run."""
+"""Kayron side of billing: all invoices, recording transfers, voiding, issuing, settings and the daily run."""
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -25,7 +25,7 @@ ADMINS = (PlatformRole.SUPER_ADMIN, PlatformRole.PLATFORM_ADMIN)
 @login_required
 @platform_required()
 def _guard():
-    clear_tenant()   # HOLIDO staff only; these pages look across organizations
+    clear_tenant()   # Kayron staff only; these pages look across organizations
     return None
 
 

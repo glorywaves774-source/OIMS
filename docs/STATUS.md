@@ -4,8 +4,8 @@ _Last updated: 15 November 2026 — release 0.3.0-phase3_
 
 ## Phase 1 — Foundation ✅ complete
 
-Platform structure, PostgreSQL and migrations, authentication, HOLIDO Super Admin setup, organization
-registration and approval, tenant isolation, roles and permissions, HOLIDO support access, subscription
+Platform structure, PostgreSQL and migrations, authentication, Kayron Super Admin setup, organization
+registration and approval, tenant isolation, roles and permissions, Kayron support access, subscription
 plans, audit log, interface (dark mode, phone layout).
 
 ## Phase 2 — Office information management ✅ complete
@@ -24,7 +24,7 @@ plans, audit log, interface (dark mode, phone layout).
 | Notifications, announcements, internal messages | Done |
 | Calendar: personal, departmental, organizational | Done |
 | Scheduled reminders | Done |
-| Two-step sign-in (required for HOLIDO staff) | Done |
+| Two-step sign-in (required for Kayron staff) | Done |
 | Department / own-record permission scopes | Done |
 | Dashboard with office widgets | Done |
 
@@ -133,17 +133,17 @@ errors. Chart colours were checked with a palette validator for both light and d
 
 | Item | Status |
 | --- | --- |
-| Automatic invoices before each period or trial end; invoice PDF; tax and invoice details set by HOLIDO | Done |
+| Automatic invoices before each period or trial end; invoice PDF; tax and invoice details set by Kayron | Done |
 | Online payments through Paystack (card, mobile money) with server-side confirmation and signed webhooks | Done |
-| Bank transfer / mobile money / cheque payments recorded by HOLIDO staff; part payments; invoice cancellation | Done |
+| Bank transfer / mobile money / cheque payments recorded by Kayron staff; part payments; invoice cancellation | Done |
 | Renewal, plan changes (next period, or immediately in a trial), downgrade checks, cancel at period end | Done |
 | Past due → grace period → read-only workspace (billing stays open) → restored on payment | Done |
 | Usage meters for people and storage; user and storage limits enforced | Done |
-| HOLIDO billing console and settings; hourly billing run with the reminders job | Done |
+| Kayron billing console and settings; hourly billing run with the reminders job | Done |
 
 189 automated tests pass on SQLite and on PostgreSQL 16 (Paystack calls are simulated in tests). Migration
 `0007` was tested by upgrading a Phase 7 database with an existing subscription, checking it matches the code,
-downgrading and upgrading again. The billing pages (organization and HOLIDO side) were crawled in Chrome at
+downgrading and upgrading again. The billing pages (organization and Kayron side) were crawled in Chrome at
 320–440 px phone widths and 1440 px, in light and dark mode, with no sideways scrolling, contrast problems or
 console errors.
 
@@ -151,7 +151,7 @@ console errors.
 
 - Name ZENTAVA OIMS (two-tone wordmark), tagline, logo and colours from the ZENTAVA brand profile, in both themes, emails, PDFs and spreadsheets.
 - Internal names kept (`flask oims`, `OIMS_*` variables) so deployment settings do not change.
-- The logo is a vector redraw; HOLIDO can drop in the original artwork as `app/static/img/logo.svg`.
+- The logo is a vector redraw; Kayron can drop in the original artwork as `app/static/img/logo.svg`.
 - Verified: 193 tests pass (SQLite; affected modules also on PostgreSQL); every menu page crawled at
   320/360/390/402/440/1440px in light and dark mode with no issues.
 
@@ -174,7 +174,7 @@ console errors.
 - **Paystack has not been tried against the live service from here** (the build environment cannot reach it);
   the integration follows Paystack's documented API and is covered by simulated tests. Do one test-mode
   payment after deployment (docs/DEPLOYMENT.md).
-- **No mid-period upgrades with pro-rated charges**: a plan change applies from the next period. HOLIDO can
+- **No mid-period upgrades with pro-rated charges**: a plan change applies from the next period. Kayron can
   still change a plan immediately from the organization's page.
 - **Invoices in the plan's currency only**; no automatic currency conversion or card-on-file auto-renewal.
 - **Reports are produced on request**: there are no scheduled report emails and no custom report builder yet.

@@ -79,7 +79,7 @@ def test_invoice_renewal_grace_and_read_only_lock(client, app, env, db):
     inv = Invoice.query.one()
     assert inv.number == f"ZTV-{T.year}-00001" and inv.total == Decimal("115.00") and inv.tax_amount == Decimal("15.00")
     assert inv.period_start == T + timedelta(days=7) and inv.due_on == T + timedelta(days=7)
-    assert inv.bill_to["name"] == "Hope Trust" and inv.issuer["name"].startswith("HOLIDO")
+    assert inv.bill_to["name"] == "Hope Trust" and inv.issuer["name"] == "Kayron Global Tech Services"
     assert Notification.query.filter_by(user_id=env["admin"].id, kind="billing").count() == 1
     as_(client, "admin")
     html = client.get(W(env, "/billing/")).data.decode()

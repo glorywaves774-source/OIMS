@@ -20,7 +20,7 @@
       {{ field(regen_form.code, attrs={'inputmode': 'numeric', 'autocomplete': 'one-time-code'}) }}
       <button class="btn btn-soft" type="submit">Create new codes</button></form>
     {% if required %}
-      <div class="perm-module"><strong>Required for HOLIDO staff</strong><p class="small text-muted mb-0">Two-step sign-in protects the platform console and cannot be turned off for your account.</p></div>
+      <div class="perm-module"><strong>Required for Kayron staff</strong><p class="small text-muted mb-0">Two-step sign-in protects the platform console and cannot be turned off for your account.</p></div>
     {% else %}
     <form method="post" action="{{ url_for('account.two_factor_disable') }}" novalidate class="perm-module" data-confirm="Turn off two-step sign-in? Your account will be protected by your password only." data-confirm-variant="btn-danger" data-confirm-label="Turn off">{{ disable_form.hidden_tag() }}
       <strong class="d-block mb-2">Turn off</strong>
@@ -32,7 +32,7 @@
 </section>
 {% else %}
 <section class="panel">
-  {% if required %}<div class="alert alert-warning">HOLIDO platform staff must use two-step sign-in. Set it up to continue.</div>{% endif %}
+  {% if required %}<div class="alert alert-warning">Kayron platform staff must use two-step sign-in. Set it up to continue.</div>{% endif %}
   <p>Two-step sign-in asks for a 6-digit code from an authenticator app on your phone (Google Authenticator, Microsoft Authenticator, Authy or similar) each time you sign in.</p>
   <ol>
     <li>Open your authenticator app and add an account.</li>

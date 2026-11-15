@@ -2,7 +2,7 @@
 {% block title %}Subscription plans{% endblock %}
 {% block page_title %}Subscription plans{% endblock %}
 {% block content %}
-<div class="page-head"><div><h2 class="h4 mb-0">Subscription plans</h2><p>Pricing and limits are set by HOLIDO. Price changes apply to invoices issued from now on.</p></div>
+<div class="page-head"><div><h2 class="h4 mb-0">Subscription plans</h2><p>Pricing and limits are set by Kayron Global Tech Services. Price changes apply to invoices issued from now on.</p></div>
   <a class="btn btn-primary" href="{{ url_for('platform.plan_edit') }}"><i class="bi bi-plus-lg me-1"></i>New plan</a></div>
 <section class="panel panel-flush">
   {% if plans %}
@@ -20,6 +20,6 @@
       <td>{% if p.is_active %}<span class="badge-status st-active">active{% if not p.is_public %} · private{% endif %}</span>{% else %}<span class="badge-status st-ended">retired</span>{% endif %}</td>
     </tr>{% endfor %}</tbody>
   </table></div>
-  {% else %}<div class="empty"><i class="bi bi-credit-card-2-front"></i>No plans yet. Create the plans HOLIDO will offer.</div>{% endif %}
+  {% else %}<div class="empty"><i class="bi bi-credit-card-2-front"></i>No plans yet. Create the plans Kayron will offer.</div>{% endif %}
 </section>
 {% endblock %}

@@ -14,9 +14,9 @@ def register_cli(app):
     @oims.command("create-superadmin")
     @click.option("--email", envvar="OIMS_SUPERADMIN_EMAIL", required=True,
                   help="Defaults to OIMS_SUPERADMIN_EMAIL")
-    @click.option("--name", envvar="OIMS_SUPERADMIN_NAME", default="HOLIDO Super Admin")
+    @click.option("--name", envvar="OIMS_SUPERADMIN_NAME", default="Kayron Super Admin")
     def create_superadmin(email, name):
-        """Create the first HOLIDO Super Admin from environment variables.
+        """Create the first Kayron Super Admin from environment variables.
 
         The password is read from OIMS_SUPERADMIN_PASSWORD (or prompted) and must be
         changed at first sign-in. Refuses to run if a Super Admin already exists.

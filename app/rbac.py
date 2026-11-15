@@ -31,7 +31,7 @@ CATALOG = {
     ]),
     "roles": ("Roles & permissions", [("view", "View roles"), ("manage", "Create and edit custom roles")]),
     "audit": ("Audit log", [("view", "View the organization audit log")]),
-    "support": ("HOLIDO support access", [
+    "support": ("Kayron support access", [
         ("view", "View support access requests"),
         ("approve", "Approve, deny or revoke support access"),
     ]),

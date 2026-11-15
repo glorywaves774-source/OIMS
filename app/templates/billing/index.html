@@ -3,9 +3,9 @@
 {% block title %}Billing{% endblock %}
 {% block page_title %}Subscription & billing{% endblock %}
 {% block content %}
-<div class="page-head"><div><h2 class="h4 mb-0">Subscription & billing</h2><p>Your ZENTAVA OIMS plan, what you use, and your invoices from HOLIDO.</p></div></div>
+<div class="page-head"><div><h2 class="h4 mb-0">Subscription & billing</h2><p>Your ZENTAVA OIMS plan, what you use, and your invoices from Kayron Global Tech Services.</p></div></div>
 {% if not sub %}
-<section class="panel"><p class="mb-0">This workspace has no subscription yet. Please contact HOLIDO.</p></section>
+<section class="panel"><p class="mb-0">This workspace has no subscription yet. Please contact Kayron.</p></section>
 {% else %}
 <div class="grid-2">
   <section class="panel">
@@ -14,7 +14,7 @@
       <dt>Plan</dt><dd><strong>{{ sub.plan.name }}</strong> · {{ 'yearly' if sub.billing_cycle == 'annual' else 'monthly' }}{% if sub.plan.monthly_price or sub.plan.annual_price %} · {{ money(sub.plan.annual_price if sub.billing_cycle == 'annual' else sub.plan.monthly_price, sub.plan.currency) }}{% else %} · free{% endif %}</dd>
       {% if sub.status == 'trial' %}<dt>Trial ends</dt><dd>{{ dt(sub.trial_ends_at, '%d %b %Y') }}</dd>{% endif %}
       {% if period_end and sub.status != 'trial' %}<dt>{{ 'Paid until' if sub.status == 'active' else 'Period ended' }}</dt><dd>{{ dt(period_end, '%d %b %Y') }}</dd>{% endif %}
-      {% if not period_end %}<dt>Renewal</dt><dd>Arranged directly with HOLIDO</dd>{% endif %}
+      {% if not period_end %}<dt>Renewal</dt><dd>Arranged directly with Kayron</dd>{% endif %}
       {% if sub.pending_plan %}<dt>Next period</dt><dd>{{ sub.pending_plan.name }} · {{ 'yearly' if (sub.pending_cycle or sub.billing_cycle) == 'annual' else 'monthly' }}</dd>{% endif %}
       {% if sub.cancel_at_period_end %}<dt>Ends</dt><dd class="overdue">{{ dt(period_end, '%d %b %Y') }} (cancelled)</dd>{% endif %}
     </dl>
@@ -39,7 +39,7 @@
   </tbody></table></div>{% else %}<p class="text-muted px-3 pb-3 mb-0">No invoices yet.</p>{% endif %}
   {% if invoices|selectattr('status', 'equalto', 'open')|list and settings.bank_details %}
   <div class="px-3 pb-3"><h3 class="fs-6">{{ 'Or pay' if online else 'Pay' }} by bank transfer or mobile money</h3><p class="prewrap small mb-1" translate="no">{{ settings.bank_details }}</p>
-    <p class="small text-muted mb-0">Use the invoice number as the reference. HOLIDO records the payment when it arrives, usually within one working day.</p></div>{% endif %}
+    <p class="small text-muted mb-0">Use the invoice number as the reference. Kayron records the payment when it arrives, usually within one working day.</p></div>{% endif %}
   {% if online %}<p class="small text-muted px-3 pb-3 mb-0"><i class="bi bi-shield-lock me-1"></i>Online payments are handled by Paystack (card or mobile money). ZENTAVA OIMS never sees card details.</p>{% endif %}
 </section>
 
