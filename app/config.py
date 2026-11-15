@@ -68,8 +68,8 @@ class BaseConfig:
     SMTP_USERNAME = os.environ.get("SMTP_USERNAME")
     SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
     SMTP_USE_TLS = _bool("SMTP_USE_TLS", True)
-    MAIL_FROM = os.environ.get("MAIL_FROM", "no-reply@oims.local")
-    PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL")  # e.g. https://oims.example.org
+    MAIL_FROM = os.environ.get("MAIL_FROM", "no-reply@zentava.local")
+    PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL")  # e.g. https://zentava.example.org
 
     # Document storage: "local" (a directory / persistent disk) or "s3" (S3-compatible object storage)
     STORAGE_BACKEND = os.environ.get("STORAGE_BACKEND", "local").lower()
