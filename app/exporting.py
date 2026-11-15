@@ -8,6 +8,7 @@ import io
 from datetime import date
 from decimal import Decimal
 
+from app.analytics_export import safe_row
 from app.models import Activity, Expenditure, Milestone
 from app.programme_logic import (achievement, category_breakdown, consolidated, finance_summary, indicator_actual,
                                  indicator_rows, of, own)
@@ -113,7 +114,7 @@ def to_xlsx(data, title):
         for c in ws[1]:
             c.font, c.fill = head, fill
         for r in rows:
-            ws.append(r)
+            ws.append(safe_row(r))
         for i, h in enumerate(headers, 1):
             col = get_column_letter(i)
             ws.column_dimensions[col].width = max(12, min(60, len(str(h)) + 4))
@@ -143,7 +144,7 @@ def to_xlsx(data, title):
               if data.get("reach") else []),
             ("Generated", data["generated"])]
     for r in rows:
-        ws.append(list(r))
+        ws.append(safe_row(r))
     ws.column_dimensions["A"].width, ws.column_dimensions["B"].width = 28, 70
     for cell in ws["A"]:
         cell.font = Font(bold=True)
@@ -153,7 +154,7 @@ def to_xlsx(data, title):
     for k, label in (("summary", "Executive summary"), ("achievements", "Key achievements"), ("challenges", "Challenges"),
                      ("lessons", "Lessons learned"), ("next_steps", "Next period")):
         if data["narrative"].get(k):
-            ws.append([label, data["narrative"][k]])
+            ws.append(safe_row([label, data["narrative"][k]]))
             ws.cell(ws.max_row, 2).alignment = Alignment(wrap_text=True, vertical="top")
             ws.cell(ws.max_row, 1).font = Font(bold=True)
 

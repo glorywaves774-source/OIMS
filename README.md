@@ -2,8 +2,19 @@
 
 A multi-tenant SaaS platform owned and operated by **HOLIDO — Holistic Development Organization**.
 
-**Current release:** `0.6.0-phase6` (Phase 6 — Finance, procurement and assets). See [CHANGELOG.md](CHANGELOG.md) and
+**Current release:** `0.7.0-phase7` (Phase 7 — Reporting and analytics). See [CHANGELOG.md](CHANGELOG.md) and
 [docs/STATUS.md](docs/STATUS.md) for what is complete and what comes next.
+
+## What Phase 7 adds
+
+| Area | Delivered |
+|---|---|
+| Reports centre | Ten standard reports: portfolio summary, indicator performance, budget and spending, donor funding, activities, beneficiaries reached, feedback and complaints, procurement, assets, staff and leave |
+| Filters | Period (from–to), programme or project (with or without its projects), department where it applies |
+| Charts | Bar and monthly column charts with hover and keyboard tooltips, compact labels, one validated colour per light/dark mode, and the full table under every chart |
+| Exports | Every report as Excel (summary + one sheet per table), CSV (per table) and PDF (summary, charts and tables); every export is logged |
+| Same rules as the pages | A report only uses records the person may see; sensitive feedback is counted but never detailed; people and money are never counted twice |
+| Safer spreadsheets | Text that looks like a spreadsheet formula is neutralised in all Excel and CSV exports |
 
 ## What Phase 6 adds
 
@@ -147,7 +158,8 @@ app/
                      meetings, tasks, comms (notifications, announcements, messages, calendar),
                      programmes and projects (+ programme_finance, programme_reports,
                      project_extras, owner_meal and registers), beneficiaries, meal (overview and
-                     data collection), feedback (+ public page), finance (overview), procurement, assets
+                     data collection), feedback (+ public page), finance (overview), procurement, assets,
+                     analytics (reports centre)
   storage.py         local-disk and S3 file storage, upload checks
   notify.py          notifications, reference numbers   reminders.py  scheduled reminders
   twofactor.py       two-step sign-in
@@ -156,9 +168,11 @@ app/
   meal_logic.py      beneficiary and feedback access, duplicate checks, people-reached counts
   crypto.py          encryption of personal data and keyed indexes for duplicate checks
   procurement_logic.py  purchase and asset access rules, buying method, order and payment figures
+  analytics.py       the standard reports (one data structure per report)
+  analytics_export.py   CSV, Excel and PDF versions of a report; spreadsheet formula protection
   templates/ static/ interface (Bootstrap 5 self-hosted; css/app.css, dark.css, mobile.css)
 migrations/          Alembic migrations
-tests/               167 automated tests
+tests/               176 automated tests
 docs/                architecture, deployment, status
 ```
 

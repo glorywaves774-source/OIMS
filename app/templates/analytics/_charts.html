@@ -1,0 +1,28 @@
+{% macro chart(c, uid) -%}
+<figure class="chart" aria-labelledby="{{ uid }}-t">
+  <figcaption id="{{ uid }}-t" class="chart-title">{{ c.title }}</figcaption>
+  {% if not c.rows %}<p class="text-muted small mb-0">Nothing to show for this period.</p>
+  {% elif c.kind == 'bars' %}
+    {% set top = c.rows|map(attribute=1)|max %}
+    <ul class="hbars" role="list">
+      {% for label, v in c.rows %}<li class="hbar-row">
+        <span class="hbar-label" translate="no">{{ label }}</span>
+        <span class="hbar-track"><span class="hbar {{ bar_class(v, top) }}" tabindex="0" data-tip="{{ label }}: {{ fmtv(v, c.fmt) }}" aria-label="{{ label }}: {{ fmtv(v, c.fmt) }}"></span><span class="hbar-value">{{ fmtv(v, c.fmt) }}</span></span>
+      </li>{% endfor %}
+    </ul>
+  {% else %}
+    {% set top = c.rows|map(attribute=1)|max %}
+    {% set n = c.rows|length %}
+    <div class="vcols-wrap">
+      <div class="vcols-axis" aria-hidden="true"><span>{{ fmtc(top, c.fmt) if top else '0' }}</span><span>0</span></div>
+      <ol class="vcols" role="list">
+        {% for label, v in c.rows %}<li class="vcol-slot">
+          <span class="vcol-area">{% if (v == top and top) or loop.last %}<span class="vcol-value">{{ fmtc(v, c.fmt) }}</span>{% endif %}<span class="vcol {{ bar_class(v, top, 'bh') }}" tabindex="0" data-tip="{{ label }}: {{ fmtv(v, c.fmt) }}" aria-label="{{ label }}: {{ fmtv(v, c.fmt) }}"></span></span>
+          <span class="vcol-label{% if n > 12 and loop.index0 % 2 %} vcol-label-skip{% endif %}">{{ label }}</span>
+        </li>{% endfor %}
+      </ol>
+    </div>
+  {% endif %}
+  {% if c.note %}<p class="small text-muted mt-2 mb-0">{{ c.note }}</p>{% endif %}
+</figure>
+{%- endmacro %}

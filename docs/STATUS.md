@@ -113,11 +113,26 @@ Phase 5 database with existing projects, budget lines and expenditure, checking 
 downgrading and upgrading again. Every new page was crawled in Chrome at 320–440 px phone widths and
 1440 px, in light and dark mode, with no sideways scrolling, contrast problems or console errors.
 
+## Phase 7 — Reporting and analytics ✅ complete
+
+| Item | Status |
+| --- | --- |
+| Reports centre with ten standard reports across programmes, MEAL, finance, operations and office | Done |
+| Period, programme/project and department filters | Done |
+| Charts (bars and monthly columns) with tooltips and a table for every chart | Done |
+| Excel, CSV and PDF exports, logged | Done |
+| Permissions and scopes respected; no double counting of people or money | Done |
+| Spreadsheet formula protection for all exports | Done |
+
+176 automated tests pass on SQLite and on PostgreSQL 16. No database changes in this phase (the schema
+check confirms the models match migration `0006`). Every report page was crawled in Chrome at 320–440 px
+phone widths and 1440 px, in light and dark mode, with no sideways scrolling, contrast problems or console
+errors. Chart colours were checked with a palette validator for both light and dark surfaces.
+
 ## Outstanding phases
 
 | Phase | Scope |
 |---|---|
-| 7 — Reporting & analytics | Dashboards, charts, PDF/Excel/CSV exports |
 | 8 — SaaS billing | Invoices, payment provider integration, renewals, usage enforcement |
 | 9 — Hardening & launch | Security review, load testing, production backups, go-live |
 
@@ -130,7 +145,10 @@ downgrading and upgrading again. Every new page was crawled in Chrome at 320–4
 - **Indicator roll-up** applies to indicators that add up (counts). Rates and percentages are not
   combined across projects, because averaging them would be misleading.
 - **Organization running costs** (rent, salaries outside programmes) are not budgeted yet: purchases must be
-  charged to a programme or project budget line. An "organization" budget comes with reporting in Phase 7.
+  charged to a programme or project budget line.
+- **Reports are produced on request**: there are no scheduled report emails and no custom report builder yet.
+- **Large organizations**: reports are calculated when opened; with many thousands of records some may take a
+  few seconds. Caching can be added in Phase 9 if needed.
 - **Payments are recorded, not made**: OIMS does not connect to banks or mobile money.
 - **One currency per order**; the finance overview shows a total per currency without conversion.
 - **Asset tags** are numbers (AST/2026/0001); printing labels or QR codes is not included yet.
@@ -144,8 +162,7 @@ downgrading and upgrading again. Every new page was crawled in Chrome at 320–4
 - **Encryption key** is derived from `SECRET_KEY`; changing it makes encrypted phone and ID numbers
   unreadable (see DEPLOYMENT.md).
 - **Exchange rates**: each programme has one currency; multi-currency conversion is not supported yet.
-- **Report charts**: PDF/Excel exports contain tables, not charts; organization-wide dashboards and
-  more export formats come in Phase 7.
+- **Charts in Excel**: Excel exports contain the tables (ready for your own charts); PDFs include the charts.
 - **Meeting minutes and letters print to PDF from the browser** (no generated PDF yet).
 - **Messages and notifications refresh when the page loads** (no live push yet).
 - **Leave entitlements** are per calendar year, without carry-over or accrual rules; public holidays

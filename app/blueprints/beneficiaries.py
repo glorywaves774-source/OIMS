@@ -508,6 +508,7 @@ def anonymize(bid):
 def export():
     import openpyxl
     from openpyxl.styles import Font
+    from app.analytics_export import safe_row
     personal = can("beneficiaries.sensitive") and request.args.get("personal") == "1"
     stmt = visible_beneficiaries_stmt().order_by(Beneficiary.code)
     rows = db.session.execute(stmt).scalars().all()
@@ -531,7 +532,7 @@ def export():
         if personal:
             row += [b.date_of_birth.isoformat() if b.date_of_birth else "", decrypt_text(b.phone_enc) or "",
                     b.id_type or "", decrypt_text(b.id_number_enc) or "", ", ".join(b.vulnerabilities or [])]
-        ws.append(row)
+        ws.append(safe_row(row))
     for col in ws.columns:
         ws.column_dimensions[col[0].column_letter].width = max(10, min(40, max(len(str(c.value or "")) for c in col) + 2))
     buf = io.BytesIO()

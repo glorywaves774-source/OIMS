@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.7.0-phase7 — 15 November 2026
+
+Reporting and analytics.
+
+- **Reports centre** (new "Reports" item in the menu) with ten standard reports: portfolio summary,
+  indicator performance, budget and spending, donor funding, activities, beneficiaries reached, feedback and
+  complaints, procurement, assets, and staff and leave.
+- **Filters** for the period, a programme or project (with or without its projects) and, for staff, the
+  department.
+- **Charts** with tooltips on hover and keyboard focus, and the full table under each chart.
+- **Downloads** as Excel, CSV or PDF; every download is recorded in the audit log.
+- Reports show only what each person may see, never count a person or an amount twice, and only count
+  sensitive feedback without showing it.
+- **Security fix:** text that looks like a spreadsheet formula (for example a title starting with "=") is
+  now neutralised in every Excel and CSV export, including the programme reports, beneficiary list, asset
+  register and form answers.
+- No database changes.
+
 ## 0.6.0-phase6 — 15 November 2026
 
 Finance, procurement and assets.

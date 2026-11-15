@@ -212,6 +212,24 @@ Supplier                                        Asset ─ AssetEvent (assigned, 
 - **Depreciation** is straight-line by whole months from the purchase date to the residual value
   (`Asset.book_value()`); default useful lives per category.
 
+## Reports (Phase 7)
+
+- **One structure, four formats.** Each report in `app/analytics.py` is a function decorated with
+  `@report(...)` that returns `{"summary", "charts", "tables", "notes"}`. The page, CSV, Excel and PDF are all
+  produced from that one dictionary (`app/analytics_export.py`), so they always agree.
+- **Permissions.** A report is listed only if the person holds the permission of its data (for example
+  `finance.view` for Budget and spending). Inside, it uses the same visibility helpers as the pages
+  (`visible_owner_stmt`, `owner_in_scope`, `visible_feedback_stmt`, `visible_assets_stmt`…).
+- **No double counting.** Finance rows are each programme's or project's own lines; the beneficiary total is
+  the union of reached people, not the sum of rows.
+- **Charts without inline styles.** Bars are HTML elements sized by generated classes (`bw-0…100`,
+  `bh-0…100`), so the strict content-security policy stays on. Tooltips come from `data-tip` attributes via
+  `static/js/app.js` (hover and keyboard focus) and use `textContent`. One series colour per mode
+  (`--chart-1`), checked with the dataviz palette validator; chart labels use compact numbers, tables
+  the full values.
+- **Formula protection.** `safe_text()` prefixes text starting with `= + - @` (and tab/CR) with `'` in every
+  Excel and CSV export, so a typed title like `=HYPERLINK(...)` is shown, not executed.
+
 ## Notifications and reminders
 
 `app/notify.py::notify()` writes one in-app notification per recipient and emails those who allow it

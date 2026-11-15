@@ -9,7 +9,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from app.config import CONFIGS
 from app.extensions import csrf, db, limiter, login_manager, migrate
 
-__version__ = "0.6.0-phase6"
+__version__ = "0.7.0-phase7"
 
 
 def create_app(config_name=None, overrides=None):
@@ -75,11 +75,12 @@ def create_app(config_name=None, overrides=None):
     from app.blueprints.procurement import bp as procurement_bp
     from app.blueprints.assets import bp as assets_bp
     from app.blueprints.finance import bp as finance_bp
+    from app.blueprints.analytics import bp as analytics_bp
 
     for bp in (public_bp, auth_bp, setup_bp, account_bp, platform_bp, workspace_bp, departments_bp, staff_bp,
                leave_bp, attendance_bp, documents_bp, correspondence_bp, meetings_bp, tasks_bp, comms_bp,
                programmes_bp, projects_bp, registers_bp, beneficiaries_bp, meal_bp, feedback_bp, public_feedback_bp,
-               procurement_bp, assets_bp, finance_bp):
+               procurement_bp, assets_bp, finance_bp, analytics_bp):
         app.register_blueprint(bp)
 
     _register_template_globals(app)
