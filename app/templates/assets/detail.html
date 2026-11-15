@@ -1,0 +1,65 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt, money %}
+{% block title %}{{ a.code }}{% endblock %}
+{% block page_title %}<span translate="no">{{ a.code }}</span> · Asset{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ a.name }}</h2><p><span class="code">{{ a.code }}</span> · {{ status(a.status) }} · {{ a.condition|capitalize }} condition</p></div>
+  <div class="toolbar"><a class="btn btn-light" href="{{ url_for('assets.index') }}"><i class="bi bi-arrow-left me-1"></i>Assets</a>
+    {% if can_manage %}<a class="btn btn-soft" href="{{ url_for('assets.edit', aid=a.id) }}"><i class="bi bi-pencil me-1"></i>Edit</a>{% endif %}</div></div>
+{% if verify_due %}<div class="alert alert-warning">This asset has not been physically checked in the last 12 months.</div>{% endif %}
+{% if a.disposal_status == 'requested' %}<div class="alert alert-warning">Disposal requested by <span translate="no">{{ a.disposal_requested_by.full_name if a.disposal_requested_by else '' }}</span>: {{ methods[a.disposal_method] }}{% if a.disposal_value %} ({{ money(a.disposal_value, a.currency) }}){% endif %} — <span translate="no">{{ a.disposal_reason }}</span>
+  {% if can_decide %}<form method="post" class="d-flex flex-wrap gap-2 align-items-end mt-2" action="{{ url_for('assets.act', aid=a.id, action='decide') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input class="form-control form-control-sm w-auto" name="note" maxlength="500" placeholder="Note (required to refuse)" aria-label="Note">
+    <button class="btn btn-sm btn-primary" type="submit" name="decision" value="approve">Approve disposal</button><button class="btn btn-sm btn-light" type="submit" name="decision" value="reject">Refuse</button></form>{% endif %}</div>{% endif %}
+<div class="grid-2">
+  <section class="panel"><div class="panel-header"><h2>Details</h2></div>
+    <dl class="kv">
+      <dt>Category</dt><dd>{{ a.category }}</dd>
+      {% if a.make_model %}<dt>Make / model</dt><dd translate="no">{{ a.make_model }}</dd>{% endif %}
+      {% if a.serial_number %}<dt>Serial</dt><dd class="code">{{ a.serial_number }}</dd>{% endif %}
+      <dt>In the care of</dt><dd translate="no">{{ a.custodian.full_name if a.custodian else '— (in store)' }}</dd>
+      <dt>Location</dt><dd translate="no">{{ a.location.label if a.location else '—' }}{% if a.department %} · {{ a.department.name }}{% endif %}</dd>
+      <dt>Funded by</dt><dd>{% if a.owner %}<a href="{{ url_for(a.owner.perm ~ '.overview', pid=a.owner.id) }}" translate="no">{{ a.owner.code }} {{ a.owner.title }}</a>{% else %}Organization{% endif %}{% if a.donor %} · donor <span translate="no">{{ a.donor.name }}</span>{% endif %}</dd>
+      {% if a.order %}<dt>Bought on</dt><dd><a href="{{ url_for('procurement.order', oid=a.order.id) }}" class="code">{{ a.order.code }}</a>{% if a.supplier %} · <span translate="no">{{ a.supplier.name }}</span>{% endif %}</dd>{% endif %}
+      <dt>Last checked</dt><dd>{{ dt(a.last_verified_on, '%d %b %Y') if a.last_verified_on else 'Never' }}{% if a.last_verified_by %} by <span translate="no">{{ a.last_verified_by.full_name }}</span>{% endif %}</dd>
+      {% if a.warranty_until %}<dt>Warranty</dt><dd class="{{ 'overdue' if a.warranty_until < today }}">until {{ dt(a.warranty_until, '%d %b %Y') }}</dd>{% endif %}
+      <dt>Insured</dt><dd>{{ 'Yes' if a.insured else 'No' }}</dd>
+    </dl>
+    {% if a.description %}<p class="prewrap mt-3 mb-0" translate="no">{{ a.description }}</p>{% endif %}
+  </section>
+  <section class="panel"><div class="panel-header"><h2>Value</h2></div>
+    <dl class="kv"><dt>Cost</dt><dd>{{ money(a.cost, a.currency) }}</dd><dt>Bought</dt><dd>{{ dt(a.purchase_date, '%d %b %Y') if a.purchase_date else '—' }}</dd>
+      <dt>Useful life</dt><dd>{{ a.useful_life_years }} years{% if a.residual_value %} · {{ money(a.residual_value) }} at the end{% endif %}</dd>
+      <dt>Book value today</dt><dd><strong>{{ money(a.book_value(today), a.currency) }}</strong></dd>
+      {% if a.status == 'disposed' %}<dt>Disposed</dt><dd>{{ dt(a.disposed_on, '%d %b %Y') }} · {{ methods.get(a.disposal_method, '') }}{% if a.disposal_value %} · {{ money(a.disposal_value) }}{% endif %}{% if a.disposal_approved_by %} · approved by <span translate="no">{{ a.disposal_approved_by.full_name }}</span>{% endif %}</dd>{% endif %}</dl>
+  </section>
+</div>
+{% if can_manage and a.disposal_status != 'requested' %}
+<section class="panel"><div class="panel-header"><h2>Record</h2></div>
+  <div class="d-flex flex-wrap gap-2">
+    {% if a.status != 'lost' %}<details><summary class="btn btn-sm btn-soft">{{ 'Reassign' if a.custodian else 'Assign to someone' }}</summary>
+      <form method="post" class="mt-2" action="{{ url_for('assets.act', aid=a.id, action='assign') }}" novalidate>{{ assign_form.hidden_tag() }}{{ field(assign_form.to_user_id) }}{{ field(assign_form.happened_on) }}{{ field(assign_form.note) }}<button class="btn btn-sm btn-primary" type="submit">Assign</button></form></details>{% endif %}
+    {% set evs = [('return', 'Returned to store', a.custodian), ('maintenance', 'Service / maintenance', True), ('repair', 'Sent for repair', a.status != 'under_repair'), ('verify', 'Physical check', True), ('lost', 'Report lost or stolen', a.status != 'lost')] %}
+    {% for act, label, show in evs if show %}<details><summary class="btn btn-sm btn-light">{{ label }}</summary>
+      <form method="post" class="mt-2" action="{{ url_for('assets.act', aid=a.id, action=act) }}" novalidate><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-2"><div class="col-sm-4"><label class="form-label" for="{{ act }}-on">Date</label><input class="form-control" type="date" id="{{ act }}-on" name="e-happened_on" value="{{ today.isoformat() }}" required></div>
+          <div class="col-sm-4"><label class="form-label" for="{{ act }}-cond">Condition now</label><select class="form-select" id="{{ act }}-cond" name="e-condition">{% for v, l in event_form.condition.choices %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
+          {% if act in ('maintenance', 'repair') %}<div class="col-sm-4"><label class="form-label" for="{{ act }}-cost">Cost</label><input class="form-control" id="{{ act }}-cost" name="e-cost" inputmode="decimal"></div>{% endif %}
+          {% if act == 'maintenance' %}<div class="col-sm-4"><label class="form-label" for="{{ act }}-next">Next service due</label><input class="form-control" type="date" id="{{ act }}-next" name="e-next_due"></div>{% endif %}</div>
+        <label class="form-label" for="{{ act }}-note">{{ 'What happened' if act in ('repair', 'lost') else 'Note' }}</label><textarea class="form-control mb-2" id="{{ act }}-note" name="e-note" rows="2"></textarea>
+        <button class="btn btn-sm btn-primary" type="submit">Save</button></form></details>{% endfor %}
+    <details><summary class="btn btn-sm btn-light">Transfer</summary>
+      <form method="post" class="mt-2" action="{{ url_for('assets.act', aid=a.id, action='transfer') }}" novalidate>{{ transfer_form.hidden_tag() }}{{ field(transfer_form.owner) }}{{ field(transfer_form.location_id) }}{{ field(transfer_form.department_id) }}{{ field(transfer_form.happened_on) }}{{ field(transfer_form.note) }}<button class="btn btn-sm btn-primary" type="submit">Transfer</button>
+        <p class="small text-muted mt-2 mb-0">When a project closes, transfer its assets to the organization, another programme or project, or a partner (by disposal).</p></form></details>
+    <details><summary class="btn btn-sm btn-light">Request disposal</summary>
+      <form method="post" class="mt-2" action="{{ url_for('assets.act', aid=a.id, action='dispose') }}" novalidate>{{ disposal_form.hidden_tag() }}{{ field(disposal_form.disposal_method) }}{{ field(disposal_form.disposal_value) }}{{ field(disposal_form.disposal_reason) }}
+        {% if a.donor %}<label class="form-check mb-2"><input class="form-check-input" type="checkbox" name="donor_ok" value="1"> <span class="form-check-label">The donor (<span translate="no">{{ a.donor.name }}</span>) agreed to this</span></label>{% endif %}
+        <button class="btn btn-sm btn-outline-danger" type="submit">Request disposal</button><p class="small text-muted mt-2 mb-0">Someone else with approval rights decides.</p></form></details>
+  </div>
+</section>
+{% endif %}
+<section class="panel"><div class="panel-header"><h2>History</h2></div>
+  <ul class="list-plain mb-0">{% for e in a.history %}<li class="py-2 border-bottom-soft"><strong>{{ kinds.get(e.kind, e.kind) }}</strong> <span class="small text-muted">· {{ dt(e.happened_on, '%d %b %Y') }}{% if e.actor %} · by <span translate="no">{{ e.actor.full_name }}</span>{% endif %}</span>
+    {% if e.to_user %}<span class="cell-sub">{{ 'To' if e.kind == 'assigned' else 'From' }} <span translate="no">{{ e.to_user.full_name }}</span></span>{% endif %}
+    {% if e.note %}<span class="cell-sub prewrap" translate="no">{{ e.note }}</span>{% endif %}{% if e.cost %}<span class="cell-sub">Cost {{ money(e.cost, a.currency) }}</span>{% endif %}{% if e.next_due %}<span class="cell-sub">Next service {{ dt(e.next_due, '%d %b %Y') }}</span>{% endif %}</li>{% else %}<li class="text-muted">Nothing recorded yet.</li>{% endfor %}</ul></section>
+{% endblock %}

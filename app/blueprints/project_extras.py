@@ -427,6 +427,8 @@ def closure_checklist(prog, closure=None):
     issues_open = Issue.query.filter(of(Issue, prog), Issue.status.in_(Issue.OPEN)).count()
     results_unchecked = IndicatorResult.query.join(Indicator).filter(of(Indicator, prog),
                                                                      IndicatorResult.status == "submitted").count()
+    from app.procurement_logic import open_assets_for, open_orders_for
+    orders_open, assets_open = open_orders_for(prog), open_assets_for(prog)
     c = closure
     checks = [
         ("deliverables", "All deliverables accepted or cancelled", not undone,
@@ -441,6 +443,10 @@ def closure_checklist(prog, closure=None):
         ("issues", "No open issues", issues_open == 0, f"{issues_open} open" if issues_open else "Done"),
         ("results", "No indicator results waiting to be checked", results_unchecked == 0,
          f"{results_unchecked} waiting" if results_unchecked else "Done"),
+        ("orders", "No purchase orders still open (received and paid, or cancelled)", orders_open == 0,
+         f"{orders_open} open" if orders_open else "Done"),
+        ("assets", "Project assets handed over (transferred or disposed)", assets_open == 0,
+         f"{assets_open} still charged to the project" if assets_open else "Done"),
         ("report", "Final report and financial reconciliation written",
          bool(c and c.final_report and c.financial_reconciliation), "Done" if c and c.final_report
          and c.financial_reconciliation else "Write them below"),

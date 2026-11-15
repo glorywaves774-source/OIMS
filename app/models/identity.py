@@ -184,6 +184,9 @@ class Organization(TimestampMixin, db.Model):
     # Accountability: a public page where community members can send feedback without signing in.
     accept_public_feedback = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     public_feedback_intro = db.Column(db.Text)
+    # Procurement thresholds (organization currency): from the first, three quotations; from the second, a tender.
+    proc_quotes_threshold = db.Column(db.Numeric(14, 2), nullable=False, default=5000, server_default="5000")
+    proc_tender_threshold = db.Column(db.Numeric(14, 2), nullable=False, default=50000, server_default="50000")
 
     subscription = db.relationship("Subscription", uselist=False, back_populates="organization")
 

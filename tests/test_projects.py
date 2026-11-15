@@ -311,7 +311,8 @@ def test_closure_checklist_approval_and_archive(client, env, db):
     checks = {c["key"]: c["ok"] for c in closure_checklist(db.session.get(Project, proj.id),
                                                            ProjectClosure.query.one())}
     assert checks == {"deliverables": False, "activities": True, "tasks": True, "expenditure": False,
-                      "commitments": True, "issues": False, "results": True, "report": False}
+                      "commitments": True, "issues": False, "results": True, "orders": True, "assets": True,
+                      "report": False}
     # settle everything
     as_(client, "pof")
     client.post(url + f"/deliverables/{d.id}/submit", data={})

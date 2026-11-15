@@ -1,0 +1,74 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt, money, num %}
+{% block title %}{{ po.code }}{% endblock %}
+{% block page_title %}<span translate="no">{{ po.code }}</span> · Purchase order{% endblock %}
+{% block content %}
+{% set cur = owner.currency %}
+<div class="page-head"><div><h2 class="h4 mb-0"><span class="code">{{ po.code }}</span> · <span translate="no">{{ po.supplier.name }}</span></h2>
+  <p>{{ status(po.status) }} · for <a href="{{ url_for('procurement.request_detail', rid=pr.id) }}" class="code">{{ pr.code }}</a> <span translate="no">{{ pr.title }}</span></p></div>
+  <a class="btn btn-light" href="{{ url_for('procurement.index') }}"><i class="bi bi-arrow-left me-1"></i>Procurement</a></div>
+<div class="kpi-row mb-3">
+  <div class="kpi"><div class="v">{{ money(fig.total, cur) }}</div><div class="l">Order total</div></div>
+  <div class="kpi"><div class="v">{{ money(fig.received) }}</div><div class="l">Value received</div></div>
+  <div class="kpi"><div class="v">{{ money(fig.paid) }}</div><div class="l">Paid (approved){% if fig.pending %} · {{ money(fig.pending) }} waiting{% endif %}</div></div>
+  <div class="kpi"><div class="v">{{ money(fig.payable) }}</div><div class="l">Can be paid now</div></div>
+</div>
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-header"><h2>Order</h2></div>
+    <dl class="kv">
+      <dt>Supplier</dt><dd><a href="{{ url_for('procurement.supplier', sid=po.supplier.id) }}" translate="no">{{ po.supplier.name }}</a></dd>
+      <dt>Charged to</dt><dd translate="no">{{ owner.code }} · {{ pr.budget_line.description }}</dd>
+      <dt>Ordered</dt><dd>{{ dt(po.order_date, '%d %b %Y') }}{% if po.delivery_date %} · delivery by {{ dt(po.delivery_date, '%d %b %Y') }}{% endif %}</dd>
+      <dt>Prepared by</dt><dd translate="no">{{ po.created_by.full_name if po.created_by else '—' }}</dd>
+      {% if po.approved_by %}<dt>Approved by</dt><dd><span translate="no">{{ po.approved_by.full_name }}</span> · {{ dt(po.approved_at, '%d %b %Y') }}</dd>{% endif %}
+      {% if po.commitment %}<dt>Still committed</dt><dd>{{ money(po.commitment.amount if po.commitment.status == 'approved' else 0, cur) }}</dd>{% endif %}
+      {% if po.cancel_reason %}<dt>Cancelled because</dt><dd translate="no">{{ po.cancel_reason }}</dd>{% endif %}
+    </dl>
+    {% if po.terms %}<h3 class="fs-6 mt-3">Terms</h3><p class="prewrap mb-0" translate="no">{{ po.terms }}</p>{% endif %}
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Next step</h2></div>
+    {% if po.status == 'draft' %}
+      {% if can_approve %}<p class="small text-muted">Approving commits {{ money(fig.total, cur) }} on the budget line.</p>
+      <form method="post" action="{{ url_for('procurement.order_action', oid=po.id, action='approve') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-primary" type="submit">Approve order</button></form>
+      {% else %}<p class="text-muted mb-0">Waiting for approval by finance (someone other than the person who prepared it).</p>{% endif %}
+    {% elif po.status in ('approved', 'partially_received') %}<p class="mb-0">Send the order to the supplier. Record what arrives below; payment is possible for what has been received.</p>
+    {% elif po.status == 'received' %}<p class="mb-0">Everything received. Pay the supplier; the order closes when fully paid.</p>
+    {% else %}<p class="mb-0">{{ po.status|capitalize }}.</p>{% endif %}
+    {% if can_process and po.status in ('draft', 'approved') and not po.receipts and not payments %}
+    <details class="mt-3"><summary class="btn btn-sm btn-light">Cancel order</summary>
+      <form method="post" class="mt-2" action="{{ url_for('procurement.order_action', oid=po.id, action='cancel') }}" novalidate>{{ cancel_form.hidden_tag() }}{{ field(cancel_form.reason) }}<button class="btn btn-sm btn-outline-danger" type="submit">Cancel and release the money</button></form></details>{% endif %}
+  </section>
+</div>
+
+<section class="panel panel-flush" id="receive">
+  <div class="panel-header"><h2>Items</h2></div>
+  <form method="post" action="{{ url_for('procurement.receive', oid=po.id) }}" novalidate>{{ receipt_form.hidden_tag() }}
+  <div class="table-scroll"><table class="table"><thead><tr><th>Item</th><th class="text-end">Ordered</th><th class="text-end">Unit price</th><th class="text-end">Received</th>{% if can_receive %}<th>Receive now</th><th>Condition</th>{% endif %}</tr></thead><tbody>
+    {% for i in po.items %}<tr><td translate="no">{{ i.description }}{% if i.is_asset %}<span class="cell-sub"><i class="bi bi-tag"></i> Asset · {{ i.asset_category }}</span>{% endif %}</td>
+      <td class="num">{{ num(i.quantity) }} {{ i.unit }}</td><td class="money">{{ money(i.unit_price) }}</td><td class="num">{{ num(i.received_qty) }}</td>
+      {% if can_receive %}<td>{% if i.outstanding > 0 %}<input class="form-control form-control-sm" name="qty_{{ i.id }}" inputmode="decimal" value="0" aria-label="Quantity received for {{ i.description }}">{% endif %}</td>
+      <td>{% if i.outstanding > 0 %}<select class="form-select form-select-sm" name="cond_{{ i.id }}" aria-label="Condition">{% for c in ('good', 'fair', 'poor', 'broken') %}<option value="{{ c }}">{{ c|capitalize }}</option>{% endfor %}</select>{% endif %}</td>{% endif %}</tr>{% endfor %}
+  </tbody></table></div>
+  {% if can_receive %}
+  <div class="px-3 pb-3"><div class="row g-2"><div class="col-6 col-md-3">{{ field(receipt_form.received_on) }}</div><div class="col-6 col-md-3">{{ field(receipt_form.delivery_note) }}</div><div class="col-md-6">{{ field(receipt_form.notes) }}</div></div>
+    <button class="btn btn-primary" type="submit">Record goods received</button>
+    <p class="small text-muted mt-2 mb-0">Items marked as assets are added to the asset register automatically, one per unit.</p></div>{% endif %}
+  </form>
+  {% if po.receipts %}<h3 class="fs-6 px-3">Receipts</h3><ul class="list-plain px-3 pb-3 mb-0">{% for r in po.receipts %}<li class="py-2 border-bottom-soft"><span class="code">{{ r.code }}</span> · {{ dt(r.received_on, '%d %b %Y') }} · <span translate="no">{{ r.received_by.full_name if r.received_by else '' }}</span>{% if r.delivery_note %} · note {{ r.delivery_note }}{% endif %}
+    <span class="cell-sub" translate="no">{% for l in r.lines %}{{ num(l.quantity) }} × {{ l.description }} ({{ l.condition }}){{ '; ' if not loop.last }}{% endfor %}</span></li>{% endfor %}</ul>{% endif %}
+</section>
+
+<section class="panel" id="payments">
+  <div class="panel-header"><h2>Payments</h2></div>
+  {% if payments %}<div class="table-scroll"><table class="table"><thead><tr><th>Date</th><th>Reference</th><th class="text-end">Amount</th><th>Status</th></tr></thead><tbody>
+    {% for e in payments %}<tr><td class="date">{{ dt(e.spent_on, '%d %b %Y') }}</td><td translate="no">{{ e.reference }}</td><td class="money">{{ money(e.amount) }}</td><td>{{ status(e.status) }}{% if e.status == 'pending' %}<span class="cell-sub"><a href="{{ url_for(owner.perm ~ '.finance', pid=owner.id) }}#expenditure">Approve on the finance page</a></span>{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="text-muted">No payments yet.</p>{% endif %}
+  {% if can_pay and po.status in ('partially_received', 'received') and fig.payable > 0 %}
+  <form method="post" action="{{ url_for('procurement.pay', oid=po.id) }}" class="mt-2" novalidate>{{ pay_form.hidden_tag() }}
+    <div class="row g-2"><div class="col-6 col-md-3">{{ field(pay_form.amount, attrs={'value': '%.2f'|format(fig.payable)}) }}</div><div class="col-6 col-md-3">{{ field(pay_form.paid_on) }}</div><div class="col-md-6">{{ field(pay_form.reference) }}</div></div>
+    <button class="btn btn-soft" type="submit">Record payment</button>
+    <p class="small text-muted mt-2 mb-0">A second person approves it on the finance page. Payments cannot exceed the value of goods received.</p></form>{% endif %}
+</section>
+{% endblock %}

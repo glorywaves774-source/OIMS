@@ -1,0 +1,13 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}Procurement thresholds{% endblock %}
+{% block page_title %}Procurement thresholds{% endblock %}
+{% block content %}
+<section class="panel">
+  <p>The estimated value of a purchase request decides how it must be bought (amounts in {{ org.currency }}):</p>
+  <ul><li>Below the first amount: one quotation.</li><li>From the first amount: at least three quotations.</li><li>From the second amount: a competitive tender — at least three bids and the evaluation committee's report.</li></ul>
+  <p class="small text-muted">If the chosen quotation is not the lowest, a reason must be written down.</p>
+  <form method="post" novalidate>{{ form.hidden_tag() }}<div class="row g-2"><div class="col-md-6">{{ field(form.proc_quotes_threshold) }}</div><div class="col-md-6">{{ field(form.proc_tender_threshold) }}</div></div>
+    <div class="toolbar"><button class="btn btn-primary" type="submit">Save</button><a class="btn btn-light" href="{{ url_for('procurement.index') }}">Back</a></div></form>
+</section>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt, money %}
+{% block title %}{{ s.name }}{% endblock %}
+{% block page_title %}Supplier{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ s.name }}</h2><p><span class="code">{{ s.code }}</span> · {{ status(s.status) }}{% if s.rating %} · rated {{ s.rating }}/5{% endif %}</p></div>
+  <div class="toolbar"><a class="btn btn-light" href="{{ url_for('procurement.suppliers') }}"><i class="bi bi-arrow-left me-1"></i>Suppliers</a>
+    {% if can_process %}<a class="btn btn-soft" href="{{ url_for('procurement.supplier_edit', sid=s.id) }}"><i class="bi bi-pencil me-1"></i>Edit</a>{% endif %}</div></div>
+{% if s.status != 'active' %}<div class="alert alert-warning">{{ s.status|capitalize }}{% if s.status_reason %}: <span translate="no">{{ s.status_reason }}</span>{% endif %}. New quotations from this supplier cannot be recorded.</div>{% endif %}
+<div class="grid-2">
+  <section class="panel"><div class="panel-header"><h2>Details</h2></div>
+    <dl class="kv"><dt>Category</dt><dd>{{ s.category }}</dd><dt>Contact</dt><dd translate="no">{{ s.contact_person or '—' }}</dd><dt>Phone</dt><dd translate="no">{{ s.phone or '—' }}</dd>
+      <dt>Email</dt><dd translate="no">{{ s.email or '—' }}</dd><dt>Address</dt><dd translate="no">{{ s.address or '—' }}</dd><dt>Tax ID</dt><dd translate="no">{{ s.tax_id or '—' }}</dd>
+      {% if bank_account is not none %}<dt>Bank</dt><dd translate="no">{{ s.bank_name or '' }} {{ bank_account or '' }}{% if not s.bank_name and not bank_account %}—{% endif %}</dd>{% endif %}</dl>
+    {% if s.notes %}<p class="prewrap mt-3 mb-0" translate="no">{{ s.notes }}</p>{% endif %}</section>
+  {% if can_process %}<section class="panel"><div class="panel-header"><h2>Status and rating</h2></div>
+    <form method="post" novalidate>{{ form.hidden_tag() }}{{ field(form.status) }}{{ field(form.status_reason, help='Required to suspend or blacklist.') }}{{ field(form.rating) }}<button class="btn btn-soft" type="submit">Save</button></form></section>{% endif %}
+</div>
+<section class="panel panel-flush"><div class="panel-header"><h2>Orders</h2></div>
+  {% if orders %}<div class="table-scroll"><table class="table"><thead><tr><th>Order</th><th>Date</th><th class="text-end">Amount</th><th>Status</th></tr></thead><tbody>
+    {% for o in orders %}<tr><td><a href="{{ url_for('procurement.order', oid=o.id) }}" class="code">{{ o.code }}</a><span class="cell-sub" translate="no">{{ o.request.title }}</span></td><td class="date">{{ dt(o.order_date, '%d %b %Y') }}</td><td class="money">{{ money(o.total, o.request.owner.currency) }}</td><td>{{ status(o.status) }}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="text-muted px-3 pb-3 mb-0">No orders you can see.</p>{% endif %}</section>
+{% endblock %}

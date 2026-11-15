@@ -185,6 +185,33 @@ Household ─ Beneficiary ─┬─ ConsentRecord (given / withdrawn)
   follow priority (urgent 1 day, high 3, normal 7, low 14 days). The public page (`/f/<slug>`) is off by
   default, rate-limited, and stamps the tenant explicitly because there is no signed-in user.
 
+## Procurement and assets (Phase 6)
+
+```
+PurchaseRequest (items, budget line) ─ Quotation × n ─ selected ─ PurchaseOrder (items)
+        │                                                          ├─ Expenditure kind=commitment (on approval)
+        │                                                          ├─ GoodsReceipt × n ──→ Asset (one per unit)
+        │                                                          └─ Expenditure kind=expenditure (payments)
+Supplier                                        Asset ─ AssetEvent (assigned, returned, transferred, maintenance,
+                                                                    verified, lost, disposal requested/approved)
+```
+
+- **Money is never counted twice.** Approving an order creates an approved *commitment* on the budget
+  line. A payment on the order is an *expenditure* linked by `purchase_order_id`; when it is approved
+  (on the existing finance page, by someone other than the recorder) the funds check counts the order's
+  remaining commitment as available, and `after_payment_approved()` reduces the commitment by the same
+  amount. When the order is fully received and paid it closes and any remainder is released.
+- **Three-way match.** Payments cannot exceed the value of goods received less what is paid or pending.
+- **Separation of duties.** Requester ≠ request approver; order preparer ≠ order approver (finance);
+  payment recorder ≠ payment approver; disposal requester ≠ disposal approver.
+- **Buying method** is fixed when the request is submitted, from the estimate and the organization's two
+  thresholds (`proc_quotes_threshold`, `proc_tender_threshold`).
+- **Scope.** Purchase requests follow the programme/project they are charged to (own = requester or team;
+  department = the owner's department). Assets are visible to their custodian (everyone has
+  `assets.view` for their own), to the funding programme/project's team, and by department.
+- **Depreciation** is straight-line by whole months from the purchase date to the residual value
+  (`Asset.book_value()`); default useful lives per category.
+
 ## Notifications and reminders
 
 `app/notify.py::notify()` writes one in-app notification per recipient and emails those who allow it

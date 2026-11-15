@@ -1,0 +1,104 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt, money, num %}
+{% block title %}{{ pr.code }}{% endblock %}
+{% block page_title %}<span translate="no">{{ pr.code }}</span> · Purchase request{% endblock %}
+{% block content %}
+{% set cur = owner.currency %}
+<div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ pr.title }}</h2>
+  <p><span class="code">{{ pr.code }}</span> · {{ status(pr.status) }}</p></div>
+  <a class="btn btn-light" href="{{ url_for('procurement.index') }}"><i class="bi bi-arrow-left me-1"></i>Procurement</a></div>
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-header"><h2>Request</h2></div>
+    <dl class="kv">
+      <dt>Charged to</dt><dd><a href="{{ url_for(owner.perm ~ '.finance', pid=owner.id) }}" translate="no">{{ owner.code }} {{ owner.title }}</a></dd>
+      <dt>Budget line</dt><dd translate="no">{{ pr.budget_line.code ~ ' ' if pr.budget_line.code }}{{ pr.budget_line.description }}<span class="cell-sub">Available now: {{ money(line.available, cur) }}</span></dd>
+      {% if pr.activity %}<dt>Activity</dt><dd translate="no">{{ pr.activity.title }}</dd>{% endif %}
+      <dt>Estimated total</dt><dd><strong>{{ money(pr.estimated_total, cur) }}</strong></dd>
+      <dt>Buying method</dt><dd>{{ methods[pr.method] if pr.method else methods[method_now] ~ ' (decided when submitted)' }}</dd>
+      <dt>Requested by</dt><dd><span translate="no">{{ pr.requested_by.full_name if pr.requested_by else '—' }}</span>{% if pr.submitted_at %} · {{ dt(pr.submitted_at, '%d %b %Y') }}{% endif %}</dd>
+      {% if pr.needed_by %}<dt>Needed by</dt><dd>{{ dt(pr.needed_by, '%d %b %Y') }}</dd>{% endif %}
+      {% if pr.delivery_location %}<dt>Deliver to</dt><dd translate="no">{{ pr.delivery_location }}</dd>{% endif %}
+      {% if pr.approved_by %}<dt>{{ 'Approved' if pr.status not in ('rejected',) else 'Rejected' }} by</dt><dd><span translate="no">{{ pr.approved_by.full_name }}</span> · {{ dt(pr.approved_at, '%d %b %Y') }}{% if pr.decision_note %}<span class="cell-sub" translate="no">{{ pr.decision_note }}</span>{% endif %}</dd>{% endif %}
+    </dl>
+    <h3 class="fs-6 mt-3">Why it is needed</h3><p class="prewrap mb-0" translate="no">{{ pr.justification }}</p>
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Next step</h2></div>
+    {% if pr.status == 'draft' %}
+      {% if can_edit %}<p class="small text-muted">Add the items below, then submit. Someone other than you approves it, after checking the money is available.</p>
+      <form method="post" action="{{ url_for('procurement.request_action', rid=pr.id, action='submit') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-primary" type="submit"{% if not pr.items %} disabled{% endif %}>Submit for approval</button></form>
+      {% else %}<p class="text-muted mb-0">Being prepared by the requester.</p>{% endif %}
+    {% elif pr.status == 'submitted' %}
+      {% if can_approve %}
+      <form method="post" action="{{ url_for('procurement.request_action', rid=pr.id, action='approve') }}" class="d-flex flex-wrap gap-2 align-items-end"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="flex-grow-1"><label class="form-label" for="dec-note">Note</label><input class="form-control" id="dec-note" name="note" maxlength="500" placeholder="Required when rejecting"></div>
+        <button class="btn btn-primary" type="submit">Approve</button>
+        <button class="btn btn-outline-danger" type="submit" formaction="{{ url_for('procurement.request_action', rid=pr.id, action='reject') }}">Reject</button></form>
+      {% else %}<p class="text-muted mb-0">Waiting for approval.</p>{% endif %}
+    {% elif pr.status == 'approved' %}<p class="mb-0">Approved. The procurement office collects quotations ({{ pr.quotes_needed }} needed) and prepares the order.</p>
+    {% elif pr.status == 'rejected' %}<p class="mb-2">Rejected.</p>{% if pr.requested_by_id == current_user.id and not support_request %}<form method="post" action="{{ url_for('procurement.request_action', rid=pr.id, action='reopen') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-soft" type="submit">Change and resubmit</button></form>{% endif %}
+    {% elif pr.status == 'ordered' %}<p class="mb-0">Ordered — see the purchase order below.</p>
+    {% else %}<p class="mb-0">{{ pr.status|capitalize }}.</p>{% endif %}
+    {% if pr.status in ('draft', 'submitted', 'approved') and not support_request and (pr.requested_by_id == current_user.id or can_process) and not live_orders %}
+    <form method="post" class="mt-3" action="{{ url_for('procurement.request_action', rid=pr.id, action='cancel') }}" data-confirm="Cancel this purchase request?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit">Cancel request</button></form>{% endif %}
+  </section>
+</div>
+
+<section class="panel panel-flush" id="items">
+  <div class="panel-header"><h2>Items ({{ pr.items|length }})</h2></div>
+  {% if pr.items %}<div class="table-scroll"><table class="table"><thead><tr><th>Item</th><th class="text-end">Quantity</th><th class="text-end">Unit cost (estimate)</th><th class="text-end">Total</th><th></th></tr></thead><tbody>
+    {% for i in pr.items %}<tr><td translate="no">{{ i.description }}{% if i.is_asset %}<span class="cell-sub"><i class="bi bi-tag"></i> Asset · {{ i.asset_category }}</span>{% endif %}</td>
+      <td class="num">{{ num(i.quantity) }} {{ i.unit }}</td><td class="money">{{ money(i.unit_cost) }}</td><td class="money">{{ money(i.line_total) }}</td>
+      <td>{% if can_edit %}<form method="post" action="{{ url_for('procurement.delete_item', rid=pr.id, iid=i.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit" title="Remove"><i class="bi bi-trash"></i><span class="visually-hidden">Remove</span></button></form>{% endif %}</td></tr>{% endfor %}
+    <tr><th colspan="3">Estimated total</th><td class="money"><strong>{{ money(pr.estimated_total, cur) }}</strong></td><td></td></tr>
+  </tbody></table></div>{% else %}<p class="text-muted px-3">No items yet.</p>{% endif %}
+  {% if can_edit %}
+  <form method="post" class="px-3 pb-3" action="{{ url_for('procurement.add_item', rid=pr.id) }}" novalidate>{{ item_form.hidden_tag() }}
+    <div class="row g-2"><div class="col-md-5">{{ field(item_form.description) }}</div><div class="col-4 col-md-2">{{ field(item_form.quantity) }}</div><div class="col-4 col-md-2">{{ field(item_form.unit) }}</div><div class="col-4 col-md-3">{{ field(item_form.unit_cost) }}</div></div>
+    <div class="row g-2 align-items-end"><div class="col-md-7">{{ field(item_form.is_asset) }}</div><div class="col-md-5">{{ field(item_form.asset_category) }}</div></div>
+    <button class="btn btn-soft" type="submit">Add item</button></form>{% endif %}
+</section>
+
+{% if pr.status in ('approved', 'ordered', 'completed') %}
+<section class="panel panel-flush" id="quotations">
+  <div class="panel-header"><h2>Quotations ({{ pr.quotations|length }} of {{ pr.quotes_needed }} needed)</h2></div>
+  {% if pr.quotations %}<div class="table-scroll"><table class="table"><thead><tr><th>Supplier</th><th>Received</th><th class="text-end">Total</th><th class="text-end">Delivery</th><th></th></tr></thead><tbody>
+    {% for q in pr.quotations %}<tr><td><a href="{{ url_for('procurement.supplier', sid=q.supplier.id) }}" translate="no">{{ q.supplier.name }}</a>{% if q.reference %}<span class="cell-sub" translate="no">{{ q.reference }}</span>{% endif %}{% if q.notes %}<span class="cell-sub" translate="no">{{ q.notes }}</span>{% endif %}</td>
+      <td class="date">{{ dt(q.received_on, '%d %b %Y') }}</td><td class="money">{{ money(q.total_amount) }}{% if q.total_amount == lowest %}<span class="cell-sub">Lowest</span>{% endif %}</td><td class="num">{{ (q.delivery_days ~ ' days') if q.delivery_days is not none else '—' }}</td>
+      <td>{% if pr.selected_quotation_id == q.id %}<span class="badge-status st-approved">Chosen</span>{% elif can_process and pr.status == 'approved' %}<form method="post" action="{{ url_for('procurement.delete_quotation', rid=pr.id, qid=q.id) }}" data-confirm="Remove this quotation?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit" title="Remove"><i class="bi bi-trash"></i><span class="visually-hidden">Remove</span></button></form>{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div>{% endif %}
+  {% if pr.selection_reason %}<p class="px-3 small"><strong>Reason for the choice:</strong> <span translate="no">{{ pr.selection_reason }}</span></p>{% endif %}
+  {% if can_process and pr.status == 'approved' %}
+  <div class="px-3 pb-3">
+    <details{% if pr.quotations|length < pr.quotes_needed %} open{% endif %}><summary class="btn btn-sm btn-soft">Record a quotation</summary>
+      <form method="post" class="mt-3" action="{{ url_for('procurement.add_quotation', rid=pr.id) }}" novalidate>{{ quote_form.hidden_tag() }}
+        <div class="row g-2"><div class="col-md-4">{{ field(quote_form.supplier_id, help='Only active suppliers. Add new ones under Suppliers.') }}</div><div class="col-md-4">{{ field(quote_form.reference) }}</div><div class="col-md-4">{{ field(quote_form.received_on) }}</div>
+          <div class="col-6 col-md-4">{{ field(quote_form.total_amount) }}</div><div class="col-6 col-md-4">{{ field(quote_form.delivery_days) }}</div><div class="col-md-4">{{ field(quote_form.valid_until) }}</div></div>
+        {{ field(quote_form.notes) }}<button class="btn btn-primary" type="submit">Save quotation</button></form></details>
+    {% if pr.quotations %}
+    <form method="post" class="mt-3" action="{{ url_for('procurement.select_quotation', rid=pr.id) }}" novalidate>{{ select_form.hidden_tag() }}
+      <h3 class="fs-6">Choose the supplier</h3>
+      {{ field(select_form.quotation_id) }}{{ field(select_form.selection_reason, attrs={'rows': 2}, help='Required if you do not choose the lowest quotation.') }}
+      {% if pr.method == 'tender' %}{{ field(select_form.evaluation_report, attrs={'rows': 4}) }}{% endif %}
+      <button class="btn btn-soft" type="submit">Save choice</button></form>{% endif %}
+  </div>{% endif %}
+</section>
+{% endif %}
+
+<section class="panel" id="order">
+  <div class="panel-header"><h2>Purchase order</h2></div>
+  {% for o in orders %}<p class="mb-2"><a href="{{ url_for('procurement.order', oid=o.id) }}" class="code">{{ o.code }}</a> · <span translate="no">{{ o.supplier.name }}</span> · {{ money(o.total, cur) }} {{ status(o.status) }}</p>{% endfor %}
+  {% if can_process and pr.status == 'approved' and pr.selected_quotation and not live_orders %}
+  {% set q = pr.selected_quotation %}{% set ratio = (q.total_amount / pr.estimated_total) if pr.estimated_total else 1 %}
+  <p class="small text-muted">Agreed prices with <strong translate="no">{{ q.supplier.name }}</strong>. The order total cannot exceed the quotation ({{ money(q.total_amount, cur) }}). It needs approval by finance, which commits the money on the budget line.</p>
+  <form method="post" action="{{ url_for('procurement.create_order', rid=pr.id) }}" novalidate>{{ order_form.hidden_tag() }}
+    <div class="table-scroll"><table class="table"><thead><tr><th>Item</th><th class="text-end">Quantity</th><th>Agreed unit price</th></tr></thead><tbody>
+      {% for i in pr.items %}<tr><td translate="no">{{ i.description }}</td><td class="num">{{ num(i.quantity) }} {{ i.unit }}</td>
+        <td><input class="form-control form-control-sm" name="price_{{ i.id }}" inputmode="decimal" aria-label="Unit price for {{ i.description }}" value="{{ '%.2f'|format(i.unit_cost * ratio) }}"></td></tr>{% endfor %}
+    </tbody></table></div>
+    <div class="row g-2"><div class="col-6 col-md-3">{{ field(order_form.order_date) }}</div><div class="col-6 col-md-3">{{ field(order_form.delivery_date) }}</div><div class="col-md-6">{{ field(order_form.terms, attrs={'rows': 2}) }}</div></div>
+    <button class="btn btn-primary" type="submit">Prepare purchase order</button></form>
+  {% elif not orders %}<p class="text-muted mb-0">{{ 'Choose a quotation first.' if pr.status == 'approved' else 'Not yet.' }}</p>{% endif %}
+</section>
+{% endblock %}

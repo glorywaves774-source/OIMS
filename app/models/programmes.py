@@ -428,9 +428,13 @@ class Expenditure(TenantMixin, TimestampMixin, db.Model):
     approved_by_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
     approved_at = db.Column(db.DateTime(timezone=True))
     decision_note = db.Column(db.String(500))
+    # Phase 6: a payment against a purchase order (or the order's commitment)
+    purchase_order_id = db.Column(db.Integer, db.ForeignKey("purchase_orders.id", ondelete="SET NULL", use_alter=True,
+                                                            name="fk_expenditures_purchase_order_id"), index=True)
 
     budget_line = db.relationship("BudgetLine")
     activity = db.relationship("Activity")
+    purchase_order = db.relationship("PurchaseOrder", foreign_keys=[purchase_order_id])
     recorded_by = db.relationship("User", foreign_keys=[recorded_by_id])
     approved_by = db.relationship("User", foreign_keys=[approved_by_id])
 

@@ -9,7 +9,7 @@
   {% if page.items %}
   <ul class="list-plain mb-0">
     {% for n in page.items %}<li class="px-3 py-3 border-bottom-soft d-flex gap-3 align-items-start">
-      <i class="bi {{ {'task': 'bi-check2-square', 'meeting': 'bi-calendar-event', 'document': 'bi-file-earmark', 'correspondence': 'bi-envelope-paper', 'leave': 'bi-airplane', 'message': 'bi-chat-dots', 'announcement': 'bi-megaphone', 'reminder': 'bi-alarm'}.get(n.kind, 'bi-bell') }} fs-5 text-muted"></i>
+      <i class="bi {{ {'task': 'bi-check2-square', 'meeting': 'bi-calendar-event', 'document': 'bi-file-earmark', 'correspondence': 'bi-envelope-paper', 'leave': 'bi-airplane', 'message': 'bi-chat-dots', 'announcement': 'bi-megaphone', 'reminder': 'bi-alarm', 'programme': 'bi-kanban', 'project': 'bi-briefcase', 'finance': 'bi-cash-coin', 'meal': 'bi-graph-up-arrow', 'feedback': 'bi-chat-square-heart', 'procurement': 'bi-cart3', 'asset': 'bi-pc-display'}.get(n.kind, 'bi-bell') }} fs-5 text-muted"></i>
       <div class="flex-grow-1 min-w-0">
         <a href="{{ url_for('comms.open_notification', note_id=n.id) }}" class="{% if not n.read_at %}fw-bold{% endif %}" translate="no">{{ n.title }}</a>
         {% if n.body %}<div class="small text-muted" translate="no">{{ n.body }}</div>{% endif %}
