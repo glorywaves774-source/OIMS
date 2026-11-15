@@ -230,6 +230,27 @@ Supplier                                        Asset ─ AssetEvent (assigned, 
 - **Formula protection.** `safe_text()` prefixes text starting with `= + - @` (and tab/CR) with `'` in every
   Excel and CSV export, so a typed title like `=HYPERLINK(...)` is shown, not executed.
 
+## Billing (Phase 8)
+
+```
+SubscriptionPlan ─ Subscription (status, period end, pending plan, cancel at period end)
+                        └─ Invoice (period, frozen prices, tax, bill-to / issuer copies) ─ Payment × n
+BillingSettings (one row: invoice details, bank instructions, tax, lead time, grace days, number counter)
+```
+
+- **Lifecycle** (`app/billing.py`, run by `oims billing-run`): an invoice for the next period is issued
+  `invoice_days_before` days before the period (or trial) ends; when the period ends unpaid the subscription
+  is `past_due`; `grace_days` later it is `expired`. Paying (`record_payment` → `apply_payment`) makes it
+  `active` and extends the period to the invoice's period end — or, for a workspace that was locked, a full
+  period from today. Free plans roll over without invoices. No period end = manual arrangement.
+- **Read-only lock.** In `tenant._enter_tenant`, an expired or cancelled subscription keeps only `view`
+  permissions (and `billing.*`) and refuses any non-GET request outside the billing pages with a clear
+  page. Nothing is deleted; exports keep working.
+- **Paystack.** `paystack.initialize` returns the checkout URL; on return and on the webhook the payment is
+  confirmed with `paystack.verify` (amount and currency must match) before it is recorded. Webhooks must
+  carry a valid HMAC-SHA512 signature. Payment references are unique, so a payment is never recorded twice.
+- **Numbers** come from a counter on `BillingSettings`, locked with `SELECT … FOR UPDATE` on PostgreSQL.
+
 ## Notifications and reminders
 
 `app/notify.py::notify()` writes one in-app notification per recipient and emails those who allow it

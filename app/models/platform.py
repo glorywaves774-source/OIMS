@@ -20,7 +20,7 @@ class SubscriptionPlan(TimestampMixin, db.Model):
 
 
 class Subscription(TimestampMixin, db.Model):
-    """One subscription per organization. Billing and payments arrive in Phase 8."""
+    """One subscription per organization; invoices and payments in app/models/billing.py."""
 
     __tablename__ = "subscriptions"
 
@@ -41,9 +41,15 @@ class Subscription(TimestampMixin, db.Model):
     starts_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
     trial_ends_at = db.Column(db.DateTime(timezone=True))
     current_period_end = db.Column(db.DateTime(timezone=True))
+    # Phase 8: plan changes wait for the next period; cancellation takes effect at the period end.
+    pending_plan_id = db.Column(db.Integer, db.ForeignKey("subscription_plans.id", ondelete="SET NULL"))
+    pending_cycle = db.Column(db.String(10))
+    cancel_at_period_end = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    past_due_since = db.Column(db.Date)
 
     organization = db.relationship("Organization", back_populates="subscription")
-    plan = db.relationship("SubscriptionPlan")
+    plan = db.relationship("SubscriptionPlan", foreign_keys=[plan_id])
+    pending_plan = db.relationship("SubscriptionPlan", foreign_keys=[pending_plan_id])
 
 
 class SupportAccessRequest(TenantMixin, TimestampMixin, db.Model):

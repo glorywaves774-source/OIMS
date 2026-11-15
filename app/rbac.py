@@ -95,6 +95,10 @@ CATALOG = {
         ("collect", "Report indicator results, activity reports and monitoring visits"),
         ("edit", "Define indicators and targets, verify results, record evaluations and learning"),
     ]),
+    "billing": ("Subscription & billing", [
+        ("view", "See the plan, usage and invoices"),
+        ("manage", "Pay invoices, change the plan or cancel the subscription"),
+    ]),
     "procurement": ("Procurement", [
         ("view", "View purchase requests, quotations, orders and suppliers"),
         ("request", "Raise purchase requests"),
@@ -171,7 +175,8 @@ ROLE_TEMPLATES = [
      BASE + ["meal.*", "beneficiaries.*", "programmes.view", "projects.view", "reports.*",
              "feedback.view", "feedback.record", "feedback.manage"]),
     ("Finance Officer", "Budgets, expenditure and financial reporting.",
-     BASE + ["finance.*", "programmes.view", "projects.view", "reports.view", "procurement.view", "assets.view"]),
+     BASE + ["finance.*", "programmes.view", "projects.view", "reports.view", "procurement.view", "assets.view",
+             "billing.view"]),
     ("Logistics & Assets Officer", "Keeps the asset register: tags, assignments, maintenance and checks.",
      BASE + ["assets.view", "assets.manage", "procurement.view", "programmes.view", "projects.view"]),
     ("HR Officer", "Staff administration.",

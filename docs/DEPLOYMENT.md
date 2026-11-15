@@ -24,6 +24,8 @@
 | `ALLOW_PUBLIC_REGISTRATION` | — | `false` to hide the public registration form |
 | `TRUST_PROXY` | — | `1` (default) behind Render's proxy; `0` if exposed directly |
 | `LOG_LEVEL` | — | `INFO` by default |
+| `PAYSTACK_SECRET_KEY` | — | Turns on online subscription payments (card and mobile money) through Paystack. Leave empty to accept bank transfers recorded by HOLIDO staff only |
+| `PAYSTACK_API_BASE` | — | Defaults to `https://api.paystack.co` |
 
 Without SMTP, invitation and set-password links are shown **once** to the administrator who created
 the account, and password-reset requests are written to the server log only. Configure SMTP before
@@ -68,6 +70,25 @@ tasks due today/tomorrow and overdue tasks, meetings in the next 24 hours, docum
 30 days and correspondence replies due within 2 days. Each reminder is sent once per item and person,
 so running it more often never repeats a reminder. `render.yaml` runs it hourly as a Cron Job;
 on other hosts use any scheduler (cron, systemd timer).
+
+## Subscription billing
+
+`flask --app wsgi oims billing-run` issues invoices before each period (or trial) ends, marks unpaid
+subscriptions past due when the period ends, makes a workspace read-only after the grace period, and
+sends payment reminders. It is safe to run hourly (nothing is issued or sent twice); `render.yaml` runs it
+right after the reminders. HOLIDO super administrators set the invoice details, bank instructions, tax,
+lead time and grace period under **Platform → Billing → Settings**.
+
+Online payments (optional):
+1. Create a Paystack account for HOLIDO and copy the **secret key** into `PAYSTACK_SECRET_KEY` (Render
+   dashboard → Environment). Use the test key first.
+2. In Paystack → Settings → API keys & webhooks, set the webhook URL to
+   `https://<your domain>/billing-webhooks/paystack` (the settings page shows the exact address).
+3. Make a test payment from an organization's Billing page. Every payment is confirmed by asking
+   Paystack directly before it is recorded; webhooks are checked with Paystack's signature.
+
+A subscription without a period end (and without a trial end) is a manual arrangement and is never
+invoiced automatically — set a period end on the organization's page to start automatic billing.
 
 ## Two-step sign-in
 

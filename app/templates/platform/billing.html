@@ -1,0 +1,29 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import status, dt, money %}
+{% block title %}Billing{% endblock %}
+{% block page_title %}Billing{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Billing</h2><p>Invoices to organizations, payments received and subscriptions that need attention.</p></div>
+  <div class="toolbar">
+    {% if current_user.platform_role == 'super_admin' %}<a class="btn btn-light" href="{{ url_for('platform_billing.settings') }}"><i class="bi bi-sliders me-1"></i>Settings</a>{% endif %}
+    {% if can_admin %}<form method="post" action="{{ url_for('platform_billing.run_now') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-soft" type="submit"><i class="bi bi-arrow-repeat me-1"></i>Run billing now</button></form>{% endif %}</div></div>
+<div class="kpi-row mb-3">
+  {% for cur, amt in outstanding.items() %}<div class="kpi"><div class="v">{{ money(amt, cur) }}</div><div class="l">Outstanding</div></div>{% else %}<div class="kpi"><div class="v">0</div><div class="l">Outstanding</div></div>{% endfor %}
+  {% for cur, amt in received %}<div class="kpi"><div class="v">{{ money(amt, cur) }}</div><div class="l">Received this month</div></div>{% endfor %}
+  <div class="kpi"><div class="v">{{ attention|length }}</div><div class="l">Past due or read-only</div></div>
+</div>
+{% if attention %}
+<section class="panel panel-flush"><div class="panel-header"><h2>Needs attention</h2></div>
+  <div class="table-scroll"><table class="table"><thead><tr><th>Organization</th><th>Plan</th><th>Status</th><th>Since</th></tr></thead><tbody>
+    {% for s in attention %}<tr><td><a href="{{ url_for('platform.organization_detail', org_id=s.organization_id) }}" translate="no">{{ s.organization.name }}</a></td><td>{{ s.plan.name }}</td><td>{{ status(s.status) }}</td><td class="date">{{ dt(s.past_due_since, '%d %b %Y') if s.past_due_since else '—' }}</td></tr>{% endfor %}
+  </tbody></table></div></section>
+{% endif %}
+<nav class="tabs-scroll" aria-label="Invoice status">{% for v, l in [('open', 'Open'), ('overdue', 'Overdue'), ('paid', 'Paid'), ('void', 'Cancelled'), ('any', 'All')] %}<a href="{{ url_for('platform_billing.index', status=v) }}"{% if status == v %} aria-current="page"{% endif %}>{{ l }}</a>{% endfor %}</nav>
+<section class="panel panel-flush">
+  {% if invoices %}<div class="table-scroll"><table class="table"><thead><tr><th>Invoice</th><th>Organization</th><th>Period</th><th>Due</th><th class="text-end">Total</th><th class="text-end">Balance</th><th>Status</th></tr></thead><tbody>
+    {% for inv in invoices %}<tr><td><a href="{{ url_for('platform_billing.invoice', iid=inv.id) }}" class="code">{{ inv.number }}</a></td><td translate="no">{{ inv.organization.name }}</td>
+      <td class="date">{{ dt(inv.period_start, '%d %b %Y') }}</td><td class="date{{ ' overdue' if inv.status == 'open' and inv.due_on < today }}">{{ dt(inv.due_on, '%d %b %Y') }}</td>
+      <td class="money">{{ money(inv.total, inv.currency) }}</td><td class="money">{{ money(inv.balance) if inv.status == 'open' else '' }}</td><td>{{ status(inv.status) }}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<div class="empty"><i class="bi bi-receipt"></i>No invoices here.</div>{% endif %}
+</section>
+{% endblock %}

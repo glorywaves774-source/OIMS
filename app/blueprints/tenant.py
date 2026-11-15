@@ -11,7 +11,7 @@ from sqlalchemy import false, or_, select
 from app import audit
 from app.extensions import db
 from app.models import Membership, Organization, StaffProfile, SupportAccessRequest, User
-from app.rbac import DEPT, ORG, OWN, permissions_for_role, read_only_permissions, scope_of
+from app.rbac import DEPT, ORG, OWN, READ_ONLY_ACTIONS, permissions_for_role, read_only_permissions, scope_of
 from app.tenancy import clear_tenant, set_tenant
 
 
@@ -61,7 +61,18 @@ def _enter_tenant():
         abort(404)  # do not reveal that the organization exists
     if org.status != Organization.ACTIVE:
         return render_template("workspace/unavailable.html", org=org), 403
-    _activate(org, m, permissions_for_role(m.role))
+    perms = permissions_for_role(m.role)
+    from app.billing import state as billing_state
+    set_tenant(org.id)
+    st = billing_state(org)
+    g.billing = st
+    if st["locked"]:
+        # Lapsed or cancelled subscription: everyone can still read and export; only billing stays open.
+        perms = {c: sc for c, sc in perms.items() if c.split(".")[1] in READ_ONLY_ACTIONS or c.startswith("billing.")}
+        if request.method not in ("GET", "HEAD") and request.blueprint != "billing":
+            g.tenant = org
+            return render_template("workspace/billing_locked.html", org=org, st=st), 403
+    _activate(org, m, perms)
     return None
 
 

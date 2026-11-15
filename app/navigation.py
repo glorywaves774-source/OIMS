@@ -98,6 +98,8 @@ def build_nav():
                              match="workspace.support"))
         if can("organization.view"):
             gov.append(_item("Organization settings", "bi-building-gear", "workspace.settings", "Settings"))
+        if can("billing.view"):
+            gov.append(_item("Subscription & billing", "bi-receipt", "billing.index", "Billing", match="billing."))
         groups = [("Workspace", home), ("Office", office), ("Programmes & projects", progs), ("MEAL & accountability", meal),
                   ("Finance & operations", ops),
                   ("People", people), ("Access", access),
@@ -114,6 +116,7 @@ def build_nav():
         if admin:
             tenants.append(_item("Subscription plans", "bi-credit-card-2-front", "platform.plans", "Plans",
                                  match="platform.plan"))
+        tenants.append(_item("Billing", "bi-receipt", "platform_billing.index", "Billing", match="platform_billing."))
         adm = []
         if current_user.is_super_admin:
             adm.append(_item("Platform staff", "bi-person-badge", "platform.staff", "Staff"))
