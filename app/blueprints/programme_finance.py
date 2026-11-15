@@ -252,11 +252,15 @@ def expenditure_decide(pid, eid, action):
         if e.recorded_by_id == current_user.id:
             flash("A different person must approve this (separation of financial duties).", "danger")
             return redirect(url_for(owner_ep(prog, "finance"), pid=prog.id) + "#expenditure")
-        if action == "approve" and e.amount > line_figures(e.budget_line)["available"]:
+        from app.blueprints.procurement import after_payment_approved, commitment_release
+        # A payment on a purchase order uses money already committed for that order.
+        if action == "approve" and e.amount > line_figures(e.budget_line)["available"] + commitment_release(e):
             flash("Not enough left on this budget line. Revise the budget first.", "danger")
             return redirect(url_for(owner_ep(prog, "finance"), pid=prog.id) + "#expenditure")
         e.status = "approved" if action == "approve" else "rejected"
         e.approved_by_id, e.approved_at, e.decision_note = current_user.id, utcnow(), form.note.data or None
+        if action == "approve" and e.purchase_order_id and e.kind == "expenditure":
+            after_payment_approved(e)
         notify([e.recorded_by_id], "finance", f"{Expenditure.KINDS[e.kind]} {e.status}: {e.description}",
                e.decision_note, owner_ep(prog, "finance"), pid=prog.id)
     elif action == "cancel":
@@ -264,6 +268,9 @@ def expenditure_decide(pid, eid, action):
         need("finance.record", prog)
         if not (e.status == "pending" or (e.status == "approved" and e.kind == "commitment")):
             abort(400)
+        if e.kind == "commitment" and e.purchase_order_id:
+            flash("This commitment belongs to a purchase order. Cancel the order instead.", "danger")
+            return redirect(url_for(owner_ep(prog, "finance"), pid=prog.id) + "#expenditure")
         e.status = "cancelled"
     else:
         abort(404)

@@ -1,0 +1,32 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import status, dt, pager, money %}
+{% block title %}Procurement{% endblock %}
+{% block page_title %}Procurement{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Procurement</h2><p>Request → approval → quotations → purchase order → goods received → payment</p></div>
+  <div class="toolbar">
+    {% if can('procurement.view') %}<a class="btn btn-light" href="{{ url_for('procurement.suppliers') }}"><i class="bi bi-shop me-1"></i>Suppliers</a>{% endif %}
+    {% if can_settings %}<a class="btn btn-light" href="{{ url_for('procurement.settings') }}"><i class="bi bi-sliders me-1"></i>Thresholds</a>{% endif %}
+    {% if can_new %}<a class="btn btn-primary" href="{{ url_for('procurement.new') }}"><i class="bi bi-plus-lg me-1"></i>Purchase request</a>{% endif %}</div></div>
+{% if orders %}
+<section class="panel panel-flush"><div class="panel-header"><h2>Open purchase orders</h2></div>
+  <div class="table-scroll"><table class="table"><thead><tr><th>Order</th><th>Supplier</th><th>For</th><th class="text-end">Amount</th><th>Status</th></tr></thead><tbody>
+    {% for po in orders %}<tr><td><a href="{{ url_for('procurement.order', oid=po.id) }}" class="code">{{ po.code }}</a><span class="cell-sub" translate="no">{{ po.request.title }}</span></td>
+      <td translate="no">{{ po.supplier.name }}</td><td class="code">{{ po.request.owner.code }}</td><td class="money">{{ money(po.total, po.request.owner.currency) }}</td><td>{{ status(po.status) }}</td></tr>{% endfor %}
+  </tbody></table></div></section>
+{% endif %}
+<nav class="tabs-scroll" aria-label="Which requests">{% for v, l in [('all', 'All I can see'), ('mine', 'My requests'), ('approve', 'Waiting for approval')] %}<a href="{{ url_for('procurement.index', view=v, status=status) }}"{% if view == v %} aria-current="page"{% endif %}>{{ l }}</a>{% endfor %}</nav>
+<section class="panel panel-flush">
+  <form class="filters px-3 pt-3" method="get"><input type="hidden" name="view" value="{{ view }}">
+    <select class="form-select" name="status" data-autosubmit aria-label="Status">{% for v, l in [('open', 'Open'), ('draft', 'Draft'), ('submitted', 'Submitted'), ('approved', 'Approved'), ('ordered', 'Ordered'), ('completed', 'Completed'), ('rejected', 'Rejected'), ('cancelled', 'Cancelled'), ('any', 'Any status')] %}<option value="{{ v }}"{% if v == status %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <button class="btn btn-soft" type="submit">Filter</button></form>
+  {% if page.items %}
+  <div class="table-scroll"><table class="table"><thead><tr><th>Request</th><th>For</th><th>Requested by</th><th class="text-end">Estimate</th><th>Status</th></tr></thead><tbody>
+    {% for pr in page.items %}<tr><td><a href="{{ url_for('procurement.request_detail', rid=pr.id) }}" translate="no">{{ pr.title }}</a><span class="cell-sub code">{{ pr.code }}</span></td>
+      <td class="code">{{ pr.owner.code }}</td><td translate="no">{{ pr.requested_by.full_name if pr.requested_by else '—' }}</td>
+      <td class="money">{{ money(pr.estimated_total, pr.owner.currency) }}</td><td>{{ status(pr.status) }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {{ pager(page, 'procurement.index', view=view, status=status) }}
+  {% else %}<div class="empty"><i class="bi bi-cart3"></i>No purchase requests here.</div>{% endif %}
+</section>
+{% endblock %}

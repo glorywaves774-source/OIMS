@@ -17,3 +17,5 @@ from .projects import (Component, Deliverable, Issue, Project, ProjectClosure, P
                        RiskItem)
 from .meal import (ActivityAttendance, Beneficiary, ConsentRecord, DataForm, Enrollment, Feedback,  # noqa: F401
                    FeedbackAction, FormField, FormSubmission, Household, ServiceRecord)
+from .procurement import (Asset, AssetEvent, GoodsReceipt, PurchaseOrder, PurchaseOrderItem,  # noqa: F401
+                          PurchaseRequest, PurchaseRequestItem, Quotation, Supplier)

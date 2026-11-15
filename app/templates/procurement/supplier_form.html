@@ -1,0 +1,15 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}{{ 'Edit supplier' if s else 'New supplier' }}{% endblock %}
+{% block page_title %}{{ 'Edit supplier' if s else 'New supplier' }}{% endblock %}
+{% block content %}
+<section class="panel">
+  <form method="post" novalidate>{{ form.hidden_tag() }}
+    <div class="row g-2"><div class="col-md-8">{{ field(form.name, required=True) }}</div><div class="col-md-4">{{ field(form.category) }}</div>
+      <div class="col-md-4">{{ field(form.contact_person) }}</div><div class="col-md-4">{{ field(form.phone) }}</div><div class="col-md-4">{{ field(form.email) }}</div>
+      <div class="col-md-8">{{ field(form.address) }}</div><div class="col-md-4">{{ field(form.tax_id) }}</div>
+      <div class="col-md-6">{{ field(form.bank_name) }}</div><div class="col-md-6">{{ field(form.bank_account, attrs={'autocomplete': 'off'}, help='Stored encrypted; shown only to procurement and finance staff.') }}</div></div>
+    {{ field(form.notes, attrs={'rows': 2}) }}
+    <div class="toolbar"><button class="btn btn-primary" type="submit">Save</button><a class="btn btn-light" href="{{ url_for('procurement.supplier', sid=s.id) if s else url_for('procurement.suppliers') }}">Cancel</a></div></form>
+</section>
+{% endblock %}

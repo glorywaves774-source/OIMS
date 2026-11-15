@@ -2,8 +2,22 @@
 
 A multi-tenant SaaS platform owned and operated by **HOLIDO — Holistic Development Organization**.
 
-**Current release:** `0.5.0-phase5` (Phase 5 — MEAL & beneficiaries). See [CHANGELOG.md](CHANGELOG.md) and
+**Current release:** `0.6.0-phase6` (Phase 6 — Finance, procurement and assets). See [CHANGELOG.md](CHANGELOG.md) and
 [docs/STATUS.md](docs/STATUS.md) for what is complete and what comes next.
+
+## What Phase 6 adds
+
+| Area | Delivered |
+|---|---|
+| Finance overview | Budget, spent, committed and available across the programmes and projects you can see (no double counting); everything waiting for your approval; goods received but not yet paid |
+| Purchase requests | Raised against a budget line of an approved or active programme or project; items with estimates; approved by someone other than the requester only if the money is available |
+| Buying rules | Thresholds per organization: one quotation, three quotations, or a competitive tender with an evaluation report; a written reason when the lowest quotation is not chosen |
+| Purchase orders | Prepared from the chosen quotation (never above it); approved by finance, which commits the money on the budget line; cancelling releases it |
+| Goods received | Partial or full deliveries with condition; recorded by the procurement office or the requester; items marked as assets go straight into the asset register |
+| Payments | Never more than the value received; approved by a second person on the existing finance page; each payment releases the matching commitment; the order closes when received and paid in full |
+| Suppliers | Register with category, contacts, tax ID and encrypted bank account; suspend or blacklist with a reason; performance rating |
+| Asset register | Tags, categories, serials, cost, straight-line depreciation and book value, funding programme/project and donor, location, custodian, condition; assignment and return, transfers, maintenance and repairs, yearly physical checks, loss reports; disposal requested by one person and approved by another; Excel export; "in my care" for every staff member |
+| Project closure | Two new checks: no open purchase orders, and project assets handed over (transferred or disposed) |
 
 ## What Phase 5 adds
 
@@ -133,7 +147,7 @@ app/
                      meetings, tasks, comms (notifications, announcements, messages, calendar),
                      programmes and projects (+ programme_finance, programme_reports,
                      project_extras, owner_meal and registers), beneficiaries, meal (overview and
-                     data collection), feedback (+ public page)
+                     data collection), feedback (+ public page), finance (overview), procurement, assets
   storage.py         local-disk and S3 file storage, upload checks
   notify.py          notifications, reference numbers   reminders.py  scheduled reminders
   twofactor.py       two-step sign-in
@@ -141,9 +155,10 @@ app/
   exporting.py       report figures, Excel and PDF exports
   meal_logic.py      beneficiary and feedback access, duplicate checks, people-reached counts
   crypto.py          encryption of personal data and keyed indexes for duplicate checks
+  procurement_logic.py  purchase and asset access rules, buying method, order and payment figures
   templates/ static/ interface (Bootstrap 5 self-hosted; css/app.css, dark.css, mobile.css)
 migrations/          Alembic migrations
-tests/               156 automated tests
+tests/               167 automated tests
 docs/                architecture, deployment, status
 ```
 

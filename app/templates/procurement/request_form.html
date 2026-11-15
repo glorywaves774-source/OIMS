@@ -1,0 +1,15 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}New purchase request{% endblock %}
+{% block page_title %}New purchase request{% endblock %}
+{% block content %}
+<section class="panel">
+  <p class="mb-3">Charged to <strong translate="no">{{ owner.code }} {{ owner.title }}</strong> · <a href="{{ url_for('procurement.new') }}">change</a></p>
+  <form method="post" novalidate>{{ form.hidden_tag() }}<input type="hidden" name="owner" value="{{ owner_value }}">
+    {{ field(form.title, required=True, attrs={'placeholder': 'e.g. Laptops for field staff'}) }}
+    <div class="row g-2"><div class="col-md-6">{{ field(form.budget_line_id, required=True) }}</div><div class="col-md-6">{{ field(form.activity_id) }}</div>
+      <div class="col-6 col-md-3">{{ field(form.needed_by) }}</div><div class="col-md-9">{{ field(form.delivery_location) }}</div></div>
+    {{ field(form.justification, required=True, attrs={'rows': 3}) }}
+    <div class="toolbar"><button class="btn btn-primary" type="submit">Create and add items</button><a class="btn btn-light" href="{{ url_for('procurement.index') }}">Cancel</a></div></form>
+</section>
+{% endblock %}

@@ -56,6 +56,13 @@ def build_nav():
             progs.append(_item("Projects", "bi-briefcase", "projects.index", "Projects", match="projects."))
         if can("programmes.view") or can("projects.view") or can("finance.view"):
             progs.append(_item("Donors & locations", "bi-geo-alt", "registers.index", "Registers"))
+        ops = []
+        if can("finance.view"):
+            ops.append(_item("Finance overview", "bi-cash-coin", "finance.overview", "Finance", match="finance."))
+        if can("procurement.view") or can("procurement.request"):
+            ops.append(_item("Procurement", "bi-cart3", "procurement.index", "Buying", match="procurement."))
+        if can("assets.view"):
+            ops.append(_item("Assets", "bi-pc-display", "assets.index", "Assets", match="assets."))
         meal = []
         if can("meal.view") or can("beneficiaries.view") or can("feedback.view"):
             meal.append(_item("MEAL overview", "bi-graph-up-arrow", "meal.dashboard", "MEAL", match="meal.dashboard"))
@@ -89,6 +96,7 @@ def build_nav():
         if can("organization.view"):
             gov.append(_item("Organization settings", "bi-building-gear", "workspace.settings", "Settings"))
         groups = [("Workspace", home), ("Office", office), ("Programmes & projects", progs), ("MEAL & accountability", meal),
+                  ("Finance & operations", ops),
                   ("People", people), ("Access", access),
                   ("Organization", gov)]
         # Phone tabs: the most-used destinations this person can open.

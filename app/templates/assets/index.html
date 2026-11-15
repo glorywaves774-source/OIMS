@@ -1,0 +1,24 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import status, dt, pager, money %}
+{% block title %}Assets{% endblock %}
+{% block page_title %}Asset register{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Asset register</h2><p>{{ page.total }} asset{{ '' if page.total == 1 else 's' }}{% for cur, t in totals.items() %} · {{ cur }} {{ '{:,.2f}'.format(t.book) }} book value (cost {{ '{:,.2f}'.format(t.cost) }}){% endfor %}</p></div>
+  <div class="toolbar"><a class="btn btn-light" href="{{ url_for('assets.export') }}"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel</a>
+    {% if can_manage %}<a class="btn btn-primary" href="{{ url_for('assets.edit') }}"><i class="bi bi-plus-lg me-1"></i>Register asset</a>{% endif %}</div></div>
+<nav class="tabs-scroll" aria-label="Which assets">{% for v, l in [('', 'All I can see'), ('mine', 'In my care'), ('verify', 'Due for checking'), ('disposal', 'Disposals to decide')] %}<a href="{{ url_for('assets.index', view=v) }}"{% if f.view == v %} aria-current="page"{% endif %}>{{ l }}</a>{% endfor %}</nav>
+<section class="panel panel-flush">
+  <form class="filters px-3 pt-3" method="get"><input type="hidden" name="view" value="{{ f.view }}">
+    <input class="form-control" type="search" name="q" value="{{ f.q }}" placeholder="Name, tag, serial or model" aria-label="Search assets">
+    <select class="form-select" name="category" data-autosubmit aria-label="Category"><option value="">Any category</option>{% for c in categories %}<option value="{{ c }}"{% if c == f.category %} selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+    <select class="form-select" name="status" data-autosubmit aria-label="Status"><option value="">Not disposed</option>{% for s in ('in_use', 'in_store', 'under_repair', 'lost', 'disposed') %}<option value="{{ s }}"{% if s == f.status %} selected{% endif %}>{{ s|replace('_', ' ')|capitalize }}</option>{% endfor %}</select>
+    <select class="form-select" name="owner" data-autosubmit aria-label="Funded by"><option value="">Any programme or project</option>{% for v, l in owner_opts %}<option value="{{ v }}"{% if v == f.owner %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <button class="btn btn-soft" type="submit">Search</button></form>
+  {% if page.items %}<div class="table-scroll"><table class="table"><thead><tr><th>Asset</th><th>Category</th><th>In the care of</th><th>Funded by</th><th class="text-end">Book value</th><th>Status</th></tr></thead><tbody>
+    {% for a in page.items %}<tr><td><a href="{{ url_for('assets.detail', aid=a.id) }}" translate="no">{{ a.name }}</a><span class="cell-sub code">{{ a.code }}{% if a.serial_number %} · {{ a.serial_number }}{% endif %}</span></td>
+      <td>{{ a.category }}</td><td translate="no">{{ a.custodian.full_name if a.custodian else '—' }}</td><td class="code">{{ a.owner.code if a.owner else 'Organization' }}</td>
+      <td class="money">{{ money(a.book_value(today), a.currency) }}</td><td>{{ status(a.status) }}{% if a.disposal_status == 'requested' %}<span class="cell-sub">Disposal requested</span>{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div>{{ pager(page, 'assets.index', **f) }}
+  {% else %}<div class="empty"><i class="bi bi-pc-display"></i>No assets here.</div>{% endif %}
+</section>
+{% endblock %}

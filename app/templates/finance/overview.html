@@ -1,0 +1,36 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import status, dt, money, meter %}
+{% block title %}Finance overview{% endblock %}
+{% block page_title %}Finance overview{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Finance overview</h2><p>Budgets and spending of the programmes and projects you can see.</p></div>
+  {% if can('procurement.view') or can('procurement.request') %}<a class="btn btn-light" href="{{ url_for('procurement.index') }}"><i class="bi bi-cart3 me-1"></i>Procurement</a>{% endif %}</div>
+{% for cur, t in totals.items() %}
+<div class="kpi-row mb-3">
+  <div class="kpi"><div class="v">{{ money(t.budget, cur) }}</div><div class="l">Budget</div></div>
+  <div class="kpi"><div class="v">{{ money(t.spent, cur) }}</div><div class="l">Spent (approved)</div></div>
+  <div class="kpi"><div class="v">{{ money(t.committed, cur) }}</div><div class="l">Committed (orders, contracts)</div></div>
+  <div class="kpi"><div class="v">{{ money(t.available, cur) }}</div><div class="l">Still available</div></div>
+</div>{% endfor %}
+{% if approvals or orders %}
+<section class="panel panel-flush"><div class="panel-header"><h2>Waiting for your approval</h2></div>
+  <div class="table-scroll"><table class="table"><thead><tr><th>What</th><th>For</th><th class="text-end">Amount</th><th></th></tr></thead><tbody>
+    {% for o, po in orders %}<tr><td>Purchase order <span class="code">{{ po.code }}</span><span class="cell-sub" translate="no">{{ po.supplier.name }}</span></td><td class="code">{{ o.code }}</td><td class="money">{{ money(po.total, o.currency) }}</td><td><a class="btn btn-sm btn-soft" href="{{ url_for('procurement.order', oid=po.id) }}">Open</a></td></tr>{% endfor %}
+    {% for o, e in approvals %}<tr><td>{{ e.KINDS[e.kind] }}{% if e.purchase_order_id %} (payment){% endif %}<span class="cell-sub" translate="no">{{ e.description }}</span></td><td class="code">{{ o.code }}</td><td class="money">{{ money(e.amount, o.currency) }}</td><td><a class="btn btn-sm btn-soft" href="{{ url_for(o.perm ~ '.finance', pid=o.id) }}#expenditure">Open</a></td></tr>{% endfor %}
+  </tbody></table></div></section>
+{% endif %}
+{% if payable %}
+<section class="panel panel-flush"><div class="panel-header"><h2>Goods received, not yet paid</h2></div>
+  <div class="table-scroll"><table class="table"><thead><tr><th>Order</th><th>Supplier</th><th class="text-end">Can be paid</th><th></th></tr></thead><tbody>
+    {% for o, po, fig in payable %}<tr><td class="code">{{ po.code }}</td><td translate="no">{{ po.supplier.name }}</td><td class="money">{{ money(fig.payable, o.currency) }}</td><td><a class="btn btn-sm btn-soft" href="{{ url_for('procurement.order', oid=po.id) }}#payments">Pay</a></td></tr>{% endfor %}
+  </tbody></table></div></section>
+{% endif %}
+<section class="panel panel-flush"><div class="panel-header"><h2>By programme and project</h2></div>
+  {% if rows %}<div class="table-scroll"><table class="table"><thead><tr><th>Programme / project</th><th class="text-end">Budget</th><th class="text-end">Spent</th><th class="text-end">Committed</th><th class="text-end">Available</th><th>Used</th></tr></thead><tbody>
+    {% for r in rows %}{% set o, f = r.o, r.f %}<tr><td><a href="{{ url_for(o.perm ~ '.finance', pid=o.id) }}" translate="no">{{ o.code }} {{ o.title }}</a>{% if o.kind == 'project' and o.programme %}<span class="cell-sub">in <span translate="no">{{ o.programme.code }}</span></span>{% endif %}</td>
+      <td class="money">{{ money(f.budget, o.currency) }}</td><td class="money">{{ money(f.spent) }}</td><td class="money">{{ money(f.committed) }}</td><td class="money{{ ' overdue' if f.available < 0 }}">{{ money(f.available) }}</td><td>{{ meter(f.utilization, o.code ~ ' budget used') }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  <p class="small text-muted px-3 pb-3 mb-0">Each row shows only that programme's or project's own budget lines, so the totals above never count the same money twice.</p>
+  {% else %}<div class="empty"><i class="bi bi-cash-coin"></i>No programmes or projects with finance you can see.</div>{% endif %}
+</section>
+{% endblock %}

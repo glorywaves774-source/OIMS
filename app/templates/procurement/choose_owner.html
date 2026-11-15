@@ -1,0 +1,10 @@
+{% extends "layout_app.html" %}
+{% block title %}New purchase request{% endblock %}
+{% block page_title %}New purchase request{% endblock %}
+{% block content %}
+<section class="panel">
+  <div class="panel-header"><h2>Which programme or project pays?</h2></div>
+  <p class="small text-muted">Purchases are charged to a budget line of an approved or active programme or project.</p>
+  <ul class="list-plain mb-0">{% for o in owners %}<li class="py-2 border-bottom-soft"><a href="{{ url_for('procurement.new', owner=o.kind ~ ':' ~ o.id) }}" translate="no">{{ o.code }} — {{ o.title }}</a> <span class="small text-muted">· {{ o.kind }}</span></li>{% endfor %}</ul>
+</section>
+{% endblock %}

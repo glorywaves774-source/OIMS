@@ -362,3 +362,10 @@ html[data-theme="dark"] .tabs-scroll a[aria-current="page"] { color: #04201d; }
 .attendee:last-child { border-bottom: 0; }
 .dist-row { display: grid; grid-template-columns: minmax(80px, 130px) minmax(0, 1fr); gap: 10px; align-items: center; padding: 3px 0; font-size: .9rem; }
 .dist-row .meter-wrap { width: 100%; }
+
+/* Phase 6: procurement and assets */
+.st-ordered, .st-partially_received, .st-in_use { background: var(--brand-soft); color: var(--brand); }
+.st-received, .st-in_store { background: rgba(31, 138, 76, .14); color: var(--success); }
+.st-under_repair, .st-suspended { background: var(--accent-soft); color: var(--warning); }
+.st-lost, .st-blacklisted { background: rgba(192, 57, 43, .12); color: var(--danger); }
+.st-disposed { background: rgba(90, 104, 102, .14); color: var(--text-muted); }

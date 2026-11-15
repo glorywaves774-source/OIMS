@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.6.0-phase6 — 15 November 2026
+
+Finance, procurement and assets.
+
+- **Finance overview** across programmes and projects: budget, spent, committed and available; what is
+  waiting for your approval; goods received but not yet paid.
+- **Purchase requests** charged to a budget line, approved by someone other than the requester only when
+  the money is available.
+- **Buying rules** set per organization: one quotation, three quotations or a tender, and a written reason
+  when the lowest offer is not chosen.
+- **Purchase orders** approved by finance commit the money; cancelling releases it.
+- **Goods received**, in parts or in full; items marked as assets are added to the asset register.
+- **Payments** cannot exceed what was received, are approved by a second person, and release the
+  matching commitment; the order closes when everything is received and paid.
+- **Suppliers** with encrypted bank details, suspension or blacklisting with a reason, and ratings.
+- **Asset register** with custody, transfers, maintenance, yearly checks, depreciation, disposal approval
+  and Excel export. Every staff member can see the assets in their care.
+- **Project closure** now also checks for open purchase orders and assets still charged to the project.
+- New role: **Logistics & Assets Officer**. The Procurement Officer role handles quotations, orders and
+  receipts but does not approve requests (budget holders do), keeping buying and approving apart.
+- Migration `0006`; run `oims sync-roles` (done automatically on Render).
+
 ## 0.5.0-phase5 — 15 November 2026
 
 MEAL & beneficiaries.

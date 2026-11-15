@@ -1,0 +1,25 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}{{ 'Edit ' ~ a.code if a else 'Register an asset' }}{% endblock %}
+{% block page_title %}{{ 'Edit asset' if a else 'Register an asset' }}{% endblock %}
+{% block content %}
+<form method="post" novalidate>{{ form.hidden_tag() }}
+<section class="panel"><div class="panel-header"><h2>Asset</h2></div>
+  <div class="row g-2"><div class="col-md-6">{{ field(form.name, required=True) }}</div><div class="col-md-3">{{ field(form.category) }}</div><div class="col-md-3">{{ field(form.condition) }}</div>
+    <div class="col-md-6">{{ field(form.make_model) }}</div><div class="col-md-6">{{ field(form.serial_number) }}</div></div>
+  {{ field(form.description, attrs={'rows': 2}) }}
+</section>
+<section class="panel"><div class="panel-header"><h2>Value</h2></div>
+  <div class="row g-2"><div class="col-6 col-md-3">{{ field(form.purchase_date) }}</div><div class="col-6 col-md-3">{{ field(form.cost) }}</div><div class="col-6 col-md-2">{{ field(form.currency) }}</div>
+    <div class="col-6 col-md-2">{{ field(form.useful_life_years, help='Blank: the usual for the category.') }}</div><div class="col-md-2">{{ field(form.residual_value) }}</div>
+    <div class="col-6 col-md-3">{{ field(form.warranty_until) }}</div><div class="col-6 col-md-3 pt-md-4">{{ field(form.insured) }}</div></div>
+  <p class="small text-muted mb-0">Book value goes down evenly each month from the purchase date over the useful life (straight-line).</p>
+</section>
+<section class="panel"><div class="panel-header"><h2>Where it belongs</h2></div>
+  <div class="row g-2"><div class="col-md-6">{{ field(form.owner) }}</div><div class="col-md-6">{{ field(form.donor_id, help='Donor-funded assets may have conditions on use and disposal.') }}</div>
+    <div class="col-md-6">{{ field(form.location_id) }}</div><div class="col-md-6">{{ field(form.department_id) }}</div></div>
+  {{ field(form.notes, attrs={'rows': 2}) }}
+</section>
+<div class="toolbar mb-4"><button class="btn btn-primary" type="submit">Save</button><a class="btn btn-light" href="{{ url_for('assets.detail', aid=a.id) if a else url_for('assets.index') }}">Cancel</a></div>
+</form>
+{% endblock %}

@@ -93,11 +93,30 @@ downgrading and upgrading again. Every new page — including the public feedbac
 Chrome at 320–440 px phone widths and 1440 px, in light and dark mode, with no sideways scrolling,
 contrast problems or console errors.
 
+## Phase 6 — Finance, procurement and assets ✅ complete
+
+| Item | Status |
+| --- | --- |
+| Organization finance overview with approval queue and payables | Done |
+| Purchase requests with funds check and independent approval | Done |
+| Procurement thresholds (one quote / three quotes / tender) and justified selection | Done |
+| Purchase orders committing funds; cancellation releasing them | Done |
+| Goods received (partial and full) creating asset records | Done |
+| Payments limited to goods received, approved separately, releasing commitments | Done |
+| Supplier register with encrypted bank details, blacklisting and rating | Done |
+| Asset register: custody, transfers, maintenance, checks, depreciation, disposal approval, export | Done |
+| Project closure checks for open orders and project assets | Done |
+| New role: Logistics & Assets Officer; everyone can see the assets in their care | Done |
+
+167 automated tests pass on SQLite and on PostgreSQL 16. Migration `0006` was tested by upgrading a
+Phase 5 database with existing projects, budget lines and expenditure, checking it matches the code,
+downgrading and upgrading again. Every new page was crawled in Chrome at 320–440 px phone widths and
+1440 px, in light and dark mode, with no sideways scrolling, contrast problems or console errors.
+
 ## Outstanding phases
 
 | Phase | Scope |
 |---|---|
-| 6 — Finance, procurement, assets | Budgets, expenditure, approvals, procurement, suppliers, assets |
 | 7 — Reporting & analytics | Dashboards, charts, PDF/Excel/CSV exports |
 | 8 — SaaS billing | Invoices, payment provider integration, renewals, usage enforcement |
 | 9 — Hardening & launch | Security review, load testing, production backups, go-live |
@@ -110,8 +129,11 @@ contrast problems or console errors.
   currency are listed but not added (no exchange rates yet).
 - **Indicator roll-up** applies to indicators that add up (counts). Rates and percentages are not
   combined across projects, because averaging them would be misleading.
-- **Closure checklist** cannot yet check asset handover or procurement; those records arrive in Phase 6,
-  so the closure report has a written "handover of assets" section meanwhile.
+- **Organization running costs** (rent, salaries outside programmes) are not budgeted yet: purchases must be
+  charged to a programme or project budget line. An "organization" budget comes with reporting in Phase 7.
+- **Payments are recorded, not made**: OIMS does not connect to banks or mobile money.
+- **One currency per order**; the finance overview shows a total per currency without conversion.
+- **Asset tags** are numbers (AST/2026/0001); printing labels or QR codes is not included yet.
 - **Head-counts and named attendance are separate**: an activity report's head-count can include people
   who are not registered; "people reached" counts only registered beneficiaries, each once.
 - **Data collection works online**: forms are filled in the browser with a connection. Offline collection
