@@ -51,11 +51,30 @@ Phase 2 database with existing data, checking it matches the code, downgrading a
 Every programme page was crawled in Chrome at 320–440 px phone widths and 1440 px, in light and dark
 mode, with no sideways scrolling, contrast problems or console/security-policy errors.
 
+## Phase 4 — Project management ✅ complete
+
+| Item | Status |
+| --- | --- |
+| Separate Projects module: register, codes, profile, team, status workflow, documents | Done |
+| Independent projects and projects linked to a programme | Done |
+| Planning, proposal summary, resource plan; workplans, activities, milestones, timeline | Done |
+| Work breakdown structure: components → activities → tasks → subtasks, with deliverables | Done |
+| Deliverables with acceptance criteria and checking by a second person | Done |
+| Risk register, risk matrix, issue register and corrective actions (projects and programmes) | Done |
+| Project budget, expenditure, results, indicators, monitoring and reports (shared design) | Done |
+| Closure checklist, closure report, independent approval, read-only archive | Done |
+| Roll-up into programmes without double counting (finance, indicators, reports) | Done |
+| Tasks, calendar, dashboard, reminders and navigation include projects | Done |
+
+140 automated tests pass on SQLite and on PostgreSQL 16. Migration `0004` was tested by upgrading a
+Phase 3 database with existing programmes, activities and tasks, checking it matches the code,
+downgrading and upgrading again. Every project page was crawled in Chrome at 320–440 px phone widths
+and 1440 px, in light and dark mode, with no sideways scrolling, contrast problems or console errors.
+
 ## Outstanding phases
 
 | Phase | Scope |
 |---|---|
-| 4 — Projects | Registration, WBS, milestones, deliverables, budgets, risks, closure, programme links, Gantt charts |
 | 5 — MEAL & beneficiaries | Results frameworks, data collection, beneficiaries, consent, feedback |
 | 6 — Finance, procurement, assets | Budgets, expenditure, approvals, procurement, suppliers, assets |
 | 7 — Reporting & analytics | Dashboards, charts, PDF/Excel/CSV exports |
@@ -66,8 +85,12 @@ mode, with no sideways scrolling, contrast problems or console/security-policy e
 
 - **Email** is real SMTP but optional; without it, notifications are in-app only and invitation links
   are shown once to the administrator.
-- **Project management** (Phase 4) is next: projects will reuse the programme structures and roll up
-  into their programme's figures.
+- **Programme roll-up of money** adds projects in the programme's currency; projects in another
+  currency are listed but not added (no exchange rates yet).
+- **Indicator roll-up** applies to indicators that add up (counts). Rates and percentages are not
+  combined across projects, because averaging them would be misleading.
+- **Closure checklist** cannot yet check asset handover or procurement; those records arrive in Phase 6,
+  so the closure report has a written "handover of assets" section meanwhile.
 - **Beneficiary names in attendance**: activity reports record participant counts; named attendance
   linked to beneficiary records comes with Phase 5 (MEAL & beneficiaries). Attendance sheets can be
   attached as files meanwhile.

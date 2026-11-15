@@ -5,7 +5,7 @@ from flask import Response, abort, flash, g, redirect, render_template, request,
 from flask_login import current_user
 
 from app import audit
-from app.blueprints.programmes import bp, child, ctx, load, need
+from app.blueprints.programmes import child, ctx, load, need, owner_ep, route
 from app.blueprints.tenant import workspace_blueprint
 from app.exporting import report_data, to_pdf, to_xlsx
 from app.extensions import db
@@ -13,7 +13,7 @@ from app.forms import ActionForm
 from app.forms_programmes import CategoryNameForm, DonorForm, LocationForm, ReportForm, ReviewNoteForm
 from app.models import BudgetCategory, BudgetLine, Donor, FundingAgreement, Location, ProgrammeReport, utcnow
 from app.notify import notify
-from app.programme_logic import allowed, holders
+from app.programme_logic import allowed, holders, own
 from app.rbac import can
 from app.tenancy import tenant_get_or_404
 
@@ -28,23 +28,23 @@ def _setup(form):
         organization_id=g.tenant.id).order_by(Donor.name)]
 
 
-@bp.route("/<int:pid>/reports")
+@route("/<int:pid>/reports")
 def reports(pid):
     prog = load(pid)
     _view(prog)
-    rows = ProgrammeReport.query.filter_by(programme_id=prog.id).order_by(ProgrammeReport.period_end.desc()).all()
+    rows = ProgrammeReport.query.filter_by(**own(prog)).order_by(ProgrammeReport.period_end.desc()).all()
     return render_template("programmes/reports.html", rows=rows, today=date.today(), **ctx(prog, "reports"))
 
 
-@bp.route("/<int:pid>/reports/new", methods=["GET", "POST"])
-@bp.route("/<int:pid>/reports/<int:rid>/edit", methods=["GET", "POST"])
+@route("/<int:pid>/reports/new", methods=["GET", "POST"])
+@route("/<int:pid>/reports/<int:rid>/edit", methods=["GET", "POST"])
 def report_edit(pid, rid=None):
     prog = load(pid)
     need("reports.create", prog)
     rep = child(ProgrammeReport, rid, prog) if rid else None
     if rep and rep.status == "approved":
         flash("Approved reports cannot be changed.", "warning")
-        return redirect(url_for("programmes.report_view", pid=prog.id, rid=rep.id))
+        return redirect(url_for(owner_ep(prog, "report_view"), pid=prog.id, rid=rep.id))
     form = ReportForm(obj=rep)
     _setup(form)
     if request.method == "GET" and not rep:
@@ -56,7 +56,7 @@ def report_edit(pid, rid=None):
             tenant_get_or_404(Donor, form.donor_id.data)
         creating = rep is None
         if creating:
-            rep = ProgrammeReport(organization_id=g.tenant.id, programme_id=prog.id, prepared_by_id=current_user.id)
+            rep = ProgrammeReport(organization_id=g.tenant.id, **own(prog), prepared_by_id=current_user.id)
             db.session.add(rep)
         form.populate_obj(rep)
         rep.donor_id = form.donor_id.data
@@ -66,7 +66,7 @@ def report_edit(pid, rid=None):
         audit.record("report.saved", f"Report '{rep.title}' saved", entity=rep)
         db.session.commit()
         flash("Report saved as a draft.", "success")
-        return redirect(url_for("programmes.report_view", pid=prog.id, rid=rep.id))
+        return redirect(url_for(owner_ep(prog, "report_view"), pid=prog.id, rid=rep.id))
     return render_template("programmes/report_form.html", form=form, rep=rep, **ctx(prog, "reports"))
 
 
@@ -76,7 +76,7 @@ def _data_for(prog, rep):
     return report_data(prog, rep.period_start, rep.period_end, rep)
 
 
-@bp.route("/<int:pid>/reports/<int:rid>")
+@route("/<int:pid>/reports/<int:rid>")
 def report_view(pid, rid):
     prog = load(pid)
     _view(prog)
@@ -85,7 +85,7 @@ def report_view(pid, rid):
                            **ctx(prog, "reports"))
 
 
-@bp.route("/<int:pid>/reports/<int:rid>/<action>", methods=["POST"])
+@route("/<int:pid>/reports/<int:rid>/<action>", methods=["POST"])
 def report_action(pid, rid, action):
     prog = load(pid)
     rep = child(ProgrammeReport, rid, prog)
@@ -98,21 +98,21 @@ def report_action(pid, rid, action):
             abort(400)
         rep.status = "submitted"
         notify([u for u in holders("reports.approve", prog) if u != current_user.id], "report",
-               f"Report to approve: {rep.title}", prog.code, "programmes.report_view", pid=prog.id, rid=rep.id)
+               f"Report to approve: {rep.title}", prog.code, owner_ep(prog, "report_view"), pid=prog.id, rid=rep.id)
     elif action in ("approve", "return"):
         need("reports.approve", prog)
         if rep.status != "submitted":
             abort(400)
         if action == "approve" and rep.prepared_by_id == current_user.id:
             flash("Someone other than the author must approve the report.", "danger")
-            return redirect(url_for("programmes.report_view", pid=prog.id, rid=rep.id))
+            return redirect(url_for(owner_ep(prog, "report_view"), pid=prog.id, rid=rep.id))
         if action == "approve":
             rep.status, rep.approved_by_id, rep.approved_at = "approved", current_user.id, utcnow()
             rep.snapshot = report_data(prog, rep.period_start, rep.period_end, rep)  # freeze the figures
         else:
             rep.status = "draft"
         notify([rep.prepared_by_id], "report", f"Report {'approved' if action == 'approve' else 'returned'}: {rep.title}",
-               form.note.data, "programmes.report_view", pid=prog.id, rid=rep.id)
+               form.note.data, owner_ep(prog, "report_view"), pid=prog.id, rid=rep.id)
     elif action == "delete":
         need("reports.create", prog)
         if rep.status == "approved":
@@ -120,13 +120,13 @@ def report_action(pid, rid, action):
         audit.record("report.deleted", f"Report '{rep.title}' deleted", entity=rep)
         db.session.delete(rep)
         db.session.commit()
-        return redirect(url_for("programmes.reports", pid=prog.id))
+        return redirect(url_for(owner_ep(prog, "reports"), pid=prog.id))
     else:
         abort(404)
     audit.record(f"report.{action}", f"Report '{rep.title}': {rep.status}", entity=rep)
     db.session.commit()
     flash("Done.", "success")
-    return redirect(url_for("programmes.report_view", pid=prog.id, rid=rep.id))
+    return redirect(url_for(owner_ep(prog, "report_view"), pid=prog.id, rid=rep.id))
 
 
 def _download(content, mimetype, filename):
@@ -140,7 +140,7 @@ def _safe_name(s):
     return "".join(c if c.isalnum() or c in "-_" else "-" for c in s)[:80]
 
 
-@bp.route("/<int:pid>/reports/<int:rid>/export.<fmt>")
+@route("/<int:pid>/reports/<int:rid>/export.<fmt>")
 def report_export(pid, rid, fmt):
     prog = load(pid)
     _view(prog)
@@ -157,7 +157,7 @@ def report_export(pid, rid, fmt):
     abort(404)
 
 
-@bp.route("/<int:pid>/export.<fmt>")
+@route("/<int:pid>/export.<fmt>")
 def quick_export(pid, fmt):
     """Status report for any period, without narrative (indicator, activity and financial figures)."""
     prog = load(pid)
@@ -195,7 +195,7 @@ def _can_registers():
 
 @registers.route("/", methods=["GET", "POST"])
 def index():
-    if not (_can_registers() or can("programmes.view") or can("finance.view")):
+    if not (_can_registers() or can("programmes.view") or can("projects.view") or can("finance.view")):
         abort(403)
     donor_form, loc_form, cat_form = DonorForm(prefix="d"), LocationForm(prefix="l"), CategoryNameForm(prefix="c")
     what = request.form.get("what")

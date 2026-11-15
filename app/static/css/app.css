@@ -319,3 +319,30 @@ html[data-theme="dark"] .tabs-scroll a[aria-current="page"] { color: #04201d; }
 .lg-plan { background: var(--brand-soft); } .lg-done { background: var(--brand); } .lg-late { background: var(--danger); } .lg-ms { background: var(--accent); transform: rotate(45deg); border-radius: 1px !important; }
 .money { font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
 .gantt .grid.major { stroke: var(--text-muted); stroke-opacity: .35; }
+
+/* Phase 4: projects — work breakdown, deliverables, risks, closure */
+.st-submitted, .st-monitoring { background: var(--accent-soft); color: var(--warning); }
+.st-verified, .st-resolved { background: rgba(31, 138, 76, .14); color: var(--success); }
+.st-returned, .st-open { background: rgba(192, 57, 43, .12); color: var(--danger); }
+.lv-low { background: rgba(90, 104, 102, .14); color: var(--text-muted); }
+.lv-medium { background: var(--accent-soft); color: var(--warning); }
+.lv-high { background: rgba(214, 102, 31, .16); color: #b4531a; }
+.lv-critical { background: rgba(192, 57, 43, .16); color: var(--danger); }
+.wbs { margin: 0; }
+.wbs .list-plain { margin: 6px 0 0; padding-left: 18px; border-left: 3px solid var(--brand-soft); margin-left: 6px; }
+.wbs-act { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.wbs-act:last-child { border-bottom: 0; }
+.wbs-task, .wbs-deliv { padding: 5px 0; }
+.wbs-sub { font-size: .95em; }
+.wbs .bi-box-seam { color: var(--accent); }
+.risk-matrix { border-collapse: separate; border-spacing: 3px; margin: 0 auto; }
+.risk-matrix th { font-size: .8rem; color: var(--text-muted); text-align: center; padding: 2px 6px; font-weight: 600; }
+.risk-matrix td { width: 52px; height: 40px; text-align: center; border-radius: 8px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.rm-low { background: rgba(31, 138, 76, .16); color: var(--success); }
+.rm-medium { background: rgba(217, 145, 26, .22); color: var(--warning); }
+.rm-high { background: rgba(214, 102, 31, .28); color: #9c4514; }
+.rm-critical { background: rgba(192, 57, 43, .30); color: #8e2a1f; }
+.rm-key { display: inline-block; padding: 1px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+.st-planned, .st-on_hold { background: rgba(90, 104, 102, .14); color: var(--text-muted); }
+.st-completed { background: rgba(31, 138, 76, .14); color: var(--success); }
+.st-postponed { background: var(--accent-soft); color: var(--warning); }

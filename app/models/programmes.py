@@ -102,6 +102,11 @@ class Programme(TenantMixin, TimestampMixin, db.Model):
         months = (self.end_date.year - self.start_date.year) * 12 + self.end_date.month - self.start_date.month
         return months + (1 if self.end_date.day >= self.start_date.day else 0)
 
+    kind = "programme"
+    fk = "programme_id"
+    perm = "programmes"
+    ref_prefix = "PRG"
+
     def member_ids(self):
         return {self.manager_id} | {t.user_id for t in self.team} - {None}
 
@@ -130,6 +135,7 @@ class ResultNode(TenantMixin, TimestampMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     programme_id = db.Column(db.Integer, db.ForeignKey("programmes.id", ondelete="CASCADE"), index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="CASCADE"), index=True)
     parent_id = db.Column(db.Integer, db.ForeignKey("result_nodes.id", ondelete="CASCADE"), index=True)
     level = db.Column(db.String(20), nullable=False)
     code = db.Column(db.String(20))
@@ -153,6 +159,7 @@ class Indicator(TenantMixin, TimestampMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     programme_id = db.Column(db.Integer, db.ForeignKey("programmes.id", ondelete="CASCADE"), index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="CASCADE"), index=True)
     result_id = db.Column(db.Integer, db.ForeignKey("result_nodes.id", ondelete="SET NULL"), index=True)
     code = db.Column(db.String(20))
     name = db.Column(db.String(400), nullable=False)
@@ -168,10 +175,13 @@ class Indicator(TenantMixin, TimestampMixin, db.Model):
     frequency = db.Column(db.String(20), nullable=False, default="quarterly")
     responsible_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
     disaggregations = db.Column(db.JSON)  # e.g. ["sex", "age"]
+    # A project indicator can feed a programme indicator; each result is still stored once.
+    contributes_to_id = db.Column(db.Integer, db.ForeignKey("indicators.id", ondelete="SET NULL"), index=True)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
 
     result = db.relationship("ResultNode")
     responsible = db.relationship("User")
+    contributes_to = db.relationship("Indicator", remote_side=[id])
     targets = db.relationship("IndicatorTarget", cascade="all, delete-orphan", order_by="IndicatorTarget.period_start")
     results = db.relationship("IndicatorResult", cascade="all, delete-orphan",
                               order_by="IndicatorResult.period_end.desc()")
@@ -224,6 +234,7 @@ class Workplan(TenantMixin, TimestampMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     programme_id = db.Column(db.Integer, db.ForeignKey("programmes.id", ondelete="CASCADE"), index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="CASCADE"), index=True)
     title = db.Column(db.String(200), nullable=False)
     period_type = db.Column(db.String(20), nullable=False, default="annual")
     start_date = db.Column(db.Date, nullable=False)
@@ -243,10 +254,12 @@ class Activity(TenantMixin, TimestampMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     programme_id = db.Column(db.Integer, db.ForeignKey("programmes.id", ondelete="CASCADE"), index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="CASCADE"), index=True)
     workplan_id = db.Column(db.Integer, db.ForeignKey("workplans.id", ondelete="SET NULL"), index=True)
     result_id = db.Column(db.Integer, db.ForeignKey("result_nodes.id", ondelete="SET NULL"), index=True)
     budget_line_id = db.Column(db.Integer, db.ForeignKey("budget_lines.id", ondelete="SET NULL"), index=True)
     location_id = db.Column(db.Integer, db.ForeignKey("locations.id", ondelete="SET NULL"))
+    component_id = db.Column(db.Integer, db.ForeignKey("project_components.id", ondelete="SET NULL"), index=True)
     code = db.Column(db.String(20))
     title = db.Column(db.String(250), nullable=False)
     description = db.Column(db.Text)
@@ -263,6 +276,7 @@ class Activity(TenantMixin, TimestampMixin, db.Model):
     reminder_sent_at = db.Column(db.DateTime(timezone=True))
 
     workplan = db.relationship("Workplan")
+    component = db.relationship("Component")
     result = db.relationship("ResultNode")
     budget_line = db.relationship("BudgetLine")
     location = db.relationship("Location")
@@ -303,6 +317,7 @@ class Milestone(TenantMixin, TimestampMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     programme_id = db.Column(db.Integer, db.ForeignKey("programmes.id", ondelete="CASCADE"), index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="CASCADE"), index=True)
     title = db.Column(db.String(250), nullable=False)
     due_date = db.Column(db.Date, nullable=False, index=True)
     achieved_date = db.Column(db.Date)
@@ -317,6 +332,7 @@ class BudgetLine(TenantMixin, TimestampMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     programme_id = db.Column(db.Integer, db.ForeignKey("programmes.id", ondelete="CASCADE"), index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="CASCADE"), index=True)
     category_id = db.Column(db.Integer, db.ForeignKey("budget_categories.id", ondelete="RESTRICT"), nullable=False)
     code = db.Column(db.String(30))
     description = db.Column(db.String(300), nullable=False)
@@ -333,6 +349,7 @@ class BudgetRevision(TenantMixin, TimestampMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     programme_id = db.Column(db.Integer, db.ForeignKey("programmes.id", ondelete="CASCADE"), index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="CASCADE"), index=True)
     reason = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(20), nullable=False, default="pending", index=True)
     requested_by_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
@@ -363,6 +380,7 @@ class FundingAgreement(TenantMixin, TimestampMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     programme_id = db.Column(db.Integer, db.ForeignKey("programmes.id", ondelete="CASCADE"), index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="CASCADE"), index=True)
     donor_id = db.Column(db.Integer, db.ForeignKey("donors.id", ondelete="RESTRICT"), nullable=False, index=True)
     reference = db.Column(db.String(120))
     committed_amount = db.Column(MONEY, nullable=False)
@@ -394,6 +412,7 @@ class Expenditure(TenantMixin, TimestampMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     programme_id = db.Column(db.Integer, db.ForeignKey("programmes.id", ondelete="CASCADE"), index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="CASCADE"), index=True)
     budget_line_id = db.Column(db.Integer, db.ForeignKey("budget_lines.id", ondelete="RESTRICT"), nullable=False, index=True)
     activity_id = db.Column(db.Integer, db.ForeignKey("activities.id", ondelete="SET NULL"), index=True)
     kind = db.Column(db.String(20), nullable=False, default="expenditure")
@@ -421,6 +440,7 @@ class MonitoringVisit(TenantMixin, TimestampMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     programme_id = db.Column(db.Integer, db.ForeignKey("programmes.id", ondelete="CASCADE"), index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="CASCADE"), index=True)
     visit_date = db.Column(db.Date, nullable=False, index=True)
     location_id = db.Column(db.Integer, db.ForeignKey("locations.id", ondelete="SET NULL"))
     purpose = db.Column(db.String(300), nullable=False)
@@ -441,6 +461,7 @@ class Evaluation(TenantMixin, TimestampMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     programme_id = db.Column(db.Integer, db.ForeignKey("programmes.id", ondelete="CASCADE"), index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="CASCADE"), index=True)
     eval_type = db.Column(db.String(30), nullable=False)
     title = db.Column(db.String(250), nullable=False)
     evaluator = db.Column(db.String(200))
@@ -460,6 +481,7 @@ class LearningItem(TenantMixin, TimestampMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     programme_id = db.Column(db.Integer, db.ForeignKey("programmes.id", ondelete="CASCADE"), index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="CASCADE"), index=True)
     evaluation_id = db.Column(db.Integer, db.ForeignKey("evaluations.id", ondelete="SET NULL"))
     kind = db.Column(db.String(20), nullable=False, default="lesson")
     title = db.Column(db.String(250), nullable=False)
@@ -485,6 +507,7 @@ class ProgrammeReport(TenantMixin, TimestampMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     programme_id = db.Column(db.Integer, db.ForeignKey("programmes.id", ondelete="CASCADE"), index=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="CASCADE"), index=True)
     report_type = db.Column(db.String(20), nullable=False)
     title = db.Column(db.String(250), nullable=False)
     period_start = db.Column(db.Date, nullable=False)

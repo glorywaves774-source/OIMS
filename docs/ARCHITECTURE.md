@@ -125,6 +125,34 @@ Programme ─┬─ ResultNode (goal → objective → outcome → output) ─ I
   and the PDF. When a report is approved that dictionary is stored as `snapshot`, so approved reports
   never change when later data is entered.
 
+## Projects (Phase 4)
+
+```
+Programme (optional) ─ Project ─┬─ Component ─ Activity ─ Task ─ Task (subtask)
+                                ├─ Deliverable (pending → submitted → verified / rejected; or cancelled)
+                                ├─ RiskItem ─ Issue ─ Task (corrective action, issue_id / risk_id)
+                                ├─ ProjectClosure (checklist snapshot frozen on approval)
+                                └─ the shared programme tables, through project_id
+```
+
+- **Separate modules, shared design.** `programmes_bp` and `projects_bp` are two blueprints. Each view is
+  registered on both by `@route`; `K()` says which one is serving the request. A record belongs to
+  exactly one owner: shared tables carry `programme_id` *or* `project_id`. Helpers in `programme_logic`
+  (`own`, `of`, `owner_of`, `pcode`) hide the difference, and `pcode` turns `programmes.edit` into
+  `projects.edit` so each module keeps its own permissions.
+- **Archived records.** `can_do()` refuses every change on a closed or cancelled programme or project.
+  The only exception is the status change that revives a cancelled record (`can_set_status`). A project
+  is closed only by approving its closure, never by picking "closed" from the status list.
+- **Independent approval.** Plans and closures cannot be approved by the manager unless their
+  `manage` permission covers the whole organization; closures also need someone other than the submitter.
+- **Roll-up without double counting.** `consolidated(programme)` adds the programme's own budget and
+  spending to its linked projects'. Each expenditure has one owner, so the sums cannot overlap. A project
+  indicator may set `contributes_to_id` to a summing indicator of its own programme;
+  `indicator_actual()` then includes the project's verified results in the programme figure. The result
+  is stored once, on the project indicator.
+- **Tasks.** A task with `project_id` (or linked to an issue or risk) is visible to anyone who can see
+  that project or programme, and becomes read-only when it is archived.
+
 ## Notifications and reminders
 
 `app/notify.py::notify()` writes one in-app notification per recipient and emails those who allow it

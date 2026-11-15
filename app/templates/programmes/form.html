@@ -1,7 +1,7 @@
 {% extends "layout_app.html" %}
 {% from "macros.html" import field %}
-{% block title %}{{ prog.title if prog else 'Register a programme' }}{% endblock %}
-{% block page_title %}{{ 'Edit programme' if prog else 'Register a programme' }}{% endblock %}
+{% block title %}{{ prog.title if prog else 'Register a ' ~ K.label|lower }}{% endblock %}
+{% block page_title %}{{ ('Edit ' ~ K.label|lower) if prog else ('Register a ' ~ K.label|lower) }}{% endblock %}
 {% block content %}
 <form method="post" novalidate>
   {{ form.hidden_tag() }}
@@ -13,6 +13,11 @@
         <div class="col-md-4">{{ field(form.sector, attrs={'list': 'sectors'}) }}<datalist id="sectors">{% for s in sectors %}<option value="{{ s }}">{% endfor %}</datalist></div>
         <div class="col-md-4">{{ field(form.manager_id, attrs={'disabled': True} if prog and not manage else {}) }}{% if prog and not manage %}<input type="hidden" name="manager_id" value="{{ prog.manager_id or 0 }}">{% endif %}</div>
         <div class="col-md-4">{{ field(form.department_id) }}</div>
+        {% if K.kind == 'project' %}
+        <div class="col-md-6">{{ field(form.programme_id, help='Leave as independent if the project is not part of a programme.') }}</div>
+        <div class="col-md-3">{{ field(form.donor_id) }}</div>
+        <div class="col-md-3">{{ field(form.funding_source) }}</div>
+        {% endif %}
         <div class="col-md-3">{{ field(form.start_date) }}</div>
         <div class="col-md-3">{{ field(form.end_date) }}</div>
         <div class="col-md-3">{{ field(form.currency) }}</div>
@@ -24,12 +29,16 @@
       {{ field(form.description, attrs={'rows': 3}) }}
       {{ field(form.background, attrs={'rows': 4}) }}
       {{ field(form.rationale, attrs={'rows': 4}) }}
-      {{ field(form.goal, attrs={'rows': 2}, help='Objectives, outcomes and outputs are set up in the Results framework tab.') }}
+      {{ field(form.goal, attrs={'rows': 2}, help='Detailed objectives, outcomes and outputs with indicators go in the Results framework tab.') }}
+      {% if K.kind == 'project' %}
+      {{ field(form.objectives, attrs={'rows': 3}) }}
+      <div class="row g-3"><div class="col-md-6">{{ field(form.expected_outcomes, attrs={'rows': 3}) }}</div><div class="col-md-6">{{ field(form.expected_outputs, attrs={'rows': 3}) }}</div></div>
+      {% endif %}
       <div class="row g-3"><div class="col-md-6">{{ field(form.target_population, attrs={'rows': 3}) }}</div>
         <div class="col-md-6">{{ field(form.geographic_coverage, attrs={'rows': 3}) }}</div></div>
     </div>
   </section>
-  <div class="toolbar mb-4"><button class="btn btn-primary" type="submit" data-loading>{{ 'Save' if prog else 'Register programme' }}</button>
-    <a class="btn btn-light" href="{{ url_for('programmes.overview', pid=prog.id) if prog else url_for('programmes.index') }}">Cancel</a></div>
+  <div class="toolbar mb-4"><button class="btn btn-primary" type="submit" data-loading>{{ 'Save' if prog else 'Register ' ~ K.label|lower }}</button>
+    <a class="btn btn-light" href="{{ url_for(bpn ~ '.overview', pid=prog.id) if prog else url_for(bpn ~ '.index') }}">Cancel</a></div>
 </form>
 {% endblock %}

@@ -40,8 +40,23 @@ class ProgrammeForm(FlaskForm):
     approved_budget = _money("Approved budget")
 
 
+class ProjectForm(ProgrammeForm):
+    code = StringField("Project code", validators=[Optional(), Length(max=40)], filters=[_strip],
+                       description="Leave blank to number it automatically (PRJ/2026/001).")
+    title = StringField("Project title", validators=[DataRequired(), Length(max=250)], filters=[_strip])
+    programme_id = SelectField("Part of programme", coerce=opt_int, validators=[Optional()])
+    rationale = _txt("Justification")
+    objectives = _txt("Project objectives")
+    expected_outcomes = _txt("Expected outcomes")
+    expected_outputs = _txt("Expected outputs")
+    geographic_coverage = _txt("Project location(s)")
+    manager_id = SelectField("Project manager", coerce=opt_int, validators=[Optional()])
+    donor_id = SelectField("Donor", coerce=opt_int, validators=[Optional()])
+    funding_source = StringField("Funding source", validators=[Optional(), Length(max=200)], filters=[_strip])
+
+
 class PlanningForm(FlaskForm):
-    strategy = _txt("Programme strategy")
+    strategy = _txt("Strategy")
     implementation_plan = _txt("Implementation plan")
     theory_of_change = _txt("Theory of change")
     assumptions = _txt("Key assumptions")
@@ -82,6 +97,9 @@ class IndicatorForm(FlaskForm):
     means_of_verification = _txt("Means of verification", maxlen=4000)
     data_source = StringField("Data source / collection tool", validators=[Optional(), Length(max=300)], filters=[_strip])
     responsible_id = SelectField("Responsible", coerce=opt_int, validators=[Optional()])
+    # Checked in the view (it must be a summing indicator of the project's own programme).
+    contributes_to_id = SelectField("Counts toward programme indicator", coerce=opt_int, validators=[Optional()],
+                                    validate_choice=False)
     disaggregations = SelectMultipleField("Break results down by", choices=[
         ("sex", "Sex"), ("age", "Age group"), ("disability", "Disability")], validators=[Optional()])
 
@@ -119,6 +137,7 @@ class ActivityForm(FlaskForm):
     description = _txt("Description", maxlen=8000)
     category = StringField("Category", validators=[Optional(), Length(max=100)], filters=[_strip])
     workplan_id = SelectField("Workplan", coerce=opt_int, validators=[Optional()])
+    component_id = SelectField("Project component", coerce=opt_int, validators=[Optional()])
     result_id = SelectField("Contributes to output", coerce=opt_int, validators=[Optional()])
     location_id = SelectField("Location", coerce=opt_int, validators=[Optional()])
     planned_start = DateField("Planned start", validators=[Optional()])
@@ -257,3 +276,93 @@ class LocationForm(FlaskForm):
 class CategoryNameForm(FlaskForm):
     name = StringField("Budget category", validators=[DataRequired(), Length(max=100)], filters=[_strip])
 
+
+
+class ProjectPlanningForm(PlanningForm):
+    proposal_summary = _txt("Project proposal summary")
+    resource_plan = _txt("Resource allocation (people, equipment, partners)")
+
+
+# --- Project management (Phase 4) --------------------------------------------------------
+
+class ComponentForm(FlaskForm):
+    code = StringField("Code", validators=[Optional(), Length(max=20)], filters=[_strip])
+    title = StringField("Component", validators=[DataRequired(), Length(max=250)], filters=[_strip])
+    description = _txt("Description", 4000)
+    responsible_id = SelectField("Responsible", coerce=opt_int, validators=[Optional()])
+
+
+class WbsTaskForm(FlaskForm):
+    title = StringField("Task", validators=[DataRequired(), Length(max=250)], filters=[_strip])
+    activity_id = SelectField("Activity", coerce=opt_int, validators=[Optional()])
+    parent_id = SelectField("Subtask of", coerce=opt_int, validators=[Optional()])
+    assigned_to_id = SelectField("Assign to", coerce=opt_int, validators=[Optional()])
+    priority = SelectField("Priority", choices=[(p, p.capitalize()) for p in ("low", "normal", "high", "urgent")],
+                           default="normal")
+    due_date = DateField("Deadline", validators=[Optional()])
+
+
+class DeliverableForm(FlaskForm):
+    title = StringField("Deliverable", validators=[DataRequired(), Length(max=250)], filters=[_strip])
+    description = _txt("Description", 4000)
+    acceptance_criteria = _txt("Acceptance criteria (how it will be checked)", 4000)
+    component_id = SelectField("Component", coerce=opt_int, validators=[Optional()])
+    activity_id = SelectField("Activity", coerce=opt_int, validators=[Optional()])
+    due_date = DateField("Due date", validators=[Optional()])
+    responsible_id = SelectField("Responsible", coerce=opt_int, validators=[Optional()])
+    priority = SelectField("Priority", choices=[(p, p.capitalize()) for p in ("low", "normal", "high", "urgent")],
+                           default="normal")
+
+
+_SCALE = [(i, f"{i}") for i in range(1, 6)]
+
+
+class RiskForm(FlaskForm):
+    code = StringField("Code", validators=[Optional(), Length(max=20)], filters=[_strip])
+    title = StringField("Risk", validators=[DataRequired(), Length(max=250)], filters=[_strip])
+    description = _txt("Description (cause and effect)", 4000)
+    category = SelectField("Category")
+    probability = SelectField("Likelihood", coerce=int)
+    impact = SelectField("Impact", coerce=int)
+    mitigation = _txt("Mitigation / response", 4000)
+    owner_id = SelectField("Risk owner", coerce=opt_int, validators=[Optional()])
+    status = SelectField("Status")
+    review_date = DateField("Next review", validators=[Optional()])
+
+    def __init__(self, *a, **kw):
+        from app.models import RiskItem
+        super().__init__(*a, **kw)
+        self.category.choices = [(c, c) for c in RiskItem.CATEGORIES]
+        self.probability.choices = [(k, f"{k} – {v}") for k, v in RiskItem.LIKELIHOOD.items()]
+        self.impact.choices = [(k, f"{k} – {v}") for k, v in RiskItem.IMPACT.items()]
+        self.status.choices = [(s, s.capitalize()) for s in RiskItem.STATUSES]
+
+
+class IssueForm(FlaskForm):
+    title = StringField("Issue", validators=[DataRequired(), Length(max=250)], filters=[_strip])
+    description = _txt("What happened", 4000)
+    severity = SelectField("Severity", choices=[(s, s.capitalize()) for s in ("low", "medium", "high", "critical")],
+                           default="medium")
+    risk_id = SelectField("Linked risk", coerce=opt_int, validators=[Optional()])
+    owner_id = SelectField("Owner", coerce=opt_int, validators=[Optional()])
+    status = SelectField("Status", choices=[(s, s.replace("_", " ").capitalize())
+                                            for s in ("open", "in_progress", "resolved", "closed")])
+    resolution = _txt("Resolution", 4000)
+
+
+class CorrectiveActionForm(FlaskForm):
+    title = StringField("Corrective action", validators=[DataRequired(), Length(max=250)], filters=[_strip])
+    assigned_to_id = SelectField("Assign to", coerce=opt_int, validators=[DataRequired(message="Choose a person.")])
+    due_date = DateField("Deadline", validators=[Optional()])
+    priority = SelectField("Priority", choices=[(p, p.capitalize()) for p in ("low", "normal", "high", "urgent")],
+                           default="high")
+
+
+class ClosureForm(FlaskForm):
+    final_report = _txt("Final project report")
+    achievements = _txt("Final achievements against targets")
+    financial_reconciliation = _txt("Financial reconciliation")
+    lessons_learned = _txt("Lessons learned")
+    evaluation_summary = _txt("Final evaluation")
+    outstanding_issues = _txt("Outstanding issues and how they will be handled")
+    asset_handover = _txt("Handover of assets and documents")

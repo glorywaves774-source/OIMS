@@ -48,3 +48,8 @@ html[data-theme="dark"] .support-banner { border-color: rgba(240, 181, 74, .35);
 html[data-theme="dark"] .badge-dot { color: #2a0905; }
 html[data-theme="dark"] .report-page { background: var(--surface-solid); color: var(--text); }
 html[data-theme="dark"] .report-page th, html[data-theme="dark"] .report-page td { border-color: var(--border); }
+
+/* Phase 4: risk levels need lighter text on dark surfaces */
+html[data-theme="dark"] .lv-high { color: #f0a46a; }
+html[data-theme="dark"] .rm-high { color: #f6b27c; }
+html[data-theme="dark"] .rm-critical { color: #ff9c8f; }

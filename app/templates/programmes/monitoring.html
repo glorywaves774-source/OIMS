@@ -29,7 +29,7 @@
   {% if evals %}<div class="table-scroll mb-3"><table class="table"><thead><tr><th>Evaluation</th><th>Type</th><th>Dates</th><th>Evaluator</th><th>Status</th><th></th></tr></thead><tbody>
     {% for e in evals %}<tr><td translate="no">{{ e.title }}{% if e.findings %}<span class="cell-sub">{{ e.findings|truncate(120) }}</span>{% endif %}</td><td>{{ e.eval_type }}</td>
       <td class="date">{{ dt(e.start_date, '%b %Y') }} – {{ dt(e.end_date, '%b %Y') }}</td><td translate="no">{{ e.evaluator or '—' }}</td><td>{{ status(e.status) }}</td>
-      <td><a class="btn btn-sm btn-light" href="{{ url_for('programmes.evaluation_edit', pid=prog.id, eid=e.id) }}">{{ 'Open' if p_can['meal.edit'] else 'View' }}</a></td></tr>{% endfor %}
+      <td><a class="btn btn-sm btn-light" href="{{ url_for(bpn ~ '.evaluation_edit', pid=prog.id, eid=e.id) }}">{{ 'Open' if p_can['meal.edit'] else 'View' }}</a></td></tr>{% endfor %}
   </tbody></table></div>{% else %}<p class="text-muted">No evaluations recorded.</p>{% endif %}
   {% if p_can['meal.edit'] %}
   <details><summary class="btn btn-sm btn-soft">Add an evaluation</summary>
@@ -50,7 +50,7 @@
     {% if l.management_response %}<p class="prewrap small mb-1"><strong>Management response:</strong> <span translate="no">{{ l.management_response }}</span></p>{% endif %}
     {% if (p_can['programmes.manage'] or l.responsible_id == current_user.id) and not support_request %}
     <details><summary class="small">Record the management response</summary>
-      <form method="post" action="{{ url_for('programmes.learning_respond', pid=prog.id, lid=l.id) }}" class="mt-2" novalidate>
+      <form method="post" action="{{ url_for(bpn ~ '.learning_respond', pid=prog.id, lid=l.id) }}" class="mt-2" novalidate>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="row g-2"><div class="col-md-4"><label class="form-label" for="rs{{ l.id }}">Response</label><select class="form-select" id="rs{{ l.id }}" name="response_status">{% for v, lab in response_form.response_status.choices %}<option value="{{ v }}"{% if v == l.response_status %} selected{% endif %}>{{ lab }}</option>{% endfor %}</select></div>
           <div class="col-md-8"><label class="form-label" for="mr{{ l.id }}">Management response</label><textarea class="form-control" id="mr{{ l.id }}" name="management_response" rows="2">{{ l.management_response or '' }}</textarea></div></div>

@@ -1,0 +1,49 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt %}
+{% block title %}Closure · {{ prog.code }}{% endblock %}
+{% block page_title %}<span translate="no">{{ prog.code }}</span> · Closure{% endblock %}
+{% block content %}
+{% include "programmes/_header.html" %}
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-header"><h2>Closure checklist</h2>{% if c %}{{ status(c.status) }}{% endif %}</div>
+    {% if c and c.status == 'approved' %}<p class="small text-muted">As it stood when closure was approved.</p>{% else %}<p class="small text-muted">Worked out from the project's records. Every item must be settled before closure can be submitted or approved.</p>{% endif %}
+    <ul class="list-plain checklist-status mb-0">{% for x in checks %}
+      <li class="py-2 border-bottom-soft d-flex gap-2"><i class="bi {{ 'bi-check-circle-fill text-success' if x.ok else 'bi-x-circle text-danger' }}" aria-hidden="true"></i>
+        <span>{{ x.label }}<span class="cell-sub">{% if x.ok %}{{ x.detail }}{% else %}Not yet: {{ x.detail }}{% endif %}</span></span></li>{% endfor %}</ul>
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Approval</h2></div>
+    <dl class="kv">
+      <dt>Status</dt><dd>{{ status(c.status) if c else 'Not started' }}</dd>
+      {% if c and c.submitted_by %}<dt>Submitted</dt><dd><span translate="no">{{ c.submitted_by.full_name }}</span> · {{ dt(c.submitted_at) }}</dd>{% endif %}
+      {% if c and c.approved_by %}<dt>Approved</dt><dd><span translate="no">{{ c.approved_by.full_name }}</span> · {{ dt(c.approved_at) }}</dd>{% endif %}
+      {% if prog.closed_at %}<dt>Project closed</dt><dd>{{ dt(prog.closed_at) }}</dd>{% endif %}
+      {% if c and c.decision_note %}<dt>Note</dt><dd translate="no">{{ c.decision_note }}</dd>{% endif %}
+    </dl>
+    {% if p_can['programmes.manage'] and c %}
+      {% if c.status in ('draft', 'returned') %}
+      <form method="post" class="mt-3" action="{{ url_for(bpn ~ '.closure_action', pid=prog.id, action='submit') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-primary" type="submit"{% if not ready %} disabled aria-disabled="true"{% endif %}>Submit for closure approval</button>
+        {% if not ready %}<div class="form-text">Settle the open checklist items first.</div>{% endif %}</form>
+      {% elif c.status == 'submitted' and can_approve %}
+      <form method="post" class="mt-3" action="{{ url_for(bpn ~ '.closure_action', pid=prog.id, action='approve') }}" data-confirm="Approve closure? The project becomes a read-only archive."><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="form-label" for="cl-note">Note</label><input class="form-control mb-2" id="cl-note" name="note" maxlength="500" placeholder="Required when returning">
+        <div class="toolbar"><button class="btn btn-primary" type="submit"{% if not ready %} disabled aria-disabled="true"{% endif %}>Approve closure</button>
+          <button class="btn btn-light" type="submit" formaction="{{ url_for(bpn ~ '.closure_action', pid=prog.id, action='return') }}" formnovalidate>Return for changes</button></div></form>
+      {% elif c.status == 'submitted' %}<p class="text-muted mt-3 mb-0">Waiting for approval by someone other than the project manager.</p>{% endif %}
+    {% elif not c and p_can['programmes.manage'] %}<p class="text-muted mb-0">Write the closure report below to begin.</p>{% endif %}
+  </section>
+</div>
+
+<section class="panel">
+  <div class="panel-header"><h2>Closure report</h2></div>
+  {% if editable and p_can['programmes.manage'] %}
+  <form method="post" novalidate>{{ form.hidden_tag() }}
+    {% for f in form if f.type == 'TextAreaField' %}{{ field(f, attrs={'rows': 4}) }}{% endfor %}
+    <button class="btn btn-primary" type="submit" data-loading>Save closure report</button></form>
+  {% elif c %}
+  <dl class="kv">{% for f in form if f.type == 'TextAreaField' %}<dt>{{ f.label.text }}</dt><dd class="prewrap" translate="no">{{ c[f.name] or '—' }}</dd>{% endfor %}</dl>
+  {% else %}<p class="text-muted mb-0">No closure report yet.</p>{% endif %}
+</section>
+{% endblock %}

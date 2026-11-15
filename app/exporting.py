@@ -9,7 +9,8 @@ from datetime import date
 from decimal import Decimal
 
 from app.models import Activity, Expenditure, Milestone
-from app.programme_logic import achievement, category_breakdown, finance_summary, indicator_actual, indicator_rows
+from app.programme_logic import (achievement, category_breakdown, consolidated, finance_summary, indicator_actual,
+                                 indicator_rows, of, own)
 
 
 def _f(v):
@@ -23,7 +24,7 @@ def report_data(prog, start=None, end=None, report=None):
     end = end or date.today()
     fin = finance_summary(prog)
     period_spent = sum((Decimal(e.amount) for e in Expenditure.query.filter(
-        Expenditure.programme_id == prog.id, Expenditure.kind == "expenditure", Expenditure.status == "approved",
+        of(Expenditure, prog), Expenditure.kind == "expenditure", Expenditure.status == "approved",
         *([Expenditure.spent_on >= start] if start else []), Expenditure.spent_on <= end)), Decimal(0))
     inds = []
     for r in indicator_rows(prog, start, end):
@@ -34,7 +35,7 @@ def report_data(prog, start=None, end=None, report=None):
                      "period_actual": _f(r["actual"]), "cumulative": _f(cumulative),
                      "achievement": achievement(ind, cumulative)})
     acts = []
-    q = Activity.query.filter(Activity.programme_id == prog.id)
+    q = Activity.query.filter(of(Activity, prog))
     for a in q.order_by(Activity.planned_start.is_(None), Activity.planned_start, Activity.code).all():
         in_period = (not a.planned_start or not end or a.planned_start <= end) and \
                     (not a.planned_end or not start or a.planned_end >= start)
@@ -49,12 +50,12 @@ def report_data(prog, start=None, end=None, report=None):
     reached_f = sum(a["female"] for a in acts)
     reached_m = sum(a["male"] for a in acts)
     ms = [{"title": m.title, "due": m.due_date.isoformat(), "achieved": m.achieved_date.isoformat() if m.achieved_date else None}
-          for m in Milestone.query.filter_by(programme_id=prog.id).order_by(Milestone.due_date)
+          for m in Milestone.query.filter_by(**own(prog)).order_by(Milestone.due_date)
           if (not start or m.due_date >= start) and m.due_date <= end]
-    challenges = [r.challenges for a in Activity.query.filter_by(programme_id=prog.id) for r in a.reports
+    challenges = [r.challenges for a in Activity.query.filter_by(**own(prog)) for r in a.reports
                   if r.challenges and (not start or r.report_date >= start) and r.report_date <= end][:10]
     data = {
-        "programme": {"code": prog.code, "title": prog.title, "status": prog.status, "currency": prog.currency,
+        "programme": {"kind": prog.kind, "code": prog.code, "title": prog.title, "status": prog.status, "currency": prog.currency,
                       "manager": prog.manager.full_name if prog.manager else None, "sector": prog.sector,
                       "start": prog.start_date.isoformat() if prog.start_date else None,
                       "end": prog.end_date.isoformat() if prog.end_date else None, "goal": prog.goal},
@@ -69,6 +70,17 @@ def report_data(prog, start=None, end=None, report=None):
         if report else {},
         "generated": date.today().isoformat(),
     }
+    cons = consolidated(prog)
+    if cons is not None:
+        data["projects"] = [{"code": r["p"].code, "title": r["p"].title, "status": r["p"].status,
+                             "currency": r["p"].currency, "budget": _f(r["fin"]["budget"]), "spent": _f(r["fin"]["spent"]),
+                             "utilization": r["fin"]["utilization"], "activities": r["acts"]["total"],
+                             "completed": r["acts"]["by_status"].get("completed", 0)} for r in cons["projects"]]
+        data["consolidated"] = {"budget": _f(cons["budget"]), "spent": _f(cons["spent"]),
+                                "other_currency": cons["other_currency"],
+                                "note": "Programme and linked projects together. Each payment is recorded once, so "
+                                        "nothing is counted twice. Indicator figures include verified results "
+                                        "reported on linked project indicators."}
     return data
 
 
@@ -104,7 +116,7 @@ def to_xlsx(data, title):
     ws = wb.active
     ws.title = "Summary"
     p, per, fin = data["programme"], data["period"], data["finance"]
-    rows = [("Report", title), ("Programme", f"{p['code']} — {p['title']}"), ("Status", p["status"]),
+    rows = [("Report", title), (p.get("kind", "programme").capitalize(), f"{p['code']} — {p['title']}"), ("Status", p["status"]),
             ("Manager", p["manager"] or ""), ("Period", f"{per['start'] or '—'} to {per['end']}"),
             ("Currency", cur), ("", ""),
             ("Budget", fin["budget"]), ("Spent (to date)", fin["spent"]), ("Spent in period", fin["period_spent"]),
@@ -146,6 +158,15 @@ def to_xlsx(data, title):
           money_cols=(2, 3, 4, 5), pct_cols=(6,))
     sheet(wb.create_sheet("Milestones"), ["Milestone", "Due", "Achieved"],
           [[m["title"], m["due"], m["achieved"] or ""] for m in data["milestones"]])
+    if data.get("projects"):
+        sheet(wb.create_sheet("Projects"),
+              ["Code", "Project", "Status", "Currency", "Budget", "Spent", "Used %", "Activities", "Completed"],
+              [[r["code"], r["title"], r["status"], r["currency"], r["budget"], r["spent"],
+                round(r["utilization"], 1) if r["utilization"] is not None else None, r["activities"], r["completed"]]
+               for r in data["projects"]] +
+              [["", "Programme and projects combined", "", cur, data["consolidated"]["budget"],
+                data["consolidated"]["spent"], None, None, None]],
+              money_cols=(5, 6), pct_cols=(7,))
     buf = io.BytesIO()
     wb.save(buf)
     return buf.getvalue()
@@ -233,6 +254,17 @@ def to_pdf(data, title, org_name):
         els += [Paragraph("Milestones", h2),
                 table(["Milestone", "Due", "Achieved"], [(m["title"], m["due"], m["achieved"] or "Not yet")
                                                           for m in data["milestones"]], [100 * mm, 35 * mm, 35 * mm], text_cols=3)]
+    if data.get("projects"):
+        els += [Paragraph("Projects in this programme", h2),
+                table(["Project", "Status", f"Budget ({cur})", f"Spent ({cur})", "Used"],
+                      [(f"{r['code']} {r['title']}", r["status"].replace("_", " "),
+                        money(r["budget"]) + ("" if r["currency"] == cur else f" {r['currency']}"),
+                        money(r["spent"]), f"{r['utilization']:.0f}%" if r["utilization"] is not None else "—")
+                       for r in data["projects"]] +
+                      [("Programme and projects combined", "", money(data["consolidated"]["budget"]),
+                        money(data["consolidated"]["spent"]), "")],
+                      [78 * mm, 24 * mm, 30 * mm, 30 * mm, 14 * mm], text_cols=2),
+                Paragraph(esc(data["consolidated"]["note"]), small)]
     els += [Spacer(1, 10), Paragraph(f"Generated by OIMS on {esc(data['generated'])}.", small)]
     doc.build(els)
     return buf.getvalue()

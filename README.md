@@ -2,8 +2,22 @@
 
 A multi-tenant SaaS platform owned and operated by **HOLIDO — Holistic Development Organization**.
 
-**Current release:** `0.3.0-phase3` (Phase 3 — Programmes management). See [CHANGELOG.md](CHANGELOG.md) and
+**Current release:** `0.4.0-phase4` (Phase 4 — Project management). See [CHANGELOG.md](CHANGELOG.md) and
 [docs/STATUS.md](docs/STATUS.md) for what is complete and what comes next.
+
+## What Phase 4 adds
+
+| Area | Delivered |
+|---|---|
+| Project registration | Separate **Projects** module with its own menu, list, codes (`PRJ/2026/001`) and permissions; title, objectives, justification, expected outcomes and outputs, locations, donor and funding source, dates, manager, team, budget, status workflow, documents |
+| Independent or linked | A project can stand alone or belong to a programme; the project list filters by programme or "independent" |
+| Planning & work breakdown | Proposal summary and resource plan; project → components → activities → tasks → subtasks, with deliverables shown where they belong |
+| Deliverables | Acceptance criteria, due date, responsible person; submitted by the responsible person and accepted or returned by someone else; files attached |
+| Risks & issues | Risk register (likelihood × impact rating, risk matrix, owner, review date); issue register; corrective actions assigned as tasks. Also available on programmes |
+| Shared with programmes | Results framework, indicators, workplans, activities, milestones, timeline, budget and expenditure, monitoring, evaluations and reports all work for projects |
+| Closure | Computed checklist (deliverables, activities, tasks, pending payments, open commitments, issues, unchecked results, final report and reconciliation); approval by someone other than the manager; the closed project becomes a read-only archive |
+| Roll-up into programmes | Programme overview and reports list linked projects with combined budget and spending; project indicators can count toward a programme indicator. Every payment and result is recorded once, so nothing is counted twice |
+| Everywhere else | Project tasks in Tasks, deliverable and risk-review dates in the calendar, dashboard and reminders; "Projects" in the menu and phone tab bar |
 
 ## What Phase 3 adds
 
@@ -103,15 +117,16 @@ app/
   blueprints/        public, auth, setup, account, platform (HOLIDO), workspace (/o/<org>),
                      people (departments, staff, leave, attendance), documents, correspondence,
                      meetings, tasks, comms (notifications, announcements, messages, calendar),
-                     programmes (+ programme_finance, programme_reports and registers)
+                     programmes and projects (+ programme_finance, programme_reports,
+                     project_extras and registers)
   storage.py         local-disk and S3 file storage, upload checks
   notify.py          notifications, reference numbers   reminders.py  scheduled reminders
   twofactor.py       two-step sign-in
-  programme_logic.py programme access, finance, indicator and timeline calculations
+  programme_logic.py programme/project access, finance, indicator, roll-up and timeline calculations
   exporting.py       report figures, Excel and PDF exports
   templates/ static/ interface (Bootstrap 5 self-hosted; css/app.css, dark.css, mobile.css)
 migrations/          Alembic migrations
-tests/               126 automated tests
+tests/               140 automated tests
 docs/                architecture, deployment, status
 ```
 

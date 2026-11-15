@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.4.0-phase4 — 15 November 2026
+
+Project management.
+
+- **Projects** are a separate module with their own menu, list, codes (`PRJ/2026/001`) and permissions.
+  A project can stand alone or belong to a programme.
+- **Work breakdown**: components, activities, tasks and subtasks on one page, with the deliverables
+  each produces. Activities can be placed in a component.
+- **Deliverables** with acceptance criteria and due dates. The responsible person submits; someone else
+  accepts it or returns it with a note.
+- **Risks and issues** for projects and programmes: likelihood × impact rating, a risk matrix, owners and
+  review dates, an issue register, and corrective actions assigned as tasks.
+- **Closure**: a checklist worked out from the records, a closure report, approval by someone other than
+  the manager, and then a read-only archive. Projects can no longer be set to "closed" directly.
+- **Programme roll-up**: the programme overview and reports list linked projects with combined budget and
+  spending; project indicators can count toward a programme indicator. Nothing is counted twice.
+- Project tasks, deliverable deadlines and risk reviews appear in Tasks, the calendar, the dashboard and
+  reminders. Tasks show their project, activity, parent task or the issue they correct.
+- **Fix:** closed or cancelled programmes are now fully read-only. Before this, managers could still change
+  the team or approve and reopen workplans on an archived programme.
+- **Fix:** "Planned", "Completed" and "Postponed" status labels now have colours.
+- Migration `0004` adds the new tables and `project_id` columns; run `oims sync-roles` (done
+  automatically on Render) so existing organizations get the project permissions.
+
 ## 0.3.0-phase3 — 15 November 2026
 
 Programmes management.

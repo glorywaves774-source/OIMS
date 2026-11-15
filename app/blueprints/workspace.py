@@ -63,8 +63,16 @@ def dashboard():
     if can("documents.view"):
         documents = db.session.execute(visible_stmt().where(Document.status == "approved")
                                        .order_by(Document.updated_at.desc()).limit(5)).scalars().all()
+    from app.models import Deliverable
+    my_deliverables = (Deliverable.query.filter(Deliverable.organization_id == org.id,
+                                                Deliverable.responsible_id == current_user.id,
+                                                Deliverable.status.in_(("pending", "rejected")),
+                                                Deliverable.due_date.isnot(None))
+                       .order_by(Deliverable.due_date).limit(5).all())
     deadlines = sorted(
         [(t.due_date, "Task", t.title, url_for("tasks.detail", task_id=t.id)) for t in my_tasks if t.due_date] +
+        [(d.due_date, "Deliverable", d.title, url_for("projects.deliverables", pid=d.project_id) + f"#d{d.id}")
+         for d in my_deliverables] +
         [(c.response_due, "Reply", f"{c.reference_no} {c.subject}", url_for("correspondence.detail", item_id=c.id))
          for c in correspondence if c.response_due],
         key=lambda x: x[0])[:6]

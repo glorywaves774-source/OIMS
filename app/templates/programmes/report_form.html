@@ -24,6 +24,6 @@
     {{ field(form.next_steps, attrs={'rows': 3}) }}
   </section>
   <div class="toolbar mb-4"><button class="btn btn-primary" type="submit" data-loading>Save draft</button>
-    <a class="btn btn-light" href="{{ url_for('programmes.report_view', pid=prog.id, rid=rep.id) if rep else url_for('programmes.reports', pid=prog.id) }}">Cancel</a></div>
+    <a class="btn btn-light" href="{{ url_for(bpn ~ '.report_view', pid=prog.id, rid=rep.id) if rep else url_for(bpn ~ '.reports', pid=prog.id) }}">Cancel</a></div>
 </form>
 {% endblock %}

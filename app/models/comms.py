@@ -130,6 +130,13 @@ class Task(TenantMixin, TimestampMixin, db.Model):
     created_by_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"), index=True)
     department_id = db.Column(db.Integer, db.ForeignKey("departments.id", ondelete="SET NULL"), index=True)
     meeting_id = db.Column(db.Integer, db.ForeignKey("meetings.id", ondelete="SET NULL"), index=True)
+    # Work breakdown: a task can belong to a project activity, have a parent task (subtask),
+    # or be a corrective action for a project issue or risk.
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="CASCADE"), index=True)
+    activity_id = db.Column(db.Integer, db.ForeignKey("activities.id", ondelete="SET NULL"), index=True)
+    parent_id = db.Column(db.Integer, db.ForeignKey("tasks.id", ondelete="CASCADE"), index=True)
+    issue_id = db.Column(db.Integer, db.ForeignKey("project_issues.id", ondelete="SET NULL"), index=True)
+    risk_id = db.Column(db.Integer, db.ForeignKey("risks.id", ondelete="SET NULL"), index=True)
     completed_at = db.Column(db.DateTime(timezone=True))
     reminder_sent_at = db.Column(db.DateTime(timezone=True))
 
@@ -137,6 +144,11 @@ class Task(TenantMixin, TimestampMixin, db.Model):
     created_by = db.relationship("User", foreign_keys=[created_by_id])
     department = db.relationship("Department")
     meeting = db.relationship("Meeting")
+    project = db.relationship("Project")
+    activity = db.relationship("Activity")
+    parent = db.relationship("Task", remote_side=[id], backref="subtasks")
+    issue = db.relationship("Issue")
+    risk = db.relationship("RiskItem")
     comments = db.relationship("TaskComment", cascade="all, delete-orphan", order_by="TaskComment.created_at")
 
 

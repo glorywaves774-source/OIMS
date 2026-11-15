@@ -272,23 +272,43 @@ def calendar_events(start, end, scope):
         events.append({"date": d.expiry_date, "time": "", "title": f"Expires: {d.title}", "kind": "document",
                        "url": url_for("documents.detail", doc_id=d.id)})
 
-    if can("programmes.view"):
-        from app.models import Activity, Milestone
-        from app.programme_logic import visible_programmes_stmt
-        prog_ids = [p.id for p in db.session.execute(visible_programmes_stmt()).scalars()]
-        if prog_ids:
-            stmt = select(Activity).where(Activity.programme_id.in_(prog_ids), Activity.planned_start >= start,
-                                          Activity.planned_start <= end, Activity.status.in_(Activity.OPEN))
+    from app.models import Activity, Deliverable, Milestone, RiskItem
+    from app.programme_logic import visible_owner_stmt
+    for kind, perm, fk in (("programme", "programmes", "programme_id"), ("project", "projects", "project_id")):
+        if not can(f"{perm}.view"):
+            continue
+        ids = [p.id for p in db.session.execute(visible_owner_stmt(kind)).scalars()]
+        if not ids:
+            continue
+        col = lambda m: getattr(m, fk)  # noqa: E731
+        stmt = select(Activity).where(col(Activity).in_(ids), Activity.planned_start >= start,
+                                      Activity.planned_start <= end, Activity.status.in_(Activity.OPEN))
+        if scope == "me":
+            stmt = stmt.where(Activity.responsible_id == me)
+        for a in db.session.execute(stmt).scalars():
+            events.append({"date": a.planned_start, "time": "", "title": f"Activity: {a.title}", "kind": "activity",
+                           "url": url_for(f"{perm}.activity_detail", pid=col(a), aid=a.id)})
+        if kind == "project":
+            dstmt = select(Deliverable).where(Deliverable.project_id.in_(ids), Deliverable.due_date >= start,
+                                              Deliverable.due_date <= end,
+                                              Deliverable.status.in_(("pending", "rejected", "submitted")))
             if scope == "me":
-                stmt = stmt.where(Activity.responsible_id == me)
-            for a in db.session.execute(stmt).scalars():
-                events.append({"date": a.planned_start, "time": "", "title": f"Activity: {a.title}", "kind": "activity",
-                               "url": url_for("programmes.activity_detail", pid=a.programme_id, aid=a.id)})
-            if scope != "me":
-                for m in Milestone.query.filter(Milestone.programme_id.in_(prog_ids), Milestone.due_date >= start,
-                                                Milestone.due_date <= end, Milestone.achieved_date.is_(None)):
-                    events.append({"date": m.due_date, "time": "", "title": f"Milestone: {m.title}", "kind": "milestone",
-                                   "url": url_for("programmes.workplans", pid=m.programme_id) + "#milestones"})
+                dstmt = dstmt.where(Deliverable.responsible_id == me)
+            for d in db.session.execute(dstmt).scalars():
+                events.append({"date": d.due_date, "time": "", "title": f"Deliverable due: {d.title}",
+                               "kind": "deliverable", "url": url_for("projects.deliverables", pid=d.project_id) + f"#d{d.id}"})
+        rstmt = select(RiskItem).where(col(RiskItem).in_(ids), RiskItem.review_date >= start,
+                                       RiskItem.review_date <= end, RiskItem.status != "closed")
+        if scope == "me":
+            rstmt = rstmt.where(RiskItem.owner_id == me)
+        for r in db.session.execute(rstmt).scalars():
+            events.append({"date": r.review_date, "time": "", "title": f"Risk review: {r.title}", "kind": "risk",
+                           "url": url_for(f"{perm}.risks", pid=col(r)) + f"#r{r.id}"})
+        if scope != "me":
+            for m in Milestone.query.filter(col(Milestone).in_(ids), Milestone.due_date >= start,
+                                            Milestone.due_date <= end, Milestone.achieved_date.is_(None)):
+                events.append({"date": m.due_date, "time": "", "title": f"Milestone: {m.title}", "kind": "milestone",
+                               "url": url_for(f"{perm}.workplans", pid=col(m)) + "#milestones"})
 
     events.sort(key=lambda e: (e["date"], e["time"] or "99", e["title"]))
     return events

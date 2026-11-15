@@ -1,0 +1,82 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt, priority, attachments %}
+{% block title %}Risks & issues · {{ prog.code }}{% endblock %}
+{% block page_title %}<span translate="no">{{ prog.code }}</span> · Risks & issues{% endblock %}
+{% macro actions_for(kind, obj) -%}
+  {% set acts = actions.get((kind, obj.id), []) %}
+  {% if acts %}<h3 class="fs-6 mt-3">Corrective actions</h3><ul class="list-plain">{% for t in acts %}
+    <li class="py-1"><a href="{{ url_for('tasks.detail', task_id=t.id) }}" translate="no">{{ t.title }}</a> <span class="cell-sub">{{ status(t.status) }}{% if t.assigned_to %} · <span translate="no">{{ t.assigned_to.full_name }}</span>{% endif %}{% if t.due_date %} · <span class="date{% if t.due_date < today and t.status in ('todo', 'in_progress', 'blocked') %} overdue{% endif %}">due {{ dt(t.due_date, '%d %b %Y') }}</span>{% endif %}</span></li>{% endfor %}</ul>{% endif %}
+  {% if p_can['programmes.edit'] and obj.status not in ('closed', 'resolved') %}
+  <details class="mt-2"><summary class="btn btn-sm btn-soft">Add a corrective action</summary>
+    <form method="post" class="mt-2" action="{{ url_for(bpn ~ '.corrective_action', pid=prog.id, kind=kind, oid=obj.id) }}" novalidate><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="row g-2">
+        <div class="col-md-5"><label class="form-label req" for="ca-t-{{ kind }}{{ obj.id }}">Action</label><input class="form-control" id="ca-t-{{ kind }}{{ obj.id }}" name="title" maxlength="250" required></div>
+        <div class="col-md-3"><label class="form-label req" for="ca-a-{{ kind }}{{ obj.id }}">Assign to</label><select class="form-select" id="ca-a-{{ kind }}{{ obj.id }}" name="assigned_to_id">{% for v, l in corrective_form.assigned_to_id.choices %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select></div>
+        <div class="col-6 col-md-2"><label class="form-label" for="ca-d-{{ kind }}{{ obj.id }}">Deadline</label><input class="form-control" type="date" id="ca-d-{{ kind }}{{ obj.id }}" name="due_date"></div>
+        <div class="col-6 col-md-2"><label class="form-label" for="ca-p-{{ kind }}{{ obj.id }}">Priority</label><select class="form-select" id="ca-p-{{ kind }}{{ obj.id }}" name="priority">{% for v, l in corrective_form.priority.choices %}<option value="{{ v }}"{% if v == 'high' %} selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+      </div><button class="btn btn-sm btn-primary mt-2" type="submit">Add and assign</button></form></details>{% endif %}
+{%- endmacro %}
+{% block content %}
+{% include "programmes/_header.html" %}
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-header"><h2>Risk matrix</h2></div>
+    <p class="small text-muted">Open and monitored risks by likelihood (rows) and impact (columns). Rating = likelihood × impact.</p>
+    <div class="table-scroll"><table class="risk-matrix" aria-label="Risk matrix: number of open risks for each likelihood and impact">
+      <thead><tr><th scope="col"><span class="visually-hidden">Likelihood</span></th>{% for i in range(1, 6) %}<th scope="col">{{ i }}</th>{% endfor %}</tr></thead>
+      <tbody>{% for row in matrix %}{% set p = 5 - loop.index0 %}<tr><th scope="row">{{ p }}</th>{% for n in row %}{% set r = p * loop.index %}
+        <td class="rm-{{ 'critical' if r >= 20 else 'high' if r >= 12 else 'medium' if r >= 6 else 'low' }}" title="Likelihood {{ p }} × impact {{ loop.index }} = {{ r }}">{{ n if n else '' }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+    </table></div>
+    <p class="small text-muted mt-2 mb-0">Impact →  · Likelihood ↑ · <span class="rm-key rm-low">Low 1–5</span> <span class="rm-key rm-medium">Medium 6–11</span> <span class="rm-key rm-high">High 12–19</span> <span class="rm-key rm-critical">Critical 20–25</span></p>
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Summary</h2></div>
+    <dl class="kv">
+      <dt>Open risks</dt><dd>{{ risk_rows|rejectattr('status', 'equalto', 'closed')|list|length }}</dd>
+      <dt>High or critical</dt><dd>{{ risk_rows|rejectattr('status', 'equalto', 'closed')|selectattr('rating', 'ge', 12)|list|length }}</dd>
+      <dt>Reviews overdue</dt><dd>{{ risk_rows|rejectattr('status', 'equalto', 'closed')|selectattr('review_date')|selectattr('review_date', 'lt', today)|list|length }}</dd>
+      <dt>Open issues</dt><dd>{{ issue_rows|selectattr('status', 'in', ['open', 'in_progress'])|list|length }}</dd>
+    </dl>
+  </section>
+</div>
+
+<section class="panel panel-flush">
+  <div class="panel-header"><h2>Risk register ({{ risk_rows|length }})</h2>{% if p_can['programmes.edit'] %}<a class="btn btn-sm btn-primary" href="{{ url_for(bpn ~ '.risk_new', pid=prog.id) }}"><i class="bi bi-plus-lg me-1"></i>Risk</a>{% endif %}</div>
+  {% if not risk_rows %}<div class="empty"><i class="bi bi-shield-exclamation"></i>No risks recorded yet.</div>{% endif %}
+</section>
+{% for r in risk_rows %}
+<section class="panel" id="r{{ r.id }}">
+  <div class="panel-header"><h2><span translate="no">{{ r.code ~ ' ' if r.code }}{{ r.title }}</span></h2><span><span class="badge-status lv-{{ r.level }}">{{ r.level }} · {{ r.rating }}</span> {{ status(r.status) }}</span></div>
+  <dl class="kv">
+    <dt>Category</dt><dd>{{ r.category }}</dd>
+    <dt>Likelihood × impact</dt><dd>{{ r.probability }} ({{ r.LIKELIHOOD[r.probability] }}) × {{ r.impact }} ({{ r.IMPACT[r.impact] }})</dd>
+    <dt>Owner</dt><dd translate="no">{{ r.owner.full_name if r.owner else '—' }}</dd>
+    <dt>Next review</dt><dd class="date{% if r.review_date and r.review_date < today and r.status != 'closed' %} overdue{% endif %}">{{ dt(r.review_date, '%d %b %Y') }}</dd>
+    {% if r.description %}<dt>Description</dt><dd class="prewrap" translate="no">{{ r.description }}</dd>{% endif %}
+    {% if r.mitigation %}<dt>Mitigation</dt><dd class="prewrap" translate="no">{{ r.mitigation }}</dd>{% endif %}
+  </dl>
+  {% if p_can['programmes.edit'] %}<div class="toolbar mt-2"><a class="btn btn-sm btn-light" href="{{ url_for(bpn ~ '.risk_edit', pid=prog.id, rid=r.id) }}"><i class="bi bi-pencil me-1"></i>Update</a></div>{% endif %}
+  {{ actions_for('risk', r) }}
+</section>
+{% endfor %}
+
+<section class="panel panel-flush" id="issues">
+  <div class="panel-header"><h2>Issue register ({{ issue_rows|length }})</h2>{% if p_can['programmes.edit'] %}<a class="btn btn-sm btn-primary" href="{{ url_for(bpn ~ '.issue_new', pid=prog.id) }}"><i class="bi bi-plus-lg me-1"></i>Raise an issue</a>{% endif %}</div>
+  {% if not issue_rows %}<div class="empty"><i class="bi bi-exclamation-octagon"></i>No issues raised.</div>{% endif %}
+</section>
+{% for i in issue_rows %}
+<section class="panel" id="i{{ i.id }}">
+  <div class="panel-header"><h2 translate="no">{{ i.title }}</h2><span><span class="badge-status lv-{{ i.severity }}">{{ i.severity }}</span> {{ status(i.status) }}</span></div>
+  <dl class="kv">
+    <dt>Raised</dt><dd>{{ dt(i.raised_on, '%d %b %Y') }}{% if i.raised_by %} by <span translate="no">{{ i.raised_by.full_name }}</span>{% endif %}</dd>
+    <dt>Owner</dt><dd translate="no">{{ i.owner.full_name if i.owner else '—' }}</dd>
+    {% if i.risk %}<dt>Linked risk</dt><dd><a href="#r{{ i.risk.id }}" translate="no">{{ i.risk.title }}</a></dd>{% endif %}
+    {% if i.description %}<dt>What happened</dt><dd class="prewrap" translate="no">{{ i.description }}</dd>{% endif %}
+    {% if i.resolution %}<dt>Resolution</dt><dd class="prewrap" translate="no">{{ i.resolution }}{% if i.resolved_on %} ({{ dt(i.resolved_on, '%d %b %Y') }}){% endif %}</dd>{% endif %}
+  </dl>
+  {% if p_can['programmes.edit'] %}<div class="toolbar mt-2"><a class="btn btn-sm btn-light" href="{{ url_for(bpn ~ '.issue_edit', pid=prog.id, iid=i.id) }}"><i class="bi bi-pencil me-1"></i>Update</a></div>{% endif %}
+  {{ actions_for('issue', i) }}
+  {% if files[i.id] %}<div class="mt-3">{{ attachments(files[i.id], 'issue', i.id, p_can['programmes.edit']) }}</div>{% endif %}
+</section>
+{% endfor %}
+{% endblock %}

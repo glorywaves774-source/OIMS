@@ -50,9 +50,9 @@
   </section>
   {% if my_activities %}
   <section class="panel">
-    <div class="panel-header"><h2>My programme activities</h2>{% if can('programmes.view') %}<a class="small" href="{{ url_for('programmes.index') }}">Programmes</a>{% endif %}</div>
+    <div class="panel-header"><h2>My activities</h2>{% if can('projects.view') %}<a class="small" href="{{ url_for('projects.index') }}">Projects</a>{% elif can('programmes.view') %}<a class="small" href="{{ url_for('programmes.index') }}">Programmes</a>{% endif %}</div>
     <ul class="list-plain mb-0">{% for a in my_activities %}<li class="py-2 border-bottom-soft d-flex flex-wrap justify-content-between gap-2">
-      <a href="{{ url_for('programmes.activity_detail', pid=a.programme_id, aid=a.id) }}" translate="no">{{ a.title }}</a>
+      <a href="{{ url_for(('projects' if a.project_id else 'programmes') ~ '.activity_detail', pid=a.project_id or a.programme_id, aid=a.id) }}" translate="no">{{ a.title }}</a>
       <span class="small nowrap{% if a.planned_end and a.planned_end < today %} overdue{% endif %}">{{ dt(a.planned_start, '%d %b') if a.planned_start else 'No date' }}</span></li>{% endfor %}</ul>
   </section>
   {% endif %}

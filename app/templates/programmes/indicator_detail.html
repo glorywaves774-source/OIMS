@@ -6,8 +6,8 @@
 {% include "programmes/_header.html" %}
 <div class="page-head"><div><h2 class="h5 mb-0" translate="no">{{ ind.code ~ ' ' if ind.code }}{{ ind.name }}</h2>
   <p>{{ ind.unit|capitalize }} · reported {{ ind.frequency|replace('_', ' ') }} · {{ ind.AGGREGATIONS[ind.aggregation] }}</p></div>
-  <div class="toolbar"><a class="btn btn-light" href="{{ url_for('programmes.indicators', pid=prog.id) }}"><i class="bi bi-arrow-left me-1"></i>Indicators</a>
-    {% if p_can['meal.edit'] %}<a class="btn btn-soft" href="{{ url_for('programmes.indicator_edit', pid=prog.id, iid=ind.id) }}"><i class="bi bi-pencil me-1"></i>Edit</a>{% endif %}</div></div>
+  <div class="toolbar"><a class="btn btn-light" href="{{ url_for(bpn ~ '.indicators', pid=prog.id) }}"><i class="bi bi-arrow-left me-1"></i>Indicators</a>
+    {% if p_can['meal.edit'] %}<a class="btn btn-soft" href="{{ url_for(bpn ~ '.indicator_edit', pid=prog.id, iid=ind.id) }}"><i class="bi bi-pencil me-1"></i>Edit</a>{% endif %}</div></div>
 <div class="kpi-row mb-4">
   <div class="kpi"><div class="v">{{ num(ind.baseline_value) }}</div><div class="l">Baseline{% if ind.baseline_date %} ({{ dt(ind.baseline_date, '%b %Y') }}){% endif %}</div></div>
   <div class="kpi"><div class="v">{{ num(ind.target_value) }}</div><div class="l">Overall target</div></div>
@@ -24,11 +24,13 @@
       <dt>Responsible</dt><dd translate="no">{{ ind.responsible.full_name if ind.responsible else '—' }}</dd>
       <dt>Good direction</dt><dd>{{ 'Higher is better' if ind.direction == 'increase' else 'Lower is better' }}</dd>
       <dt>Disaggregation</dt><dd>{{ (ind.disaggregations or [])|join(', ') or 'None' }}</dd>
+      {% if ind.contributes_to %}<dt>Counts toward</dt><dd><a href="{{ url_for('programmes.indicator_detail', pid=ind.contributes_to.programme_id, iid=ind.contributes_to.id) }}" translate="no">{{ ind.contributes_to.code ~ ' ' if ind.contributes_to.code }}{{ ind.contributes_to.name }}</a> (programme)</dd>{% endif %}
+      {% if contributions %}<dt>Includes projects</dt><dd>{% for c in contributions %}<div translate="no">{{ c.project_code }} — {{ c.name }}: {{ num(c.actual) }}</div>{% endfor %}</dd>{% endif %}
     </dl></section>
   <section class="panel panel-flush"><div class="panel-header"><h2>Targets by period</h2></div>
     {% if ind.targets %}<div class="table-scroll"><table class="table"><thead><tr><th>Period</th><th>Dates</th><th class="text-end">Target</th><th></th></tr></thead><tbody>
       {% for t in ind.targets %}<tr><td>{{ t.period_label }}</td><td class="date">{{ dt(t.period_start, '%d %b %Y') }} – {{ dt(t.period_end, '%d %b %Y') }}</td><td class="num">{{ num(t.target_value) }}</td>
-        <td>{% if p_can['meal.edit'] %}<form method="post" action="{{ url_for('programmes.target_delete', pid=prog.id, iid=ind.id, tid=t.id) }}" data-confirm="Delete this target?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit" title="Delete"><i class="bi bi-trash"></i><span class="visually-hidden">Delete</span></button></form>{% endif %}</td></tr>{% endfor %}
+        <td>{% if p_can['meal.edit'] %}<form method="post" action="{{ url_for(bpn ~ '.target_delete', pid=prog.id, iid=ind.id, tid=t.id) }}" data-confirm="Delete this target?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit" title="Delete"><i class="bi bi-trash"></i><span class="visually-hidden">Delete</span></button></form>{% endif %}</td></tr>{% endfor %}
     </tbody></table></div>{% else %}<p class="text-muted px-3 mb-3">No period targets yet.</p>{% endif %}
     {% if p_can['meal.edit'] %}
     <form method="post" class="p-3" novalidate>{{ target_form.hidden_tag() }}<input type="hidden" name="what" value="target">
@@ -52,9 +54,9 @@
       <td>{{ status(r.status) }}{% if r.review_note %}<span class="cell-sub">{{ r.review_note }}</span>{% endif %}</td>
       <td class="nowrap">{% if r.status == 'submitted' and not support_request %}<div class="d-flex gap-1">
         {% if p_can['meal.edit'] and r.reported_by_id != current_user.id %}
-        <form method="post" action="{{ url_for('programmes.result_review', pid=prog.id, iid=ind.id, rid=r.id, action='verify') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-primary" type="submit">Verify</button></form>
-        <form method="post" action="{{ url_for('programmes.result_review', pid=prog.id, iid=ind.id, rid=r.id, action='reject') }}" data-confirm="Reject this result?" data-confirm-variant="btn-danger" data-confirm-label="Reject"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" type="submit">Reject</button></form>{% endif %}
-        {% if r.reported_by_id == current_user.id or p_can['meal.edit'] %}<form method="post" action="{{ url_for('programmes.result_review', pid=prog.id, iid=ind.id, rid=r.id, action='delete') }}" data-confirm="Delete this result?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit" title="Delete"><i class="bi bi-trash"></i><span class="visually-hidden">Delete</span></button></form>{% endif %}
+        <form method="post" action="{{ url_for(bpn ~ '.result_review', pid=prog.id, iid=ind.id, rid=r.id, action='verify') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-primary" type="submit">Verify</button></form>
+        <form method="post" action="{{ url_for(bpn ~ '.result_review', pid=prog.id, iid=ind.id, rid=r.id, action='reject') }}" data-confirm="Reject this result?" data-confirm-variant="btn-danger" data-confirm-label="Reject"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" type="submit">Reject</button></form>{% endif %}
+        {% if r.reported_by_id == current_user.id or p_can['meal.edit'] %}<form method="post" action="{{ url_for(bpn ~ '.result_review', pid=prog.id, iid=ind.id, rid=r.id, action='delete') }}" data-confirm="Delete this result?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit" title="Delete"><i class="bi bi-trash"></i><span class="visually-hidden">Delete</span></button></form>{% endif %}
       </div>{% endif %}</td>
     </tr>{% endfor %}
   </tbody></table></div>

@@ -8,21 +8,21 @@
 <div class="page-head"><div><h2 class="h5 mb-0" translate="no">{{ rep.title }}</h2>
   <p>{{ rep.TYPES[rep.report_type] }} · {{ dt(rep.period_start, '%d %b %Y') }} – {{ dt(rep.period_end, '%d %b %Y') }} · {{ status(rep.status) }}{% if rep.approved_by %} by <span translate="no">{{ rep.approved_by.full_name }}</span>{% endif %}</p></div>
   <div class="toolbar">
-    <a class="btn btn-light" href="{{ url_for('programmes.report_export', pid=prog.id, rid=rep.id, fmt='pdf') }}"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
-    <a class="btn btn-light" href="{{ url_for('programmes.report_export', pid=prog.id, rid=rep.id, fmt='xlsx') }}"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel</a>
-    {% if rep.status != 'approved' and p_can['reports.create'] %}<a class="btn btn-soft" href="{{ url_for('programmes.report_edit', pid=prog.id, rid=rep.id) }}"><i class="bi bi-pencil me-1"></i>Edit</a>{% endif %}
+    <a class="btn btn-light" href="{{ url_for(bpn ~ '.report_export', pid=prog.id, rid=rep.id, fmt='pdf') }}"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+    <a class="btn btn-light" href="{{ url_for(bpn ~ '.report_export', pid=prog.id, rid=rep.id, fmt='xlsx') }}"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel</a>
+    {% if rep.status != 'approved' and p_can['reports.create'] %}<a class="btn btn-soft" href="{{ url_for(bpn ~ '.report_edit', pid=prog.id, rid=rep.id) }}"><i class="bi bi-pencil me-1"></i>Edit</a>{% endif %}
   </div></div>
 
 {% if not support_request %}
 {% if rep.status == 'draft' and p_can['reports.create'] %}
 <div class="alert alert-info d-flex flex-wrap gap-2 align-items-center justify-content-between"><span>This report is a draft. Figures update live until it is approved.</span>
-  <span class="d-flex gap-2"><form method="post" action="{{ url_for('programmes.report_action', pid=prog.id, rid=rep.id, action='submit') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-primary" type="submit">Submit for approval</button></form>
-    <form method="post" action="{{ url_for('programmes.report_action', pid=prog.id, rid=rep.id, action='delete') }}" data-confirm="Delete this draft report?" data-confirm-variant="btn-danger" data-confirm-label="Delete"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit">Delete</button></form></span></div>
+  <span class="d-flex gap-2"><form method="post" action="{{ url_for(bpn ~ '.report_action', pid=prog.id, rid=rep.id, action='submit') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-primary" type="submit">Submit for approval</button></form>
+    <form method="post" action="{{ url_for(bpn ~ '.report_action', pid=prog.id, rid=rep.id, action='delete') }}" data-confirm="Delete this draft report?" data-confirm-variant="btn-danger" data-confirm-label="Delete"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit">Delete</button></form></span></div>
 {% elif rep.status == 'submitted' and p_can['reports.approve'] and rep.prepared_by_id != current_user.id %}
 <section class="panel"><form method="post" class="d-flex flex-wrap gap-2 align-items-end" novalidate>{{ review_form.hidden_tag() }}
   <div class="flex-grow-1">{{ field(review_form.note, label='Note to the author (optional)') }}</div>
-  <div class="mb-3 d-flex gap-2"><button class="btn btn-primary" type="submit" formaction="{{ url_for('programmes.report_action', pid=prog.id, rid=rep.id, action='approve') }}">Approve and freeze figures</button>
-    <button class="btn btn-outline-danger" type="submit" formaction="{{ url_for('programmes.report_action', pid=prog.id, rid=rep.id, action='return') }}">Return for changes</button></div></form></section>
+  <div class="mb-3 d-flex gap-2"><button class="btn btn-primary" type="submit" formaction="{{ url_for(bpn ~ '.report_action', pid=prog.id, rid=rep.id, action='approve') }}">Approve and freeze figures</button>
+    <button class="btn btn-outline-danger" type="submit" formaction="{{ url_for(bpn ~ '.report_action', pid=prog.id, rid=rep.id, action='return') }}">Return for changes</button></div></form></section>
 {% elif rep.status == 'approved' %}<div class="alert alert-success">Approved on {{ dt(rep.approved_at, '%d %b %Y') }}. The figures below are frozen as they were at approval.</div>{% endif %}
 {% endif %}
 
@@ -52,6 +52,11 @@
     {% for c in data.categories %}<tr><td>{{ c.category }}</td><td class="money">{{ money(c.amount) }}</td><td class="money">{{ money(c.spent) }}</td><td class="money">{{ money(c.available) }}</td><td>{{ meter(c.utilization, c.category ~ ' used') }}</td></tr>{% endfor %}
   </tbody></table></div>{% else %}<p class="text-muted px-3 pb-3 mb-0">No budget lines.</p>{% endif %}
 </section>
+{% if data.projects %}<section class="panel panel-flush"><div class="panel-header"><h2>Projects in this programme</h2></div>
+  <div class="table-scroll"><table class="table"><thead><tr><th>Project</th><th>Status</th><th class="text-end">Budget</th><th class="text-end">Spent</th><th>Used</th><th class="text-end">Activities done</th></tr></thead><tbody>
+    {% for r in data.projects %}<tr><td translate="no">{{ r.code }} {{ r.title }}</td><td>{{ status(r.status) }}</td><td class="money">{{ money(r.budget, r.currency if r.currency != cur else '') }}</td><td class="money">{{ money(r.spent) }}</td><td>{{ meter(r.utilization, r.code ~ ' budget used') }}</td><td class="num">{{ r.completed }} / {{ r.activities }}</td></tr>{% endfor %}
+    <tr><th>Programme and projects combined</th><td></td><td class="money"><strong>{{ money(data.consolidated.budget, cur) }}</strong></td><td class="money"><strong>{{ money(data.consolidated.spent) }}</strong></td><td colspan="2"></td></tr>
+  </tbody></table></div><p class="small text-muted px-3 pb-3 mb-0">{{ data.consolidated.note }}{% if data.consolidated.other_currency %} Projects in another currency are listed but not added to the combined total.{% endif %}</p></section>{% endif %}
 {% if data.field_challenges %}<section class="panel"><div class="panel-header"><h2>Challenges reported from the field</h2></div>
   <ul class="mb-0">{% for c in data.field_challenges %}<li class="prewrap" translate="no">{{ c }}</li>{% endfor %}</ul></section>{% endif %}
 {% endblock %}
