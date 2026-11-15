@@ -1,0 +1,84 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt, money %}
+{% block title %}Workplans · {{ prog.code }}{% endblock %}
+{% block page_title %}<span translate="no">{{ prog.code }}</span> · Workplans & activities{% endblock %}
+{% block content %}
+{% include "programmes/_header.html" %}
+
+<section class="panel panel-flush">
+  <div class="panel-header"><h2>Workplans</h2>{% if p_can['programmes.edit'] %}<a class="btn btn-sm btn-primary" href="{{ url_for('programmes.activity_edit', pid=prog.id, workplan=wp_filter) }}"><i class="bi bi-plus-lg me-1"></i>Activity</a>{% endif %}</div>
+  <nav class="tabs-scroll px-3 pt-2" aria-label="Workplan">
+    <a href="{{ url_for('programmes.workplans', pid=prog.id) }}"{% if not wp_filter %} aria-current="page"{% endif %}>All activities</a>
+    {% for w in plans %}<a href="{{ url_for('programmes.workplans', pid=prog.id, workplan=w.id) }}"{% if wp_filter == w.id %} aria-current="page"{% endif %} translate="no">{{ w.title }}</a>{% endfor %}
+  </nav>
+  {% if plans %}
+  <div class="table-scroll"><table class="table"><thead><tr><th>Workplan</th><th>Period</th><th>Dates</th><th>Status</th><th></th></tr></thead><tbody>
+    {% for w in plans %}<tr><td translate="no">{{ w.title }}</td><td>{{ w.PERIODS[w.period_type] }}</td><td class="date">{{ dt(w.start_date, '%d %b %Y') }} – {{ dt(w.end_date, '%d %b %Y') }}</td>
+      <td>{{ status('approved' if w.status == 'approved' else 'draft') }}{% if w.approved_by %}<span class="cell-sub" translate="no">{{ w.approved_by.full_name }}</span>{% endif %}</td>
+      <td>{% if p_can['programmes.manage'] %}<form method="post" action="{{ url_for('programmes.workplan_action', pid=prog.id, wid=w.id, action='reopen' if w.status == 'approved' else 'approve') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm {{ 'btn-light' if w.status == 'approved' else 'btn-soft' }}" type="submit">{{ 'Reopen' if w.status == 'approved' else 'Approve' }}</button></form>{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {% endif %}
+  {% if p_can['programmes.edit'] %}
+  <details class="px-3 pb-3"><summary class="btn btn-sm btn-soft">Add a workplan</summary>
+    <form method="post" class="mt-3" novalidate>{{ wp_form.hidden_tag() }}<input type="hidden" name="what" value="workplan">
+      <div class="row g-2"><div class="col-md-5">{{ field(wp_form.title, attrs={'placeholder': 'e.g. Annual workplan 2027'}) }}</div><div class="col-md-3">{{ field(wp_form.period_type) }}</div>
+        <div class="col-md-2">{{ field(wp_form.start_date) }}</div><div class="col-md-2">{{ field(wp_form.end_date) }}</div></div>
+      <button class="btn btn-primary" type="submit">Add workplan</button></form></details>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <div class="panel-header"><h2>Timeline</h2>
+    <div class="legend" aria-hidden="true"><span><i class="lg-plan"></i>Planned</span><span><i class="lg-done"></i>Progress</span><span><i class="lg-late"></i>Overdue</span><span><i class="lg-ms"></i>Milestone</span></div></div>
+  {% if tl %}
+  <div class="gantt-box">
+    <svg class="gantt" viewBox="0 0 {{ tl.width }} {{ tl.height + 22 }}" role="img" aria-label="Timeline of {{ acts|length }} activities and {{ milestones|length }} milestones. The table below lists the same information.">
+      {% for m in tl.months %}<line class="grid{% if m.major %} major{% endif %}" x1="{{ m.x }}" y1="18" x2="{{ m.x }}" y2="{{ tl.height + 22 }}"></line>{% if m.label %}<text class="mlabel" x="{{ m.x + 3 }}" y="12">{{ m.label }}</text>{% endif %}{% endfor %}
+      {% for b in tl.bars %}
+        <a href="{{ url_for('programmes.activity_detail', pid=prog.id, aid=b.a.id) }}">
+          <title>{{ b.a.title }} — {{ dt(b.a.planned_start, '%d %b %Y') }} to {{ dt(b.a.planned_end, '%d %b %Y') }}, {{ b.a.progress }}% ({{ b.a.status|replace('_', ' ') }})</title>
+          <text class="alabel" x="4" y="{{ b.y + 31 }}">{{ (b.a.code ~ ' ' if b.a.code) ~ b.a.title|truncate(38, True, '…') }}</text>
+          <rect class="bar{% if b.late %} late{% endif %}" x="{{ b.x }}" y="{{ b.y + 20 }}" width="{{ b.w }}" height="14" rx="4"></rect>
+          {% if b.done_w > 0 %}<rect class="bar-done{% if b.late %} late{% endif %}" x="{{ b.x }}" y="{{ b.y + 20 }}" width="{{ b.done_w }}" height="14" rx="4"></rect>{% endif %}
+        </a>
+      {% endfor %}
+      {% for k in tl.marks %}<g><title>Milestone: {{ k.m.title }} — {{ dt(k.m.due_date, '%d %b %Y') }}{{ ' (achieved)' if k.m.achieved_date }}</title>
+        <rect class="ms{% if k.m.achieved_date %} done{% endif %}" x="{{ k.x - 6 }}" y="{{ tl.height + 4 }}" width="12" height="12" transform="rotate(45 {{ k.x }} {{ tl.height + 10 }})"></rect></g>{% endfor %}
+      {% if tl.today_x %}<line class="today" x1="{{ tl.today_x }}" y1="18" x2="{{ tl.today_x }}" y2="{{ tl.height + 22 }}"><title>Today</title></line>{% endif %}
+    </svg>
+  </div>
+  {% else %}<p class="text-muted mb-0">Add activities with planned dates to see the timeline.</p>{% endif %}
+</section>
+
+<section class="panel panel-flush">
+  <div class="panel-header"><h2>Activities ({{ acts|length }})</h2></div>
+  {% if acts %}
+  <div class="table-scroll"><table class="table">
+    <thead><tr><th>Activity</th><th>Planned</th><th>Responsible</th><th class="text-end">Budget</th><th>Progress</th><th>Status</th></tr></thead>
+    <tbody>{% for a in acts %}<tr>
+      <td><a href="{{ url_for('programmes.activity_detail', pid=prog.id, aid=a.id) }}" translate="no">{{ a.code ~ ' ' if a.code }}{{ a.title }}</a>{% if a.result %}<span class="cell-sub">Output {{ a.result.code or '' }}</span>{% endif %}</td>
+      <td class="date{% if a.planned_end and a.planned_end < today and a.status in ('planned', 'in_progress', 'postponed') %} overdue{% endif %}">{{ dt(a.planned_start, '%d %b %Y') }}{% if a.planned_end %} – {{ dt(a.planned_end, '%d %b %Y') }}{% endif %}</td>
+      <td translate="no">{{ a.responsible.full_name if a.responsible else '—' }}</td>
+      <td class="money">{{ money(a.planned_budget) }}</td>
+      <td class="num">{{ a.progress }}%</td>
+      <td>{{ status(a.status) }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<div class="empty"><i class="bi bi-list-check"></i>No activities yet.</div>{% endif %}
+</section>
+
+<section class="panel" id="milestones">
+  <div class="panel-header"><h2>Milestones</h2></div>
+  {% if milestones %}<ul class="list-plain mb-3">{% for m in milestones %}<li class="py-2 border-bottom-soft d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <span translate="no">{% if m.achieved_date %}<i class="bi bi-check-circle-fill text-success me-1"></i>{% endif %}{{ m.title }}<span class="cell-sub">Due {{ dt(m.due_date, '%d %b %Y') }}{% if m.achieved_date %} · achieved {{ dt(m.achieved_date, '%d %b %Y') }}{% endif %}{% if m.notes %} · {{ m.notes }}{% endif %}</span></span>
+    {% if p_can['programmes.edit'] %}<span class="d-flex gap-1">
+      <form method="post" action="{{ url_for('programmes.milestone_action', pid=prog.id, mid=m.id, action='reopen' if m.achieved_date else 'achieve') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm {{ 'btn-light' if m.achieved_date else 'btn-soft' }}" type="submit">{{ 'Reopen' if m.achieved_date else 'Mark achieved' }}</button></form>
+      <form method="post" action="{{ url_for('programmes.milestone_action', pid=prog.id, mid=m.id, action='delete') }}" data-confirm="Delete this milestone?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit" title="Delete"><i class="bi bi-trash"></i><span class="visually-hidden">Delete</span></button></form></span>{% endif %}
+  </li>{% endfor %}</ul>{% else %}<p class="text-muted">No milestones yet.</p>{% endif %}
+  {% if p_can['programmes.edit'] %}
+  <form method="post" novalidate>{{ ms_form.hidden_tag() }}<input type="hidden" name="what" value="milestone">
+    <div class="row g-2"><div class="col-md-6">{{ field(ms_form.title) }}</div><div class="col-md-2">{{ field(ms_form.due_date) }}</div><div class="col-md-4">{{ field(ms_form.notes) }}</div></div>
+    <button class="btn btn-soft" type="submit">Add milestone</button></form>
+  {% endif %}
+</section>
+{% endblock %}

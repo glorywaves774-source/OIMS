@@ -1,0 +1,17 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, attachments %}
+{% block title %}{{ title }} · {{ prog.code }}{% endblock %}
+{% block page_title %}<span translate="no">{{ prog.code }}</span> · {{ title }}{% endblock %}
+{% block content %}
+{% include "programmes/_header.html" %}
+<section class="panel">
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    {% for f in form if f.type not in ('CSRFTokenField', 'HiddenField') %}
+      {{ field(f, attrs={'rows': 4} if f.type == 'TextAreaField' else {}) }}
+    {% endfor %}
+    <div class="toolbar"><button class="btn btn-primary" type="submit" data-loading>Save</button><a class="btn btn-light" href="{{ back }}">Cancel</a></div>
+  </form>
+</section>
+{% if attach %}{{ attachments(attach[2], attach[0], attach[1], p_can['meal.edit']) }}{% endif %}
+{% endblock %}

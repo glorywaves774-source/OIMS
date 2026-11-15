@@ -1,0 +1,33 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import status, dt, pager, meter, money %}
+{% block title %}Programmes{% endblock %}
+{% block page_title %}Programmes{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Programmes</h2><p>{{ page.total }} {{ 'programme' if page.total == 1 else 'programmes' }} you can see</p></div>
+  {% if can('programmes.create') and not support_request %}<a class="btn btn-primary" href="{{ url_for('programmes.new') }}"><i class="bi bi-plus-lg me-1"></i>Register a programme</a>{% endif %}</div>
+<section class="panel panel-flush">
+  <form class="filters px-3 pt-3" method="get" role="search">
+    <input class="form-control" type="search" name="q" value="{{ q }}" placeholder="Title, ID or description" aria-label="Search programmes">
+    <select class="form-select" name="status" data-autosubmit aria-label="Status"><option value="">Any status</option>
+      {% for s in statuses %}<option value="{{ s }}"{% if s == status %} selected{% endif %}>{{ s|replace('_', ' ')|capitalize }}</option>{% endfor %}</select>
+    {% if sectors %}<select class="form-select" name="sector" data-autosubmit aria-label="Sector"><option value="">All sectors</option>
+      {% for s in sectors %}<option value="{{ s }}"{% if s == sector %} selected{% endif %} translate="no">{{ s }}</option>{% endfor %}</select>{% endif %}
+    <button class="btn btn-soft" type="submit">Search</button>
+  </form>
+  {% if page.items %}
+  <div class="table-scroll"><table class="table">
+    <thead><tr><th>Programme</th><th>Sector</th><th>Dates</th><th>Manager</th><th class="text-end">Budget</th><th>Budget used</th><th>Status</th></tr></thead>
+    <tbody>{% for p in page.items %}{% set b = budgets[p.id] %}<tr>
+      <td><a href="{{ url_for('programmes.overview', pid=p.id) }}" translate="no">{{ p.title }}</a><span class="cell-sub code">{{ p.code }}</span></td>
+      <td translate="no">{{ p.sector or '—' }}</td>
+      <td class="date">{{ dt(p.start_date, '%b %Y') }} – {{ dt(p.end_date, '%b %Y') }}</td>
+      <td translate="no">{{ p.manager.full_name if p.manager else '—' }}</td>
+      <td class="money">{{ money(b.budget or b.approved_budget, p.currency) }}</td>
+      <td>{{ meter(b.utilization, 'Budget used: ' ~ ('%.0f'|format(b.utilization) ~ '%' if b.utilization is not none else 'no budget lines yet')) }}</td>
+      <td>{{ status(p.status) }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {{ pager(page, 'programmes.index', q=q, status=status, sector=sector) }}
+  {% else %}<div class="empty"><i class="bi bi-kanban"></i>{{ 'No programmes match.' if q or status or sector else 'No programmes yet.' }}</div>{% endif %}
+</section>
+{% endblock %}

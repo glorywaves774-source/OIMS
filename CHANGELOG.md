@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.3.0-phase3 — 15 November 2026
+
+Programmes management.
+
+- **Register programmes** with all the details donors ask for, a manager, a team and a lead department,
+  and move them through draft, planned, approved, active, completed and closed.
+- **Plan**: strategy, implementation plan, theory of change, assumptions and risks; annual, quarterly and
+  monthly workplans with approval; milestones; and a timeline chart of activities and milestones.
+- **Results framework**: goal, objectives, outcomes and outputs, with indicators, baselines, period targets,
+  means of verification and breakdown by sex, age and disability.
+- **Report and verify results**: field staff report results; a different person verifies them before they
+  count. The same period and place cannot be counted twice.
+- **Activities**: responsible person, location, budget, progress and activity reports with participants,
+  challenges and recommendations; photos and attendance sheets as attachments.
+- **Finance**: budget lines by category, funding agreements and money received, expenditure and
+  commitments approved by a second person, budget revisions, and budget-versus-actual by line and category.
+- **Monitoring and learning**: monitoring visits, evaluations, lessons learned and recommendations with
+  management responses.
+- **Reports**: monthly, quarterly, semi-annual, annual, donor and performance reports that combine your
+  narrative with the figures; approved reports are frozen; PDF and Excel export, plus a one-click status
+  report for any period.
+- **Registers** for donors, locations and budget categories.
+- Programme activities and milestones appear in the calendar, on the dashboard and in reminders.
+- Migration `0003` adds the new tables only; run `oims sync-roles` (done automatically on Render) so
+  existing organizations get the new permissions and starter budget categories.
+
 ## 0.2.0-phase2 — 15 November 2026
 
 Office information management.

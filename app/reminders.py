@@ -8,7 +8,8 @@ from datetime import timedelta
 from flask import g
 
 from app.extensions import db
-from app.models import Correspondence, Document, Meeting, Organization, Task, utcnow
+from app.models import (Activity, Correspondence, Document, Meeting, Milestone, Organization, Programme,
+                        ProgrammeReport, Task, utcnow)
 from app.notify import notify
 from app.tenancy import clear_tenant, set_tenant
 
@@ -17,12 +18,14 @@ def run_reminders(now=None):
     """Must run inside a request context (the CLI command provides one) so links can be built."""
     now = now or utcnow()
     today = now.date()
-    totals = {"tasks": 0, "overdue": 0, "meetings": 0, "documents": 0, "correspondence": 0}
+    totals = {"tasks": 0, "overdue": 0, "meetings": 0, "documents": 0, "correspondence": 0, "activities": 0,
+              "milestones": 0, "reports": 0}
     for org in Organization.query.filter_by(status=Organization.ACTIVE).all():
         set_tenant(org.id)
         g.tenant = org
         try:
             _org_reminders(org, now, today, totals)
+            _programme_reminders(org, today, totals)
             db.session.commit()
         finally:
             clear_tenant()
@@ -64,3 +67,30 @@ def _org_reminders(org, now, today, totals):
                                            "correspondence.detail", dedupe_key=f"corr-due-{c.id}-{c.response_due}",
                                            item_id=c.id, org_slug=org.slug, **kw)
 
+
+
+def _programme_reminders(org, today, totals):
+    kw = {"organization_id": org.id, "exclude_current": False}
+    for a in Activity.query.filter(Activity.organization_id == org.id, Activity.status == "planned",
+                                   Activity.planned_start.isnot(None), Activity.planned_start <= today + timedelta(days=3),
+                                   Activity.planned_start >= today):
+        totals["activities"] += notify([a.responsible_id], "reminder", f"Activity starts {a.planned_start:%d %b}: {a.title}",
+                                       None, "programmes.activity_detail", dedupe_key=f"act-start-{a.id}-{a.planned_start}",
+                                       pid=a.programme_id, aid=a.id, org_slug=org.slug, **kw)
+    for m in Milestone.query.filter(Milestone.organization_id == org.id, Milestone.achieved_date.is_(None),
+                                    Milestone.due_date <= today + timedelta(days=7)):
+        prog = db.session.get(Programme, m.programme_id) if m.programme_id else None
+        if prog is None:
+            continue
+        label = "overdue" if m.due_date < today else f"due {m.due_date:%d %b}"
+        totals["milestones"] += notify([prog.manager_id], "reminder", f"Milestone {label}: {m.title}", prog.code,
+                                       "programmes.workplans", dedupe_key=f"ms-{m.id}-{m.due_date}-{'late' if m.due_date < today else 'soon'}",
+                                       pid=prog.id, org_slug=org.slug, **kw)
+    for r in ProgrammeReport.query.filter(ProgrammeReport.organization_id == org.id, ProgrammeReport.status == "draft",
+                                          ProgrammeReport.due_date.isnot(None),
+                                          ProgrammeReport.due_date <= today + timedelta(days=5)):
+        prog = db.session.get(Programme, r.programme_id) if r.programme_id else None
+        totals["reports"] += notify([r.prepared_by_id, prog.manager_id if prog else None], "reminder",
+                                    f"Report due {r.due_date:%d %b}: {r.title}", None, "programmes.report_view",
+                                    dedupe_key=f"rep-due-{r.id}-{r.due_date}", pid=r.programme_id, rid=r.id,
+                                    org_slug=org.slug, **kw)

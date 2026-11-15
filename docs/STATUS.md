@@ -1,6 +1,6 @@
 # OIMS development status
 
-_Last updated: 15 November 2026 — release 0.2.0-phase2_
+_Last updated: 15 November 2026 — release 0.3.0-phase3_
 
 ## Phase 1 — Foundation ✅ complete
 
@@ -28,17 +28,33 @@ plans, audit log, interface (dark mode, phone layout).
 | Department / own-record permission scopes | Done |
 | Dashboard with office widgets | Done |
 
-110 automated tests pass on SQLite and on PostgreSQL 16. The Phase 2 migration was tested by upgrading
-a Phase 1 database that already had users, checking that it matches the code exactly, downgrading and
-upgrading again. Every page was crawled in Chrome at 320, 360, 390, 402 (iPhone 18 Pro), 440 (iPhone 18
-Pro Max) and 1440 px in light and dark mode with no sideways scrolling, light patches, low-contrast text
-or console/security-policy errors.
+Phase 2 migration tested by upgrading a Phase 1 database with existing users, then downgrading and upgrading again.
+
+## Phase 3 — Programmes management ✅ complete
+
+| Item | Status |
+| --- | --- |
+| Programme registration, profile, team, status workflow, documents | Done |
+| Planning: strategy, implementation plan, theory of change, assumptions, risks | Done |
+| Workplans (annual / quarterly / monthly) with approval; milestones; timeline chart | Done |
+| Results framework / logical framework | Done |
+| Indicators: baselines, period targets, disaggregation, verification, double-counting guard | Done |
+| Activities: assignment, budget, location, progress, activity reports with participants | Done |
+| Finance: budget lines, revisions, funding agreements and receipts, expenditure and commitments with separate approval, variance | Done |
+| Monitoring visits, evaluations, lessons learned, recommendations, management responses | Done |
+| Reports: monthly to annual, donor and performance; approval with frozen figures; PDF and Excel | Done |
+| Registers: donors, locations, budget categories | Done |
+| Calendar, dashboard and reminders for activities, milestones and reports | Done |
+
+126 automated tests pass on SQLite and on PostgreSQL 16. Migration `0003` was tested by upgrading a
+Phase 2 database with existing data, checking it matches the code, downgrading and upgrading again.
+Every programme page was crawled in Chrome at 320–440 px phone widths and 1440 px, in light and dark
+mode, with no sideways scrolling, contrast problems or console/security-policy errors.
 
 ## Outstanding phases
 
 | Phase | Scope |
 |---|---|
-| 3 — Programmes | Registration, planning, workplans, budgets, activities, indicators, reports |
 | 4 — Projects | Registration, WBS, milestones, deliverables, budgets, risks, closure, programme links, Gantt charts |
 | 5 — MEAL & beneficiaries | Results frameworks, data collection, beneficiaries, consent, feedback |
 | 6 — Finance, procurement, assets | Budgets, expenditure, approvals, procurement, suppliers, assets |
@@ -50,8 +66,15 @@ or console/security-policy errors.
 
 - **Email** is real SMTP but optional; without it, notifications are in-app only and invitation links
   are shown once to the administrator.
-- **Programme and project calendars** arrive with Phases 3 and 4 (the calendar already has the slots).
-- **Meeting reports and letters print to PDF from the browser**; generated PDF/Excel exports come in Phase 7.
+- **Project management** (Phase 4) is next: projects will reuse the programme structures and roll up
+  into their programme's figures.
+- **Beneficiary names in attendance**: activity reports record participant counts; named attendance
+  linked to beneficiary records comes with Phase 5 (MEAL & beneficiaries). Attendance sheets can be
+  attached as files meanwhile.
+- **Exchange rates**: each programme has one currency; multi-currency conversion is not supported yet.
+- **Report charts**: PDF/Excel exports contain tables, not charts; organization-wide dashboards and
+  more export formats come in Phase 7.
+- **Meeting minutes and letters print to PDF from the browser** (no generated PDF yet).
 - **Messages and notifications refresh when the page loads** (no live push yet).
 - **Leave entitlements** are per calendar year, without carry-over or accrual rules; public holidays
   are not yet excluded from working-day counts.

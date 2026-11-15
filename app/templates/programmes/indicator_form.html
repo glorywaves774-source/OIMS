@@ -1,0 +1,33 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}Indicator · {{ prog.code }}{% endblock %}
+{% block page_title %}<span translate="no">{{ prog.code }}</span> · {{ 'Edit indicator' if ind else 'New indicator' }}{% endblock %}
+{% block content %}
+{% include "programmes/_header.html" %}
+<form method="post" novalidate>
+  {{ form.hidden_tag() }}
+  <section class="panel">
+    <div class="row g-3">
+      <div class="col-md-2">{{ field(form.code) }}</div>
+      <div class="col-md-10">{{ field(form.name, required=True) }}</div>
+      <div class="col-md-6">{{ field(form.result_id) }}</div>
+      <div class="col-md-6">{{ field(form.responsible_id) }}</div>
+      <div class="col-12">{{ field(form.definition, attrs={'rows': 2}) }}</div>
+      <div class="col-md-3">{{ field(form.unit) }}</div>
+      <div class="col-md-5">{{ field(form.aggregation, help='Use “add up” for counts per period; “latest” for rates and percentages. This also prevents double counting.') }}</div>
+      <div class="col-md-4">{{ field(form.direction) }}</div>
+      <div class="col-md-3">{{ field(form.baseline_value, attrs={'inputmode': 'decimal'}) }}</div>
+      <div class="col-md-3">{{ field(form.baseline_date) }}</div>
+      <div class="col-md-3">{{ field(form.target_value, attrs={'inputmode': 'decimal'}) }}</div>
+      <div class="col-md-3">{{ field(form.frequency) }}</div>
+      <div class="col-md-6">{{ field(form.means_of_verification, attrs={'rows': 2}) }}</div>
+      <div class="col-md-6">{{ field(form.data_source) }}</div>
+    </div>
+    <fieldset class="mb-2"><legend class="form-label fs-6">Break results down by</legend>
+      <div class="d-flex flex-wrap gap-3">{% for v, l, sel, _ in form.disaggregations.iter_choices() %}<label class="form-check"><input class="form-check-input" type="checkbox" name="disaggregations" value="{{ v }}"{% if sel %} checked{% endif %}> <span class="form-check-label">{{ l }}</span></label>{% endfor %}</div>
+      <div class="form-text">Reporters then enter the split, which must add up to the total.</div></fieldset>
+  </section>
+  <div class="toolbar mb-4"><button class="btn btn-primary" type="submit" data-loading>Save indicator</button>
+    <a class="btn btn-light" href="{{ url_for('programmes.indicator_detail', pid=prog.id, iid=ind.id) if ind else url_for('programmes.indicators', pid=prog.id) }}">Cancel</a></div>
+</form>
+{% endblock %}

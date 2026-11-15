@@ -1,0 +1,95 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt, meter, money, num, attachments %}
+{% block title %}{{ prog.title }}{% endblock %}
+{% block page_title %}<span translate="no">{{ prog.code }}</span>{% endblock %}
+{% block content %}
+{% include "programmes/_header.html" %}
+
+{% if p_can['programmes.manage'] or p_can['programmes.edit'] or p_see['reports.view'] %}
+<div class="toolbar mb-3">
+  {% if p_can['programmes.edit'] %}<a class="btn btn-soft" href="{{ url_for('programmes.edit', pid=prog.id) }}"><i class="bi bi-pencil me-1"></i>Edit profile</a>{% endif %}
+  {% if p_see['reports.view'] %}
+    <a class="btn btn-light" href="{{ url_for('programmes.quick_export', pid=prog.id, fmt='pdf') }}"><i class="bi bi-file-earmark-pdf me-1"></i>Status report (PDF)</a>
+    <a class="btn btn-light" href="{{ url_for('programmes.quick_export', pid=prog.id, fmt='xlsx') }}"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if p_can['programmes.manage'] %}
+<section class="panel">
+  <form method="post" action="{{ url_for('programmes.set_status', pid=prog.id) }}" class="d-flex flex-wrap gap-2 align-items-end" novalidate>
+    {{ status_form.hidden_tag() }}
+    <div class="flex-grow-0">{{ field(status_form.status, label='Programme status') }}</div>
+    <div class="flex-grow-1">{{ field(status_form.note, label='Note (optional)') }}</div>
+    <div class="mb-3"><button class="btn btn-soft" type="submit">Update status</button></div>
+  </form>
+  {% if prog.status_note %}<p class="small text-muted mb-0">Last note: {{ prog.status_note }}</p>{% endif %}
+  {% if prog.approved_by %}<p class="small text-muted mb-0">Approved by <span translate="no">{{ prog.approved_by.full_name }}</span> on {{ dt(prog.approved_at, '%d %b %Y') }}.</p>{% endif %}
+</section>
+{% endif %}
+
+<div class="kpi-row mb-4">
+  <div class="kpi"><div class="v">{{ dt(prog.start_date, '%b %Y') }} – {{ dt(prog.end_date, '%b %Y') }}</div><div class="l">{{ prog.duration_months ~ ' months' if prog.duration_months else 'Dates not set' }}</div></div>
+  <div class="kpi"><div class="v">{{ acts.total }}</div><div class="l">Activities · {{ acts.by_status.get('completed', 0) }} completed{% if acts.overdue %} · <span class="overdue">{{ acts.overdue }} overdue</span>{% endif %}</div></div>
+  {% if fin %}
+  <div class="kpi"><div class="v">{{ money(fin.budget, prog.currency) }}</div><div class="l">Budget{% if fin.approved_budget and fin.approved_budget != fin.budget %} (approved envelope {{ money(fin.approved_budget) }}){% endif %}</div></div>
+  <div class="kpi"><div class="v">{{ money(fin.spent, prog.currency) }}</div><div class="l">Spent · {{ money(fin.available) }} available</div></div>
+  {% endif %}
+</div>
+
+<div class="grid-2 mb-4">
+  {% if fin %}
+  <section class="panel">
+    <div class="panel-header"><h2>Budget and funding</h2><a class="small" href="{{ url_for('programmes.finance', pid=prog.id) }}">Details</a></div>
+    <dl class="kv mb-2">
+      <dt>Budget used</dt><dd>{{ meter(fin.utilization, 'Spent ' ~ money(fin.spent) ~ ' of ' ~ money(fin.budget)) }}</dd>
+      <dt>Used incl. commitments</dt><dd>{{ meter(fin.burn_with_commitments, 'Spent and committed') }}</dd>
+      <dt>Funding received</dt><dd>{{ money(fin.funding_received, prog.currency) }} of {{ money(fin.funding_committed) }} committed</dd>
+      {% if fin.funding_gap > 0 %}<dt>Funding gap</dt><dd class="overdue">{{ money(fin.funding_gap, prog.currency) }}</dd>{% endif %}
+      {% if fin.pending %}<dt>Waiting for approval</dt><dd>{{ money(fin.pending, prog.currency) }}</dd>{% endif %}
+    </dl>
+  </section>
+  {% endif %}
+  {% if p_see['meal.view'] %}
+  <section class="panel">
+    <div class="panel-header"><h2>Indicators</h2><a class="small" href="{{ url_for('programmes.indicators', pid=prog.id) }}">All indicators</a></div>
+    {% if inds %}<ul class="list-plain mb-0">{% for r in inds[:6] %}<li class="py-2 border-bottom-soft">
+      <a href="{{ url_for('programmes.indicator_detail', pid=prog.id, iid=r.ind.id) }}" translate="no">{{ r.ind.code ~ ' ' if r.ind.code }}{{ r.ind.name }}</a>
+      <div class="d-flex flex-wrap gap-2 align-items-center small text-muted"><span>{{ num(r.actual) }} of {{ num(r.ind.target_value) }}</span>{{ meter(r.achievement, 'Progress toward target') }}</div></li>{% endfor %}</ul>
+    {% else %}<p class="text-muted mb-0">No indicators yet.</p>{% endif %}
+  </section>
+  {% endif %}
+  <section class="panel">
+    <div class="panel-header"><h2>Next activities</h2><a class="small" href="{{ url_for('programmes.workplans', pid=prog.id) }}">Workplans</a></div>
+    {% if upcoming %}<ul class="list-plain mb-0">{% for a in upcoming %}<li class="py-2 border-bottom-soft d-flex flex-wrap justify-content-between gap-2">
+      <span><a href="{{ url_for('programmes.activity_detail', pid=prog.id, aid=a.id) }}" translate="no">{{ a.code ~ ' ' if a.code }}{{ a.title }}</a><span class="cell-sub" translate="no">{{ a.responsible.full_name if a.responsible else 'Unassigned' }}</span></span>
+      <span class="small nowrap{% if a.planned_end and a.planned_end < today %} overdue{% endif %}">{{ dt(a.planned_start, '%d %b') }}{% if a.planned_end %} – {{ dt(a.planned_end, '%d %b') }}{% endif %}</span></li>{% endfor %}</ul>
+    {% else %}<p class="text-muted mb-0">No open activities.</p>{% endif %}
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Milestones</h2></div>
+    {% if milestones %}<ul class="list-plain mb-0">{% for m in milestones %}<li class="py-2 border-bottom-soft d-flex justify-content-between gap-2">
+      <span translate="no">{% if m.achieved_date %}<i class="bi bi-check-circle-fill text-success me-1"></i>{% endif %}{{ m.title }}</span>
+      <span class="small nowrap{% if not m.achieved_date and m.due_date < today %} overdue{% endif %}">{{ dt(m.due_date, '%d %b %Y') }}</span></li>{% endfor %}</ul>
+    {% else %}<p class="text-muted mb-0">No milestones yet.</p>{% endif %}
+  </section>
+  {% if reports_due and p_see['reports.view'] %}
+  <section class="panel">
+    <div class="panel-header"><h2>Reports in progress</h2></div>
+    <ul class="list-plain mb-0">{% for r in reports_due %}<li class="py-2 border-bottom-soft d-flex justify-content-between gap-2"><a href="{{ url_for('programmes.report_view', pid=prog.id, rid=r.id) }}" translate="no">{{ r.title }}</a>
+      <span class="small">{{ status(r.status) }}{% if r.due_date %} <span class="nowrap{% if r.due_date < today %} overdue{% endif %}">due {{ dt(r.due_date, '%d %b') }}</span>{% endif %}</span></li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+</div>
+
+<section class="panel">
+  <div class="panel-header"><h2>Profile</h2></div>
+  <dl class="kv">
+    {% for label, val in [('Description', prog.description), ('Background', prog.background), ('Rationale', prog.rationale), ('Goal', prog.goal), ('Target population', prog.target_population), ('Geographical coverage', prog.geographic_coverage)] %}
+      {% if val %}<dt>{{ label }}</dt><dd class="prewrap" translate="no">{{ val }}</dd>{% endif %}{% endfor %}
+    <dt>Lead department</dt><dd translate="no">{{ prog.department.name if prog.department else '—' }}</dd>
+    <dt>Currency</dt><dd>{{ prog.currency }}</dd>
+  </dl>
+</section>
+<div id="documents">{{ attachments(files, 'programme', prog.id, p_can['programmes.edit']) }}</div>
+{% endblock %}

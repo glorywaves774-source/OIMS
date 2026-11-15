@@ -75,3 +75,8 @@ input, select, textarea, .form-control, .form-select { font-size: 16px; }
 @media (min-width: 761px) {
   .calendar-agenda.desktop-hide { display: none; }
 }
+@media (max-width: 760px) {
+  .kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .kpi { padding: 12px; }
+  .kpi .v { font-size: 1rem; overflow-wrap: anywhere; }
+}

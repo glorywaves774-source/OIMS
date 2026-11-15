@@ -42,6 +42,8 @@ def make_user(email, name="Test Person", password=PASSWORD, platform_role=None):
 
 def make_org(name, admin_email=None, status=Organization.ACTIVE):
     from app.services import unique_slug
+    from app.tenancy import clear_tenant
+    clear_tenant()  # test code runs between requests that share one app context
     org = Organization(name=name, slug=unique_slug(name), org_type="Other", country="Ghana",
                        email=f"info@{name.lower().replace(' ', '')}.org", status=status)
     _db.session.add(org)

@@ -122,3 +122,20 @@
 {%- endmacro %}
 
 {% macro priority(p) -%}<span class="badge-status pr-{{ p }}">{{ p }}</span>{%- endmacro %}
+
+{% macro meter(pct, label, over_ok=False) -%}
+  {%- set v = pct if pct is not none else 0 -%}
+  {%- set w = [[v, 0]|max, 100]|min -%}
+  <span class="meter-wrap" title="{{ label }}">
+    <svg class="meter" viewBox="0 0 100 10" preserveAspectRatio="none" role="img" aria-label="{{ label }}">
+      <title>{{ label }}</title>
+      <rect class="meter-track" x="0" y="0" width="100" height="10" rx="2"></rect>
+      {% if w > 0 %}<rect class="meter-fill{% if v > 100 and not over_ok %} over{% endif %}" x="0" y="0" width="{{ w }}" height="10" rx="2"></rect>{% endif %}
+    </svg>
+    <span class="meter-val">{{ ('%.0f'|format(pct)) ~ '%' if pct is not none else '—' }}</span>
+  </span>
+{%- endmacro %}
+
+{% macro money(v, cur='') -%}{%- if v is not none %}{{ cur ~ ' ' if cur }}{{ '{:,.2f}'.format(v) }}{% else %}—{% endif -%}{%- endmacro %}
+
+{% macro num(v) -%}{%- if v is not none %}{{ '{:,.4f}'.format(v).rstrip('0').rstrip('.') }}{% else %}—{% endif -%}{%- endmacro %}

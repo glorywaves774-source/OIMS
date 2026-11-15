@@ -1,0 +1,18 @@
+{% from "macros.html" import status %}
+<div class="page-head prog-head"><div>
+  <h2 class="h4 mb-0" translate="no">{{ prog.title }}</h2>
+  <p><span class="code">{{ prog.code }}</span> · {{ status(prog.status) }}{% if prog.sector %} · <span translate="no">{{ prog.sector }}</span>{% endif %}{% if prog.manager %} · Manager: <span translate="no">{{ prog.manager.full_name }}</span>{% endif %}</p></div>
+  <a class="btn btn-light" href="{{ url_for('programmes.index') }}"><i class="bi bi-arrow-left me-1"></i>All programmes</a>
+</div>
+<nav class="tabs-scroll" aria-label="Programme sections">
+  {% set tabs = [('overview', 'Overview', url_for('programmes.overview', pid=prog.id), True),
+                 ('planning', 'Planning', url_for('programmes.planning', pid=prog.id), True),
+                 ('results', 'Results framework', url_for('programmes.results', pid=prog.id), p_see['meal.view'] or p_can['programmes.edit']),
+                 ('indicators', 'Indicators', url_for('programmes.indicators', pid=prog.id), p_see['meal.view'] or p_can['meal.collect']),
+                 ('workplans', 'Workplans & activities', url_for('programmes.workplans', pid=prog.id), True),
+                 ('finance', 'Budget & finance', url_for('programmes.finance', pid=prog.id), p_see['finance.view']),
+                 ('monitoring', 'Monitoring & learning', url_for('programmes.monitoring', pid=prog.id), p_see['meal.view'] or p_can['meal.collect']),
+                 ('reports', 'Reports', url_for('programmes.reports', pid=prog.id), can('reports.view')),
+                 ('team', 'Team', url_for('programmes.team', pid=prog.id), True)] %}
+  {% for key, label, href, show in tabs if show %}<a href="{{ href }}"{% if tab == key %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+</nav>

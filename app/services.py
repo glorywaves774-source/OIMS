@@ -129,9 +129,17 @@ DEFAULT_DOC_CATEGORIES = [("Policies & procedures", True), ("Contracts & agreeme
                           ("Financial records", False), ("Templates & forms", False), ("Other", False)]
 
 
+DEFAULT_BUDGET_CATEGORIES = ["Personnel", "Travel and transport", "Training and workshops", "Equipment",
+                             "Supplies and materials", "Contractual services", "Monitoring and evaluation",
+                             "Operating costs", "Indirect costs"]
+
+
 def seed_office_defaults(org):
-    """Starter lists an organization can edit: leave types and document categories (only if empty)."""
-    from app.models import DocumentCategory, LeaveType
+    """Starter lists an organization can edit (only if empty): leave types, document and budget categories."""
+    from app.models import BudgetCategory, DocumentCategory, LeaveType
+    if not BudgetCategory.query.filter_by(organization_id=org.id).count():
+        for i, name in enumerate(DEFAULT_BUDGET_CATEGORIES):
+            db.session.add(BudgetCategory(organization_id=org.id, name=name, sort_order=i))
     if not LeaveType.query.filter_by(organization_id=org.id).count():
         for name, days in DEFAULT_LEAVE_TYPES:
             db.session.add(LeaveType(organization_id=org.id, name=name, days_per_year=days))

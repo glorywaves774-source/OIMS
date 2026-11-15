@@ -92,6 +92,39 @@ they duplicate one as a custom role to adjust it.
 4. Every page opened is written to the organization's audit log, flagged as support access.
 5. Access ends at expiry, when the requester ends it, or when the organization revokes it.
 
+## Programmes (Phase 3)
+
+```
+Programme ─┬─ ResultNode (goal → objective → outcome → output) ─ Indicator ─┬─ IndicatorTarget (per period)
+           │                                                               └─ IndicatorResult (reported → verified)
+           ├─ Workplan ─ Activity ─┬─ ActivityReport (participants, challenges)
+           │                       └─ Expenditure (optional link)
+           ├─ Milestone
+           ├─ BudgetLine (by BudgetCategory) ─┬─ Expenditure / commitment (pending → approved)
+           │                                  └─ BudgetRevisionLine ← BudgetRevision (pending → approved)
+           ├─ FundingAgreement (Donor) ─ FundingReceipt
+           ├─ MonitoringVisit · Evaluation · LearningItem (lesson / recommendation + management response)
+           ├─ ProgrammeReport (narrative + snapshot frozen on approval)
+           └─ ProgrammeTeamMember
+```
+
+- **Ready for projects.** Results, indicators, activities, budget lines and expenditure carry a nullable
+  `programme_id`; Phase 4 adds `project_id` to the same tables, so a project inside a programme and an
+  independent project use the same structures.
+- **Scope for programmes.** "Own" means the person manages the programme or is on its team; "department"
+  means the programme's lead department. `programme_logic.allowed()` applies this for every action.
+- **Indicators.** `aggregation` decides how results combine: `sum` (counts per period are added),
+  `latest` (rates/percentages: most recent period) or `max`. Only verified results count. For `sum`
+  indicators the same period and place cannot be reported twice — this is the double-counting guard.
+  Progress = (result − baseline) ÷ (target − baseline), so it works for indicators that should go down.
+- **Separation of financial duties.** Expenditure, commitments and budget revisions are recorded by one
+  person and approved by another with `finance.approve`; the app refuses self-approval. Approval is also
+  refused if it would exceed what is left on the budget line. After a programme is approved its budget
+  lines are locked and change only through an approved revision.
+- **Reports.** `exporting.report_data()` builds one dictionary used by the screen, the Excel workbook
+  and the PDF. When a report is approved that dictionary is stored as `snapshot`, so approved reports
+  never change when later data is entered.
+
 ## Notifications and reminders
 
 `app/notify.py::notify()` writes one in-app notification per recipient and emails those who allow it

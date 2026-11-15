@@ -9,3 +9,7 @@ from .documents import (Document, DocumentAccessLog, DocumentCategory, DocumentF
 from .comms import (Announcement, Conversation, ConversationParticipant, Correspondence,  # noqa: F401
                     CorrespondenceAction, Meeting, MeetingDecision, MeetingParticipant, Message,
                     Notification, SequenceCounter, Task, TaskComment)
+from .programmes import (Activity, ActivityReport, BudgetCategory, BudgetLine, BudgetRevision,  # noqa: F401
+                         BudgetRevisionLine, Donor, Evaluation, Expenditure, FundingAgreement, FundingReceipt,
+                         Indicator, IndicatorResult, IndicatorTarget, LearningItem, Location, Milestone,
+                         MonitoringVisit, Programme, ProgrammeReport, ProgrammeTeamMember, ResultNode, Workplan)

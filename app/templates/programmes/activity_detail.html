@@ -1,0 +1,71 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt, money, meter, attachments %}
+{% block title %}{{ act.title }}{% endblock %}
+{% block page_title %}<span translate="no">{{ prog.code }}</span> · Activity{% endblock %}
+{% block content %}
+{% include "programmes/_header.html" %}
+<div class="page-head"><div><h2 class="h5 mb-0" translate="no">{{ act.code ~ ' ' if act.code }}{{ act.title }}</h2><p>{{ status(act.status) }} · {{ act.progress }}% complete</p></div>
+  <div class="toolbar"><a class="btn btn-light" href="{{ url_for('programmes.workplans', pid=prog.id) }}"><i class="bi bi-arrow-left me-1"></i>Activities</a>
+    {% if p_can['programmes.edit'] %}<a class="btn btn-soft" href="{{ url_for('programmes.activity_edit', pid=prog.id, aid=act.id) }}"><i class="bi bi-pencil me-1"></i>Edit</a>{% endif %}</div></div>
+<div class="grid-2 mb-4">
+  <section class="panel">
+    <div class="panel-header"><h2>Plan</h2></div>
+    <dl class="kv">
+      <dt>Planned</dt><dd class="{% if act.planned_end and act.planned_end < today and act.status in ('planned', 'in_progress', 'postponed') %}overdue{% endif %}">{{ dt(act.planned_start, '%d %b %Y') }} – {{ dt(act.planned_end, '%d %b %Y') }}</dd>
+      <dt>Actual</dt><dd>{{ dt(act.actual_start, '%d %b %Y') }} – {{ dt(act.actual_end, '%d %b %Y') }}</dd>
+      <dt>Responsible</dt><dd translate="no">{{ act.responsible.full_name if act.responsible else '—' }}</dd>
+      <dt>Location</dt><dd translate="no">{{ act.location.label if act.location else '—' }}</dd>
+      <dt>Workplan</dt><dd translate="no">{{ act.workplan.title if act.workplan else '—' }}</dd>
+      <dt>Contributes to</dt><dd translate="no">{{ (act.result.code ~ ' ' if act.result.code) ~ act.result.statement if act.result else '—' }}</dd>
+      <dt>Budget</dt><dd>{{ money(act.planned_budget, prog.currency) }}{% if act.budget_line %} <span class="text-muted">from <span translate="no">{{ act.budget_line.description }}</span></span>{% endif %}</dd>
+      <dt>Target participants</dt><dd>{{ act.target_participants or '—' }}</dd>
+      {% if act.category %}<dt>Category</dt><dd translate="no">{{ act.category }}</dd>{% endif %}
+    </dl>
+    {% if act.description %}<p class="prewrap mt-3 mb-0" translate="no">{{ act.description }}</p>{% endif %}
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Progress</h2></div>
+    <div class="mb-3">{{ meter(act.progress, 'Progress ' ~ act.progress ~ '%') }}</div>
+    {% if can_update %}
+    <form method="post" action="{{ url_for('programmes.activity_progress', pid=prog.id, aid=act.id) }}" novalidate>{{ progress_form.hidden_tag() }}
+      <div class="row g-2"><div class="col-sm-6">{{ field(progress_form.status) }}</div><div class="col-sm-6">{{ field(progress_form.progress, attrs={'inputmode': 'numeric'}) }}</div>
+        <div class="col-sm-6">{{ field(progress_form.actual_start) }}</div><div class="col-sm-6">{{ field(progress_form.actual_end) }}</div></div>
+      <button class="btn btn-soft" type="submit">Update progress</button></form>
+    {% endif %}
+  </section>
+</div>
+
+<section class="panel" id="reports">
+  <div class="panel-header"><h2>Activity reports ({{ act.reports|length }})</h2></div>
+  {% for r in act.reports %}
+    <div class="perm-module">
+      <div class="d-flex flex-wrap justify-content-between gap-2"><strong>{{ dt(r.report_date, '%A %d %b %Y') }}{% if r.location %} · <span translate="no">{{ r.location.label }}</span>{% endif %}</strong>
+        <span class="small text-muted"><span translate="no">{{ r.submitted_by.full_name if r.submitted_by else '' }}</span></span></div>
+      <p class="small mb-2">Participants: <strong>{{ r.participants_total }}</strong> ({{ r.participants_female }} female, {{ r.participants_male }} male{% if r.participants_youth is not none %}, {{ r.participants_youth }} young people{% endif %}{% if r.participants_disability is not none %}, {{ r.participants_disability }} with a disability{% endif %})</p>
+      <p class="prewrap mb-1" translate="no">{{ r.summary }}</p>
+      {% if r.challenges %}<p class="prewrap small mb-1"><strong>Challenges:</strong> <span translate="no">{{ r.challenges }}</span></p>{% endif %}
+      {% if r.recommendations %}<p class="prewrap small mb-0"><strong>Recommendations:</strong> <span translate="no">{{ r.recommendations }}</span></p>{% endif %}
+    </div>
+  {% else %}<p class="text-muted">No reports yet.</p>{% endfor %}
+  {% if can_report %}
+  <details id="report"{% if not act.reports %} open{% endif %}><summary class="btn btn-sm btn-soft">Write an activity report</summary>
+    <form method="post" action="{{ url_for('programmes.activity_report', pid=prog.id, aid=act.id) }}" class="mt-3" novalidate>{{ rep_form.hidden_tag() }}
+      <div class="row g-2"><div class="col-sm-6">{{ field(rep_form.report_date, required=True) }}</div><div class="col-sm-6">{{ field(rep_form.location_id) }}</div>
+        <div class="col-6 col-md-3">{{ field(rep_form.participants_female, attrs={'inputmode': 'numeric'}) }}</div><div class="col-6 col-md-3">{{ field(rep_form.participants_male, attrs={'inputmode': 'numeric'}) }}</div>
+        <div class="col-6 col-md-3">{{ field(rep_form.participants_youth, attrs={'inputmode': 'numeric'}) }}</div><div class="col-6 col-md-3">{{ field(rep_form.participants_disability, attrs={'inputmode': 'numeric'}) }}</div></div>
+      {{ field(rep_form.summary, required=True, attrs={'rows': 4}) }}
+      <div class="row g-2"><div class="col-md-6">{{ field(rep_form.challenges, attrs={'rows': 2}) }}</div><div class="col-md-6">{{ field(rep_form.recommendations, attrs={'rows': 2}) }}</div></div>
+      <p class="small text-muted">Attach photos and attendance sheets below after saving. Named attendance by beneficiary comes with the MEAL & beneficiaries module.</p>
+      <button class="btn btn-primary" type="submit" data-loading>Save report</button></form></details>
+  {% endif %}
+</section>
+
+{{ attachments(files, 'activity', act.id, can_report) }}
+
+{% if spend %}
+<section class="panel panel-flush"><div class="panel-header"><h2>Spending on this activity</h2></div>
+  <div class="table-scroll"><table class="table"><thead><tr><th>Date</th><th>Description</th><th>Type</th><th class="text-end">Amount</th><th>Status</th></tr></thead><tbody>
+    {% for e in spend %}<tr><td class="date">{{ dt(e.spent_on, '%d %b %Y') }}</td><td translate="no">{{ e.description }}</td><td>{{ e.kind }}</td><td class="money">{{ money(e.amount) }}</td><td>{{ status(e.status) }}</td></tr>{% endfor %}
+  </tbody></table></div></section>
+{% endif %}
+{% endblock %}

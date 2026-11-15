@@ -1,0 +1,29 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}Activity · {{ prog.code }}{% endblock %}
+{% block page_title %}<span translate="no">{{ prog.code }}</span> · {{ 'Edit activity' if act else 'New activity' }}{% endblock %}
+{% block content %}
+{% include "programmes/_header.html" %}
+<form method="post" novalidate>
+  {{ form.hidden_tag() }}
+  <section class="panel">
+    <div class="row g-3">
+      <div class="col-md-2">{{ field(form.code, attrs={'placeholder': 'e.g. 1.1.2'}) }}</div>
+      <div class="col-md-10">{{ field(form.title, required=True) }}</div>
+      <div class="col-12">{{ field(form.description, attrs={'rows': 3}) }}</div>
+      <div class="col-md-4">{{ field(form.workplan_id) }}</div>
+      <div class="col-md-8">{{ field(form.result_id) }}</div>
+      <div class="col-md-4">{{ field(form.category, attrs={'placeholder': 'e.g. Training'}) }}</div>
+      <div class="col-md-4">{{ field(form.location_id, help='Add places under Donors & locations.') }}</div>
+      <div class="col-md-4">{{ field(form.responsible_id) }}</div>
+      <div class="col-md-3">{{ field(form.planned_start) }}</div>
+      <div class="col-md-3">{{ field(form.planned_end) }}</div>
+      <div class="col-md-3">{{ field(form.target_participants, attrs={'inputmode': 'numeric'}) }}</div>
+      <div class="col-md-3">{{ field(form.planned_budget, attrs={'inputmode': 'decimal'}) }}</div>
+      <div class="col-md-6">{{ field(form.budget_line_id) }}</div>
+    </div>
+  </section>
+  <div class="toolbar mb-4"><button class="btn btn-primary" type="submit" data-loading>Save activity</button>
+    <a class="btn btn-light" href="{{ url_for('programmes.activity_detail', pid=prog.id, aid=act.id) if act else url_for('programmes.workplans', pid=prog.id) }}">Cancel</a></div>
+</form>
+{% endblock %}

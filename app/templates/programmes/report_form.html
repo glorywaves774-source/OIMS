@@ -1,0 +1,29 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}Report · {{ prog.code }}{% endblock %}
+{% block page_title %}<span translate="no">{{ prog.code }}</span> · {{ 'Edit report' if rep else 'New report' }}{% endblock %}
+{% block content %}
+{% include "programmes/_header.html" %}
+<form method="post" novalidate>
+  {{ form.hidden_tag() }}
+  <section class="panel">
+    <div class="row g-3">
+      <div class="col-md-3">{{ field(form.report_type) }}</div>
+      <div class="col-md-9">{{ field(form.title, required=True, attrs={'placeholder': 'e.g. Q3 2027 progress report'}) }}</div>
+      <div class="col-md-3">{{ field(form.period_start, required=True) }}</div>
+      <div class="col-md-3">{{ field(form.period_end, required=True) }}</div>
+      <div class="col-md-3">{{ field(form.due_date) }}</div>
+      <div class="col-md-3">{{ field(form.donor_id) }}</div>
+    </div>
+  </section>
+  <section class="panel">
+    {{ field(form.summary, attrs={'rows': 4}) }}
+    {{ field(form.achievements, attrs={'rows': 5}) }}
+    {{ field(form.challenges, attrs={'rows': 4}) }}
+    {{ field(form.lessons, attrs={'rows': 3}) }}
+    {{ field(form.next_steps, attrs={'rows': 3}) }}
+  </section>
+  <div class="toolbar mb-4"><button class="btn btn-primary" type="submit" data-loading>Save draft</button>
+    <a class="btn btn-light" href="{{ url_for('programmes.report_view', pid=prog.id, rid=rep.id) if rep else url_for('programmes.reports', pid=prog.id) }}">Cancel</a></div>
+</form>
+{% endblock %}
