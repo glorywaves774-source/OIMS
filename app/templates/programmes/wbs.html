@@ -1,0 +1,62 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt, priority %}
+{% block title %}Work breakdown · {{ prog.code }}{% endblock %}
+{% block page_title %}<span translate="no">{{ prog.code }}</span> · Work breakdown{% endblock %}
+{% macro task_row(t, depth=0) -%}
+  <li class="wbs-task{% if depth %} wbs-sub{% endif %}">
+    <span><i class="bi {{ 'bi-check2-square' if t.status == 'done' else 'bi-square' }} me-1" aria-hidden="true"></i><a href="{{ url_for('tasks.detail', task_id=t.id) }}" translate="no">{{ t.title }}</a>
+      <span class="cell-sub">{{ status(t.status) }} {{ priority(t.priority) }}{% if t.assigned_to %} · <span translate="no">{{ t.assigned_to.full_name }}</span>{% endif %}{% if t.due_date %} · <span class="date{% if t.due_date < today and t.status in ('todo', 'in_progress', 'blocked') %} overdue{% endif %}">due {{ dt(t.due_date, '%d %b %Y') }}</span>{% endif %}</span></span>
+    {% if t.subtasks %}<ul class="list-plain">{% for s in t.subtasks %}{{ task_row(s, depth + 1) }}{% endfor %}</ul>{% endif %}
+  </li>
+{%- endmacro %}
+{% macro deliv(d) -%}<li class="wbs-deliv"><i class="bi bi-box-seam me-1" aria-hidden="true"></i><a href="{{ url_for(bpn ~ '.deliverables', pid=prog.id) }}#d{{ d.id }}" translate="no">{{ d.title }}</a> <span class="cell-sub">Deliverable · {{ status(d.status) }}{% if d.due_date %} · due {{ dt(d.due_date, '%d %b %Y') }}{% endif %}</span></li>{%- endmacro %}
+{% block content %}
+{% include "programmes/_header.html" %}
+<p class="text-muted">Project → components → activities → tasks → subtasks, with the deliverables each one produces.</p>
+
+{% for node in tree %}
+<section class="panel wbs-comp">
+  <div class="panel-header"><h2>{% if node.c %}<span translate="no">{{ node.c.code ~ ' ' if node.c.code }}{{ node.c.title }}</span>{% else %}Not in a component{% endif %}</h2>
+    {% if node.c and p_can['programmes.edit'] %}<span class="d-flex gap-1">
+      <a class="btn btn-sm btn-light" href="{{ url_for(bpn ~ '.component_edit', pid=prog.id, cid=node.c.id) }}"><i class="bi bi-pencil"></i><span class="visually-hidden">Edit component</span></a>
+      <form method="post" action="{{ url_for(bpn ~ '.component_delete', pid=prog.id, cid=node.c.id) }}" data-confirm="Remove this component? Its activities and deliverables are kept."><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit"><i class="bi bi-trash"></i><span class="visually-hidden">Remove component</span></button></form></span>{% endif %}</div>
+  {% if node.c and (node.c.description or node.c.responsible) %}<p class="small text-muted">{% if node.c.description %}<span translate="no">{{ node.c.description }}</span>{% endif %}{% if node.c.description and node.c.responsible %} · {% endif %}{% if node.c.responsible %}Responsible: <span translate="no">{{ node.c.responsible.full_name }}</span>{% endif %}</p>{% endif %}
+  {% if node.acts or node.dels %}
+  <ul class="list-plain wbs">
+    {% for row in node.acts %}{% set a = row.a %}
+    <li class="wbs-act"><div><i class="bi bi-diagram-2 me-1" aria-hidden="true"></i><a href="{{ url_for(bpn ~ '.activity_detail', pid=prog.id, aid=a.id) }}" translate="no">{{ a.code ~ ' ' if a.code }}{{ a.title }}</a>
+      <span class="cell-sub">Activity · {{ status(a.status) }} · {{ a.progress }}%{% if a.planned_end %} · ends {{ dt(a.planned_end, '%d %b %Y') }}{% endif %}</span></div>
+      {% if row.tasks or row.dels %}<ul class="list-plain">{% for t in row.tasks %}{{ task_row(t) }}{% endfor %}{% for d in row.dels %}{{ deliv(d) }}{% endfor %}</ul>{% endif %}
+    </li>{% endfor %}
+    {% for d in node.dels %}{{ deliv(d) }}{% endfor %}
+  </ul>
+  {% else %}<p class="text-muted mb-0">No activities in this component yet. Choose this component when you add or edit an activity.</p>{% endif %}
+</section>
+{% else %}
+<section class="panel"><div class="empty"><i class="bi bi-diagram-3"></i>No components or activities yet.</div></section>
+{% endfor %}
+
+{% if loose %}
+<section class="panel"><div class="panel-header"><h2>Tasks not linked to an activity</h2></div>
+  <ul class="list-plain wbs">{% for t in loose %}{{ task_row(t) }}{% endfor %}</ul></section>
+{% endif %}
+
+{% if p_can['programmes.edit'] %}
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-header"><h2>Add a component</h2></div>
+    <form method="post" action="{{ url_for(bpn ~ '.component_new', pid=prog.id) }}" novalidate>{{ comp_form.hidden_tag() }}
+      <div class="row g-2"><div class="col-4">{{ field(comp_form.code) }}</div><div class="col-8">{{ field(comp_form.title) }}</div></div>
+      {{ field(comp_form.responsible_id) }}{{ field(comp_form.description, attrs={'rows': 2}) }}
+      <button class="btn btn-primary" type="submit">Add component</button></form>
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Add a task or subtask</h2></div>
+    <form method="post" action="{{ url_for(bpn ~ '.wbs_task', pid=prog.id) }}" novalidate>{{ task_form.hidden_tag() }}
+      {{ field(task_form.title) }}{{ field(task_form.activity_id) }}{{ field(task_form.parent_id, help='Choose a task to make this a subtask of it.') }}
+      <div class="row g-2"><div class="col-md-5">{{ field(task_form.assigned_to_id) }}</div><div class="col-6 col-md-3">{{ field(task_form.priority) }}</div><div class="col-6 col-md-4">{{ field(task_form.due_date) }}</div></div>
+      <button class="btn btn-primary" type="submit">Add task</button></form>
+  </section>
+</div>
+{% endif %}
+{% endblock %}

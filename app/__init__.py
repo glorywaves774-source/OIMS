@@ -9,7 +9,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from app.config import CONFIGS
 from app.extensions import csrf, db, limiter, login_manager, migrate
 
-__version__ = "0.3.0-phase3"
+__version__ = "0.4.0-phase4"
 
 
 def create_app(config_name=None, overrides=None):
@@ -64,13 +64,14 @@ def create_app(config_name=None, overrides=None):
     from app.blueprints.meetings import bp as meetings_bp
     from app.blueprints.tasks import bp as tasks_bp
     from app.blueprints.comms import bp as comms_bp
-    from app.blueprints.programmes import bp as programmes_bp
+    from app.blueprints.programmes import programmes_bp, projects_bp
     from app.blueprints import programme_finance  # noqa: F401  (adds finance routes to programmes_bp)
+    from app.blueprints import project_extras  # noqa: F401  (work breakdown, deliverables, risks, closure)
     from app.blueprints.programme_reports import registers as registers_bp  # also adds report routes
 
     for bp in (public_bp, auth_bp, setup_bp, account_bp, platform_bp, workspace_bp, departments_bp, staff_bp,
                leave_bp, attendance_bp, documents_bp, correspondence_bp, meetings_bp, tasks_bp, comms_bp,
-               programmes_bp, registers_bp):
+               programmes_bp, projects_bp, registers_bp):
         app.register_blueprint(bp)
 
     _register_template_globals(app)

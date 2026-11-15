@@ -5,13 +5,13 @@
 {% block content %}
 {% include "programmes/_header.html" %}
 <div class="page-head"><div><h2 class="h5 mb-0">Indicator performance</h2><p>Baseline, target and verified results to date. Unverified results are not counted until a MEAL reviewer verifies them.</p></div>
-  {% if p_can['meal.edit'] %}<a class="btn btn-primary" href="{{ url_for('programmes.indicator_edit', pid=prog.id) }}"><i class="bi bi-plus-lg me-1"></i>New indicator</a>{% endif %}</div>
+  {% if p_can['meal.edit'] %}<a class="btn btn-primary" href="{{ url_for(bpn ~ '.indicator_edit', pid=prog.id) }}"><i class="bi bi-plus-lg me-1"></i>New indicator</a>{% endif %}</div>
 <section class="panel panel-flush">
   {% if rows %}
   <div class="table-scroll"><table class="table">
     <thead><tr><th>Indicator</th><th>Result level</th><th class="text-end">Baseline</th><th class="text-end">Target</th><th class="text-end">Achieved</th><th>Progress</th><th></th></tr></thead>
     <tbody>{% for r in rows %}{% set i = r.ind %}<tr>
-      <td><a href="{{ url_for('programmes.indicator_detail', pid=prog.id, iid=i.id) }}" translate="no">{{ i.code ~ ' ' if i.code }}{{ i.name }}</a><span class="cell-sub">{{ i.unit }} · {{ i.frequency|replace('_', ' ') }} · {{ 'adds up' if i.aggregation == 'sum' else ('latest value' if i.aggregation == 'latest' else 'highest value') }}</span></td>
+      <td><a href="{{ url_for(bpn ~ '.indicator_detail', pid=prog.id, iid=i.id) }}" translate="no">{{ i.code ~ ' ' if i.code }}{{ i.name }}</a><span class="cell-sub">{{ i.unit }} · {{ i.frequency|replace('_', ' ') }} · {{ 'adds up' if i.aggregation == 'sum' else ('latest value' if i.aggregation == 'latest' else 'highest value') }}</span></td>
       <td>{{ i.result.code if i.result and i.result.code else (i.result.level|capitalize if i.result else '—') }}</td>
       <td class="num">{{ num(i.baseline_value) }}</td>
       <td class="num">{{ num(i.target_value) }}</td>

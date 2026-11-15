@@ -14,6 +14,11 @@
       <dt>Created by</dt><dd translate="no">{{ t.created_by.full_name if t.created_by else '—' }} · {{ dt(t.created_at, '%d %b %Y') }}</dd>
       <dt>Deadline</dt><dd class="{% if t.due_date and t.due_date < today and t.status in ('todo', 'in_progress', 'blocked') %}overdue{% endif %}">{{ dt(t.due_date, '%d %b %Y') }}</dd>
       <dt>Department</dt><dd translate="no">{{ t.department.name if t.department else '—' }}</dd>
+      {% if owner %}<dt>{{ owner.kind|capitalize }}</dt><dd><a href="{{ url_for(owner.perm ~ '.overview', pid=owner.id) }}" translate="no">{{ owner.code }} {{ owner.title }}</a></dd>{% endif %}
+      {% if t.activity %}<dt>Activity</dt><dd><a href="{{ url_for(owner.perm ~ '.activity_detail', pid=owner.id, aid=t.activity.id) }}" translate="no">{{ t.activity.title }}</a></dd>{% endif %}
+      {% if t.parent %}<dt>Subtask of</dt><dd><a href="{{ url_for('tasks.detail', task_id=t.parent.id) }}" translate="no">{{ t.parent.title }}</a></dd>{% endif %}
+      {% if t.issue %}<dt>Corrective action for</dt><dd><a href="{{ url_for(owner.perm ~ '.risks', pid=owner.id) }}#i{{ t.issue.id }}" translate="no">Issue: {{ t.issue.title }}</a></dd>{% endif %}
+      {% if t.risk %}<dt>Corrective action for</dt><dd><a href="{{ url_for(owner.perm ~ '.risks', pid=owner.id) }}#r{{ t.risk.id }}" translate="no">Risk: {{ t.risk.title }}</a></dd>{% endif %}
       {% if t.meeting %}<dt>From meeting</dt><dd><a href="{{ url_for('meetings.detail', meeting_id=t.meeting.id) }}" translate="no">{{ t.meeting.title }}</a></dd>{% endif %}
       {% if t.completed_at %}<dt>Completed</dt><dd>{{ dt(t.completed_at) }}</dd>{% endif %}
     </dl>
@@ -21,18 +26,24 @@
   </section>
   <section class="panel">
     <div class="panel-header"><h2>Status</h2></div>
+    {% if archived %}<p class="small text-muted">This task belongs to a {{ owner.status }} {{ owner.kind }} and is kept as a read-only record.</p>{% endif %}
     {% if can_status %}
     <form method="post" action="{{ url_for('tasks.set_status', task_id=t.id) }}" novalidate>{{ status_form.hidden_tag() }}
       {{ field(status_form.status) }}<button class="btn btn-primary" type="submit">Update status</button></form>
     {% else %}<p class="mb-0">{{ status(t.status) }}</p>{% endif %}
   </section>
 </div>
+{% if t.subtasks %}
+<section class="panel"><div class="panel-header"><h2>Subtasks</h2></div>
+  <ul class="list-plain mb-0">{% for st in t.subtasks %}<li class="py-2 border-bottom-soft"><a href="{{ url_for('tasks.detail', task_id=st.id) }}" translate="no">{{ st.title }}</a> <span class="cell-sub">{{ status(st.status) }}{% if st.assigned_to %} · <span translate="no">{{ st.assigned_to.full_name }}</span>{% endif %}{% if st.due_date %} · due {{ dt(st.due_date, '%d %b %Y') }}{% endif %}</span></li>{% endfor %}</ul>
+</section>
+{% endif %}
 {{ attachments(files, 'task', t.id, can_status) }}
 <section class="panel" id="comments">
   <div class="panel-header"><h2>Comments ({{ t.comments|length }})</h2></div>
   {% for c in t.comments %}<div class="msg{% if c.author_id == current_user.id %} mine{% endif %}"><div class="meta"><span translate="no">{{ c.author.full_name if c.author else '' }}</span> · {{ dt(c.created_at) }}</div><div class="prewrap" translate="no">{{ c.body }}</div></div>
   {% else %}<p class="text-muted">No comments yet.</p>{% endfor %}
-  {% if not ro %}<form method="post" action="{{ url_for('tasks.comment', task_id=t.id) }}" novalidate class="mt-3">{{ comment_form.hidden_tag() }}
+  {% if not ro and not archived %}<form method="post" action="{{ url_for('tasks.comment', task_id=t.id) }}" novalidate class="mt-3">{{ comment_form.hidden_tag() }}
     {{ field(comment_form.body, label='Add a comment', attrs={'rows': 2}) }}<button class="btn btn-soft" type="submit">Post comment</button></form>{% endif %}
 </section>
 {% endblock %}

@@ -23,12 +23,12 @@
       <td translate="no">{{ ln.code ~ ' ' if ln.code }}{{ ln.description }}{% if ln.amount != ln.original_amount %}<span class="cell-sub">Original {{ money(ln.original_amount) }}</span>{% endif %}</td>
       <td>{{ ln.category.name }}</td><td class="money">{{ money(f.amount) }}</td><td class="money">{{ money(f.spent) }}</td><td class="money">{{ money(f.committed) }}</td>
       <td class="money{% if f.available < 0 %} overdue{% endif %}">{{ money(f.available) }}</td><td>{{ meter(f.utilization, 'Spent on this line') }}</td>
-      {% if budget_open and p_can['finance.record'] %}<td><form method="post" action="{{ url_for('programmes.budget_line', pid=prog.id, lid=ln.id) }}" data-confirm="Delete this budget line?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="delete" value="1"><button class="btn btn-sm btn-light" type="submit" title="Delete"><i class="bi bi-trash"></i><span class="visually-hidden">Delete</span></button></form></td>{% endif %}
+      {% if budget_open and p_can['finance.record'] %}<td><form method="post" action="{{ url_for(bpn ~ '.budget_line', pid=prog.id, lid=ln.id) }}" data-confirm="Delete this budget line?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="delete" value="1"><button class="btn btn-sm btn-light" type="submit" title="Delete"><i class="bi bi-trash"></i><span class="visually-hidden">Delete</span></button></form></td>{% endif %}
     </tr>{% endfor %}
   </tbody></table></div>
   {% else %}<p class="text-muted px-3">No budget lines yet.</p>{% endif %}
   {% if budget_open and p_can['finance.record'] %}
-  <form method="post" action="{{ url_for('programmes.budget_line', pid=prog.id) }}" class="p-3" novalidate>{{ line_form.hidden_tag() }}
+  <form method="post" action="{{ url_for(bpn ~ '.budget_line', pid=prog.id) }}" class="p-3" novalidate>{{ line_form.hidden_tag() }}
     <div class="row g-2 align-items-end"><div class="col-md-3">{{ field(line_form.category_id) }}</div><div class="col-md-2">{{ field(line_form.code) }}</div>
       <div class="col-md-4">{{ field(line_form.description, required=True) }}</div><div class="col-md-2">{{ field(line_form.amount, required=True, attrs={'inputmode': 'decimal'}) }}</div>
       <div class="col-md-1 mb-3"><button class="btn btn-primary w-100" type="submit">Add</button></div></div></form>
@@ -54,16 +54,16 @@
       <td>{{ status(e.status) }}<span class="cell-sub" translate="no">{{ e.recorded_by.full_name if e.recorded_by else '' }}{% if e.approved_by %} → {{ e.approved_by.full_name }}{% endif %}</span></td>
       <td class="nowrap">{% if not support_request %}<div class="d-flex gap-1">
         {% if e.status == 'pending' and p_can['finance.approve'] and e.recorded_by_id != current_user.id %}
-          <form method="post" action="{{ url_for('programmes.expenditure_decide', pid=prog.id, eid=e.id, action='approve') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-primary" type="submit">Approve</button></form>
-          <form method="post" action="{{ url_for('programmes.expenditure_decide', pid=prog.id, eid=e.id, action='reject') }}" data-confirm="Reject this entry?" data-confirm-variant="btn-danger" data-confirm-label="Reject"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" type="submit">Reject</button></form>{% endif %}
+          <form method="post" action="{{ url_for(bpn ~ '.expenditure_decide', pid=prog.id, eid=e.id, action='approve') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-primary" type="submit">Approve</button></form>
+          <form method="post" action="{{ url_for(bpn ~ '.expenditure_decide', pid=prog.id, eid=e.id, action='reject') }}" data-confirm="Reject this entry?" data-confirm-variant="btn-danger" data-confirm-label="Reject"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" type="submit">Reject</button></form>{% endif %}
         {% if p_can['finance.record'] and (e.status == 'pending' or (e.status == 'approved' and e.kind == 'commitment')) %}
-          <form method="post" action="{{ url_for('programmes.expenditure_decide', pid=prog.id, eid=e.id, action='cancel') }}" data-confirm="{{ 'Release this commitment?' if e.status == 'approved' else 'Withdraw this entry?' }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit">{{ 'Release' if e.status == 'approved' else 'Withdraw' }}</button></form>{% endif %}
+          <form method="post" action="{{ url_for(bpn ~ '.expenditure_decide', pid=prog.id, eid=e.id, action='cancel') }}" data-confirm="{{ 'Release this commitment?' if e.status == 'approved' else 'Withdraw this entry?' }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit">{{ 'Release' if e.status == 'approved' else 'Withdraw' }}</button></form>{% endif %}
       </div>{% endif %}</td>
     </tr>{% endfor %}
   </tbody></table></div>{% else %}<p class="text-muted px-3">Nothing recorded{{ ' with this status' if status }}.</p>{% endif %}
   {% if p_can['finance.record'] and line_rows %}
   <details class="px-3 pb-3"><summary class="btn btn-sm btn-soft">Record expenditure or a commitment</summary>
-    <form method="post" action="{{ url_for('programmes.expenditure_new', pid=prog.id) }}" class="mt-3" novalidate>{{ exp_form.hidden_tag() }}
+    <form method="post" action="{{ url_for(bpn ~ '.expenditure_new', pid=prog.id) }}" class="mt-3" novalidate>{{ exp_form.hidden_tag() }}
       <div class="row g-2"><div class="col-md-3">{{ field(exp_form.kind) }}</div><div class="col-md-5">{{ field(exp_form.budget_line_id) }}</div><div class="col-md-4">{{ field(exp_form.activity_id) }}</div>
         <div class="col-md-3">{{ field(exp_form.spent_on, required=True) }}</div><div class="col-md-5">{{ field(exp_form.description, required=True) }}</div><div class="col-md-4">{{ field(exp_form.amount, required=True, attrs={'inputmode': 'decimal'}) }}</div>
         <div class="col-md-6">{{ field(exp_form.payee) }}</div><div class="col-md-6">{{ field(exp_form.reference) }}</div></div>
@@ -82,13 +82,13 @@
   {% if p_can['finance.record'] %}
   <div class="grid-2">
     <details><summary class="btn btn-sm btn-soft">Add a funding agreement</summary>
-      {% if fund_form.donor_id.choices %}<form method="post" action="{{ url_for('programmes.funding', pid=prog.id) }}" class="mt-3" novalidate>{{ fund_form.hidden_tag() }}<input type="hidden" name="what" value="agreement">
+      {% if fund_form.donor_id.choices %}<form method="post" action="{{ url_for(bpn ~ '.funding', pid=prog.id) }}" class="mt-3" novalidate>{{ fund_form.hidden_tag() }}<input type="hidden" name="what" value="agreement">
         {{ field(fund_form.donor_id) }}<div class="row g-2"><div class="col-sm-6">{{ field(fund_form.reference) }}</div><div class="col-sm-6">{{ field(fund_form.committed_amount, attrs={'inputmode': 'decimal'}) }}</div>
           <div class="col-sm-6">{{ field(fund_form.start_date) }}</div><div class="col-sm-6">{{ field(fund_form.end_date) }}</div></div>
         {{ field(fund_form.reporting_requirements, attrs={'rows': 2}) }}<button class="btn btn-primary" type="submit">Save</button></form>
       {% else %}<p class="small mt-2">First add the donor under <a href="{{ url_for('registers.index') }}#donors">Donors & locations</a>.</p>{% endif %}</details>
     {% if agreements %}<details><summary class="btn btn-sm btn-soft">Record funds received</summary>
-      <form method="post" action="{{ url_for('programmes.funding', pid=prog.id) }}" class="mt-3" novalidate>{{ rec_form.hidden_tag() }}<input type="hidden" name="what" value="receipt">
+      <form method="post" action="{{ url_for(bpn ~ '.funding', pid=prog.id) }}" class="mt-3" novalidate>{{ rec_form.hidden_tag() }}<input type="hidden" name="what" value="receipt">
         {{ field(rec_form.agreement_id) }}<div class="row g-2"><div class="col-sm-6">{{ field(rec_form.received_on) }}</div><div class="col-sm-6">{{ field(rec_form.amount, attrs={'inputmode': 'decimal'}) }}</div></div>
         {{ field(rec_form.reference) }}<button class="btn btn-primary" type="submit">Save</button></form></details>{% endif %}
   </div>
@@ -105,13 +105,13 @@
     {% if r.status == 'pending' and p_can['finance.approve'] and r.requested_by_id != current_user.id %}
     <form method="post" class="d-flex flex-wrap gap-2 align-items-end" novalidate>{{ review_form.hidden_tag() }}
       <div>{{ field(review_form.note) }}</div>
-      <div class="mb-3 d-flex gap-1"><button class="btn btn-sm btn-primary" type="submit" formaction="{{ url_for('programmes.revision_decide', pid=prog.id, rid=r.id, action='approve') }}">Approve</button>
-        <button class="btn btn-sm btn-outline-danger" type="submit" formaction="{{ url_for('programmes.revision_decide', pid=prog.id, rid=r.id, action='reject') }}">Reject</button></div></form>
+      <div class="mb-3 d-flex gap-1"><button class="btn btn-sm btn-primary" type="submit" formaction="{{ url_for(bpn ~ '.revision_decide', pid=prog.id, rid=r.id, action='approve') }}">Approve</button>
+        <button class="btn btn-sm btn-outline-danger" type="submit" formaction="{{ url_for(bpn ~ '.revision_decide', pid=prog.id, rid=r.id, action='reject') }}">Reject</button></div></form>
     {% endif %}
   </div>{% else %}<p class="text-muted">No revisions.</p>{% endfor %}
   {% if not budget_open and p_can['finance.record'] and line_rows %}
   <details><summary class="btn btn-sm btn-soft">Request a budget revision</summary>
-    <form method="post" action="{{ url_for('programmes.revision_request', pid=prog.id) }}" class="mt-3" novalidate>{{ revision_form.hidden_tag() }}
+    <form method="post" action="{{ url_for(bpn ~ '.revision_request', pid=prog.id) }}" class="mt-3" novalidate>{{ revision_form.hidden_tag() }}
       <div class="table-scroll mb-2"><table class="table"><thead><tr><th>Line</th><th class="text-end">Current</th><th class="text-end">Spent + committed</th><th>New amount</th></tr></thead><tbody>
         {% for ln, f in line_rows %}<tr><td translate="no">{{ ln.description }}</td><td class="money">{{ money(f.amount) }}</td><td class="money">{{ money(f.spent + f.committed) }}</td>
           <td><input class="form-control" name="new_{{ ln.id }}" inputmode="decimal" placeholder="unchanged" aria-label="New amount for {{ ln.description }}"></td></tr>{% endfor %}

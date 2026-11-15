@@ -13,3 +13,5 @@ from .programmes import (Activity, ActivityReport, BudgetCategory, BudgetLine, B
                          BudgetRevisionLine, Donor, Evaluation, Expenditure, FundingAgreement, FundingReceipt,
                          Indicator, IndicatorResult, IndicatorTarget, LearningItem, Location, Milestone,
                          MonitoringVisit, Programme, ProgrammeReport, ProgrammeTeamMember, ResultNode, Workplan)
+from .projects import (Component, Deliverable, Issue, Project, ProjectClosure, ProjectTeamMember,  # noqa: F401
+                       RiskItem)

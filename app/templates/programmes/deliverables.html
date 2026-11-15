@@ -1,0 +1,46 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt, priority, attachments %}
+{% block title %}Deliverables · {{ prog.code }}{% endblock %}
+{% block page_title %}<span translate="no">{{ prog.code }}</span> · Deliverables{% endblock %}
+{% block content %}
+{% include "programmes/_header.html" %}
+<div class="kpi-row mb-3">
+  {% for s in ('pending', 'submitted', 'verified', 'rejected') %}<div class="kpi"><div class="l">{{ {'pending': 'Pending', 'submitted': 'Awaiting check', 'verified': 'Accepted', 'rejected': 'Returned'}[s] }}</div><div class="v">{{ counts[s] }}</div></div>{% endfor %}
+</div>
+<section class="panel panel-flush">
+  <div class="panel-header"><h2>Deliverables ({{ rows|length }})</h2>{% if p_can['programmes.edit'] %}<a class="btn btn-sm btn-primary" href="{{ url_for(bpn ~ '.deliverable_new', pid=prog.id) }}"><i class="bi bi-plus-lg me-1"></i>Deliverable</a>{% endif %}</div>
+  {% if not rows %}<div class="empty"><i class="bi bi-box-seam"></i>No deliverables yet.</div>{% endif %}
+</section>
+{% for d in rows %}
+<section class="panel" id="d{{ d.id }}">
+  <div class="panel-header"><h2 translate="no">{{ d.title }}</h2><span>{{ status(d.status) }} {{ priority(d.priority) }}</span></div>
+  <dl class="kv">
+    <dt>Due</dt><dd class="date{% if d.due_date and d.due_date < today and d.status in ('pending', 'rejected') %} overdue{% endif %}">{{ dt(d.due_date, '%d %b %Y') }}</dd>
+    <dt>Responsible</dt><dd translate="no">{{ d.responsible.full_name if d.responsible else '—' }}</dd>
+    {% if d.component %}<dt>Component</dt><dd translate="no">{{ d.component.title }}</dd>{% endif %}
+    {% if d.activity %}<dt>Activity</dt><dd><a href="{{ url_for(bpn ~ '.activity_detail', pid=prog.id, aid=d.activity.id) }}" translate="no">{{ d.activity.title }}</a></dd>{% endif %}
+    {% if d.acceptance_criteria %}<dt>Acceptance criteria</dt><dd class="prewrap" translate="no">{{ d.acceptance_criteria }}</dd>{% endif %}
+    {% if d.description %}<dt>Description</dt><dd class="prewrap" translate="no">{{ d.description }}</dd>{% endif %}
+    {% if d.submitted_by %}<dt>Submitted</dt><dd><span translate="no">{{ d.submitted_by.full_name }}</span> · {{ dt(d.submitted_at) }}</dd>{% endif %}
+    {% if d.verified_by %}<dt>{{ 'Accepted' if d.status == 'verified' else 'Checked' }}</dt><dd><span translate="no">{{ d.verified_by.full_name }}</span> · {{ dt(d.verified_at) }}</dd>{% endif %}
+    {% if d.review_note %}<dt>Note</dt><dd translate="no">{{ d.review_note }}</dd>{% endif %}
+  </dl>
+  <div class="toolbar mt-3">
+    {% if can_submit[d.id] and d.status in ('pending', 'rejected') %}
+    <form method="post" action="{{ url_for(bpn ~ '.deliverable_action', pid=prog.id, did=d.id, action='submit') }}" class="d-flex flex-wrap gap-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input class="form-control form-control-sm w-auto" name="note" maxlength="500" placeholder="Note (optional)" aria-label="Note"><button class="btn btn-sm btn-primary" type="submit">Submit for checking</button></form>{% endif %}
+    {% if p_can['programmes.manage'] and d.status == 'submitted' %}
+    <form method="post" action="{{ url_for(bpn ~ '.deliverable_action', pid=prog.id, did=d.id, action='verify') }}" class="d-flex flex-wrap gap-2"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input class="form-control form-control-sm w-auto" name="note" maxlength="500" placeholder="Note (required to return)" aria-label="Review note">
+      <button class="btn btn-sm btn-primary" type="submit">Accept</button>
+      <button class="btn btn-sm btn-light" type="submit" formaction="{{ url_for(bpn ~ '.deliverable_action', pid=prog.id, did=d.id, action='reject') }}">Return for changes</button></form>{% endif %}
+    {% if p_can['programmes.edit'] and d.status != 'verified' %}<a class="btn btn-sm btn-light" href="{{ url_for(bpn ~ '.deliverable_edit', pid=prog.id, did=d.id) }}"><i class="bi bi-pencil me-1"></i>Edit</a>{% endif %}
+    {% if p_can['programmes.manage'] and d.status not in ('verified', 'cancelled') %}
+    <form method="post" action="{{ url_for(bpn ~ '.deliverable_action', pid=prog.id, did=d.id, action='cancel') }}" data-confirm="Cancel this deliverable? It will no longer be expected."><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit">Cancel deliverable</button></form>{% endif %}
+    {% if p_can['programmes.manage'] and d.status == 'cancelled' %}
+    <form method="post" action="{{ url_for(bpn ~ '.deliverable_action', pid=prog.id, did=d.id, action='reopen') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit">Reopen</button></form>{% endif %}
+  </div>
+  {% if files[d.id] or can_submit[d.id] %}<div class="mt-3">{{ attachments(files[d.id], 'deliverable', d.id, can_submit[d.id] and d.status != 'verified') }}</div>{% endif %}
+</section>
+{% endfor %}
+{% endblock %}

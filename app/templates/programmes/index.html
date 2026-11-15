@@ -1,24 +1,27 @@
 {% extends "layout_app.html" %}
 {% from "macros.html" import status, dt, pager, meter, money %}
-{% block title %}Programmes{% endblock %}
-{% block page_title %}Programmes{% endblock %}
+{% block title %}{{ K.plural }}{% endblock %}
+{% block page_title %}{{ K.plural }}{% endblock %}
 {% block content %}
-<div class="page-head"><div><h2 class="h4 mb-0">Programmes</h2><p>{{ page.total }} {{ 'programme' if page.total == 1 else 'programmes' }} you can see</p></div>
-  {% if can('programmes.create') and not support_request %}<a class="btn btn-primary" href="{{ url_for('programmes.new') }}"><i class="bi bi-plus-lg me-1"></i>Register a programme</a>{% endif %}</div>
+<div class="page-head"><div><h2 class="h4 mb-0">{{ K.plural }}</h2><p>{{ page.total }} {{ K.label|lower if page.total == 1 else K.plural|lower }} you can see</p></div>
+  {% if can(K.perm ~ '.create') and not support_request %}<a class="btn btn-primary" href="{{ url_for(bpn ~ '.new', programme=parent if parent and parent != 'none' else None) }}"><i class="bi bi-plus-lg me-1"></i>Register a {{ K.label|lower }}</a>{% endif %}</div>
 <section class="panel panel-flush">
   <form class="filters px-3 pt-3" method="get" role="search">
-    <input class="form-control" type="search" name="q" value="{{ q }}" placeholder="Title, ID or description" aria-label="Search programmes">
+    <input class="form-control" type="search" name="q" value="{{ q }}" placeholder="Title, ID or description" aria-label="Search {{ K.plural|lower }}">
     <select class="form-select" name="status" data-autosubmit aria-label="Status"><option value="">Any status</option>
       {% for s in statuses %}<option value="{{ s }}"{% if s == status %} selected{% endif %}>{{ s|replace('_', ' ')|capitalize }}</option>{% endfor %}</select>
     {% if sectors %}<select class="form-select" name="sector" data-autosubmit aria-label="Sector"><option value="">All sectors</option>
       {% for s in sectors %}<option value="{{ s }}"{% if s == sector %} selected{% endif %} translate="no">{{ s }}</option>{% endfor %}</select>{% endif %}
+    {% if K.kind == 'project' %}<select class="form-select" name="programme" data-autosubmit aria-label="Programme"><option value="">All projects</option><option value="none"{% if parent == 'none' %} selected{% endif %}>Independent projects only</option>
+      {% for pid_, label in programmes %}<option value="{{ pid_ }}"{% if parent == pid_|string %} selected{% endif %} translate="no">{{ label|truncate(60) }}</option>{% endfor %}</select>{% endif %}
     <button class="btn btn-soft" type="submit">Search</button>
   </form>
   {% if page.items %}
   <div class="table-scroll"><table class="table">
-    <thead><tr><th>Programme</th><th>Sector</th><th>Dates</th><th>Manager</th><th class="text-end">Budget</th><th>Budget used</th><th>Status</th></tr></thead>
+    <thead><tr><th>{{ K.label }}</th>{% if K.kind == 'project' %}<th>Programme</th>{% endif %}<th>Sector</th><th>Dates</th><th>Manager</th><th class="text-end">Budget</th><th>Budget used</th><th>Status</th></tr></thead>
     <tbody>{% for p in page.items %}{% set b = budgets[p.id] %}<tr>
-      <td><a href="{{ url_for('programmes.overview', pid=p.id) }}" translate="no">{{ p.title }}</a><span class="cell-sub code">{{ p.code }}</span></td>
+      <td><a href="{{ url_for(bpn ~ '.overview', pid=p.id) }}" translate="no">{{ p.title }}</a><span class="cell-sub code">{{ p.code }}</span></td>
+      {% if K.kind == 'project' %}<td translate="no">{% if p.programme %}<span class="code">{{ p.programme.code }}</span>{% else %}<span class="text-muted">Independent</span>{% endif %}</td>{% endif %}
       <td translate="no">{{ p.sector or '—' }}</td>
       <td class="date">{{ dt(p.start_date, '%b %Y') }} – {{ dt(p.end_date, '%b %Y') }}</td>
       <td translate="no">{{ p.manager.full_name if p.manager else '—' }}</td>
@@ -28,6 +31,6 @@
     </tr>{% endfor %}</tbody>
   </table></div>
   {{ pager(page, 'programmes.index', q=q, status=status, sector=sector) }}
-  {% else %}<div class="empty"><i class="bi bi-kanban"></i>{{ 'No programmes match.' if q or status or sector else 'No programmes yet.' }}</div>{% endif %}
+  {% else %}<div class="empty"><i class="bi {{ 'bi-kanban' if K.kind == 'programme' else 'bi-briefcase' }}"></i>{{ ('No ' ~ K.plural|lower ~ ' match.') if q or status or sector or parent else ('No ' ~ K.plural|lower ~ ' yet.') }}</div>{% endif %}
 </section>
 {% endblock %}

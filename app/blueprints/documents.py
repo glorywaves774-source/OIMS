@@ -9,7 +9,7 @@ from app.blueprints.tenant import member_choices, my_department_id, page_arg, wo
 from app.extensions import db
 from app.forms import ActionForm
 from app.forms_office import CategoryForm, DecisionForm, DocumentForm, FolderForm, UploadForm, VersionForm
-from app.models import (Activity, Correspondence, Department, Document, Evaluation, Programme, DocumentAccessLog, DocumentCategory, DocumentFolder,
+from app.models import (Activity, Correspondence, Department, Document, Evaluation, Programme, Project, DocumentAccessLog, DocumentCategory, DocumentFolder,
                         DocumentShare, DocumentVersion, Meeting, StaffProfile, Task, utcnow)
 from app.notify import notify
 from app.rbac import can, require_permission
@@ -19,20 +19,28 @@ from app.tenancy import tenant_get_or_404
 bp = workspace_blueprint("documents", __name__, "/documents")
 
 RELATED = {"staff": StaffProfile, "correspondence": Correspondence, "meeting": Meeting, "task": Task,
-           "programme": Programme, "activity": Activity, "evaluation": Evaluation}
+           "programme": Programme, "project": Project, "activity": Activity, "evaluation": Evaluation,
+           "deliverable": None, "issue": None}
 
 
 def _programme_of(related_type, obj):
-    if related_type == "programme":
+    """The programme or project an attachment's parent record belongs to."""
+    if related_type in ("programme", "project"):
         return obj
-    return db.session.get(Programme, obj.programme_id) if obj.programme_id else None
+    from app.programme_logic import owner_of
+    return owner_of(obj)
+
+
+def _related_model(related_type):
+    from app.models import Deliverable, Issue
+    return {"deliverable": Deliverable, "issue": Issue}.get(related_type) or RELATED.get(related_type)
 
 
 # --- Access rules ----------------------------------------------------------------------
 
 def parent_visible(related_type, related_id):
     """Attachments inherit visibility from the record they belong to."""
-    model = RELATED.get(related_type)
+    model = _related_model(related_type)
     if model is None:
         return False
     obj = db.session.get(model, related_id)
@@ -50,34 +58,38 @@ def parent_visible(related_type, related_id):
     if related_type == "task":
         from app.blueprints.tasks import can_view_task
         return can_view_task(obj)
-    if related_type in ("programme", "activity", "evaluation"):
-        from app.programme_logic import allowed
+    if related_type in ("programme", "project", "activity", "evaluation", "deliverable", "issue"):
+        from app.programme_logic import can_see
         prog = _programme_of(related_type, obj)
         if prog is None:
             return False
         if related_type == "evaluation":
-            return can("meal.view") and allowed("meal.view", prog)
-        return can("programmes.view") and allowed("programmes.view", prog)
+            return can_see("meal.view", prog)
+        return can_see("programmes.view", prog)
     return False
 
 
 def parent_editable(related_type, related_id):
-    model = RELATED.get(related_type)
+    model = _related_model(related_type)
     obj = db.session.get(model, related_id) if model else None
     if obj is None or obj.organization_id != g.tenant.id:
         return False
     if related_type == "staff":
         return can("staff.manage") and obj.status != "exited"
-    if related_type in ("programme", "activity", "evaluation"):
+    if related_type in ("programme", "project", "activity", "evaluation", "deliverable", "issue"):
         from app.programme_logic import can_do
         prog = _programme_of(related_type, obj)
         if prog is None:
             return False
         if related_type == "evaluation":
             return can_do("meal.edit", prog)
-        if related_type == "activity" and obj.responsible_id == current_user.id:
-            return True
+        if related_type in ("activity", "deliverable") and obj.responsible_id == current_user.id:
+            return prog.status not in ("closed", "cancelled") and g.get("support_request") is None
         return can_do("programmes.edit", prog) or (related_type == "activity" and can_do("meal.collect", prog))
+    if related_type == "task":
+        from app.blueprints.tasks import _archived
+        if _archived(obj):
+            return False
     return parent_visible(related_type, related_id)
 
 
@@ -311,10 +323,17 @@ def _parent_url(rel_type, rel_id):
             "meeting": lambda: url_for("meetings.detail", meeting_id=rel_id),
             "task": lambda: url_for("tasks.detail", task_id=rel_id),
             "programme": lambda: url_for("programmes.overview", pid=rel_id) + "#documents",
-            "activity": lambda: url_for("programmes.activity_detail", pid=db.session.get(Activity, rel_id).programme_id,
-                                        aid=rel_id),
-            "evaluation": lambda: url_for("programmes.evaluation_edit", pid=db.session.get(Evaluation, rel_id).programme_id,
-                                          eid=rel_id)}[rel_type]()
+            "project": lambda: url_for("projects.overview", pid=rel_id) + "#documents",
+            "activity": lambda: _owner_url(db.session.get(Activity, rel_id), "activity_detail", aid=rel_id),
+            "evaluation": lambda: _owner_url(db.session.get(Evaluation, rel_id), "evaluation_edit", eid=rel_id),
+            "deliverable": lambda: _owner_url(db.session.get(_related_model("deliverable"), rel_id), "deliverables") + "#d" + str(rel_id),
+            "issue": lambda: _owner_url(db.session.get(_related_model("issue"), rel_id), "risks") + "#issues"}[rel_type]()
+
+
+def _owner_url(obj, endpoint, **kw):
+    from app.programme_logic import owner_of
+    owner = owner_of(obj)
+    return url_for(f"{owner.perm}.{endpoint}", pid=owner.id, **kw)
 
 
 @bp.route("/<int:doc_id>")

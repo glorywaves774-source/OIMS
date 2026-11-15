@@ -6,7 +6,7 @@
 {% include "programmes/_header.html" %}
 <section class="panel">
   <div class="panel-header"><h2>Logical framework</h2>
-    {% if p_can['meal.edit'] %}<a class="btn btn-sm btn-soft" href="{{ url_for('programmes.indicator_edit', pid=prog.id) }}"><i class="bi bi-plus-lg me-1"></i>Indicator</a>{% endif %}</div>
+    {% if p_can['meal.edit'] %}<a class="btn btn-sm btn-soft" href="{{ url_for(bpn ~ '.indicator_edit', pid=prog.id) }}"><i class="bi bi-plus-lg me-1"></i>Indicator</a>{% endif %}</div>
   {% if tree %}
     {% for n, depth, inds in tree %}
     <div class="tree-row tree-d{{ [depth, 3]|min }}">
@@ -14,10 +14,10 @@
         <div><span class="lvl">{{ levels[n.level] }}{% if n.code %} {{ n.code }}{% endif %}</span>
           <div class="prewrap" translate="no">{{ n.statement }}</div>
           {% if n.assumptions %}<div class="small text-muted mt-1"><strong>Assumptions:</strong> <span translate="no">{{ n.assumptions }}</span></div>{% endif %}</div>
-        {% if editable %}<div class="d-flex gap-1 align-items-start"><a class="btn btn-sm btn-light" href="{{ url_for('programmes.result_edit', pid=prog.id, rid=n.id) }}">Edit</a>
-          <form method="post" action="{{ url_for('programmes.result_delete', pid=prog.id, rid=n.id) }}" data-confirm="Remove this result?" data-confirm-variant="btn-danger" data-confirm-label="Remove"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit" title="Remove"><i class="bi bi-trash"></i><span class="visually-hidden">Remove</span></button></form></div>{% endif %}
+        {% if editable %}<div class="d-flex gap-1 align-items-start"><a class="btn btn-sm btn-light" href="{{ url_for(bpn ~ '.result_edit', pid=prog.id, rid=n.id) }}">Edit</a>
+          <form method="post" action="{{ url_for(bpn ~ '.result_delete', pid=prog.id, rid=n.id) }}" data-confirm="Remove this result?" data-confirm-variant="btn-danger" data-confirm-label="Remove"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit" title="Remove"><i class="bi bi-trash"></i><span class="visually-hidden">Remove</span></button></form></div>{% endif %}
       </div>
-      {% if inds %}<ul class="small mb-0 mt-2">{% for i in inds %}<li><a href="{{ url_for('programmes.indicator_detail', pid=prog.id, iid=i.id) }}" translate="no">{{ i.code ~ ' ' if i.code }}{{ i.name }}</a>{% if i.means_of_verification %} <span class="text-muted">· MoV: <span translate="no">{{ i.means_of_verification|truncate(80) }}</span></span>{% endif %}</li>{% endfor %}</ul>{% endif %}
+      {% if inds %}<ul class="small mb-0 mt-2">{% for i in inds %}<li><a href="{{ url_for(bpn ~ '.indicator_detail', pid=prog.id, iid=i.id) }}" translate="no">{{ i.code ~ ' ' if i.code }}{{ i.name }}</a>{% if i.means_of_verification %} <span class="text-muted">· MoV: <span translate="no">{{ i.means_of_verification|truncate(80) }}</span></span>{% endif %}</li>{% endfor %}</ul>{% endif %}
     </div>
     {% endfor %}
   {% else %}<p class="text-muted mb-0">No results yet. Start with the goal, then objectives, outcomes and outputs.</p>{% endif %}
@@ -34,7 +34,7 @@
   </section>
   {% endif %}
   <section class="panel">
-    <div class="panel-header"><h2>Theory of change</h2>{% if p_can['programmes.edit'] %}<a class="small" href="{{ url_for('programmes.planning', pid=prog.id) }}">Edit</a>{% endif %}</div>
+    <div class="panel-header"><h2>Theory of change</h2>{% if p_can['programmes.edit'] %}<a class="small" href="{{ url_for(bpn ~ '.planning', pid=prog.id) }}">Edit</a>{% endif %}</div>
     <p class="prewrap" translate="no">{{ prog.theory_of_change or 'Not written yet.' }}</p>
     {% if prog.assumptions %}<h3 class="fs-6">Key assumptions</h3><p class="prewrap mb-0" translate="no">{{ prog.assumptions }}</p>{% endif %}
   </section>

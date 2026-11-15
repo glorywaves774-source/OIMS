@@ -52,7 +52,9 @@ def build_nav():
         progs = []
         if can("programmes.view"):
             progs.append(_item("Programmes", "bi-kanban", "programmes.index", "Programmes", match="programmes."))
-        if can("programmes.view") or can("finance.view"):
+        if can("projects.view"):
+            progs.append(_item("Projects", "bi-briefcase", "projects.index", "Projects", match="projects."))
+        if can("programmes.view") or can("projects.view") or can("finance.view"):
             progs.append(_item("Donors & locations", "bi-geo-alt", "registers.index", "Registers"))
         people = []
         if can("staff.view"):
@@ -76,11 +78,11 @@ def build_nav():
                              match="workspace.support"))
         if can("organization.view"):
             gov.append(_item("Organization settings", "bi-building-gear", "workspace.settings", "Settings"))
-        groups = [("Workspace", home), ("Office", office), ("Programmes", progs), ("People", people), ("Access", access),
+        groups = [("Workspace", home), ("Office", office), ("Programmes & projects", progs), ("People", people), ("Access", access),
                   ("Organization", gov)]
         # Phone tabs: the most-used destinations this person can open.
         by_ep = {i["endpoint"]: i for grp in groups for i in grp[1]}
-        for ep in ("workspace.dashboard", "tasks.index", "programmes.index", "comms.calendar", "documents.index",
+        for ep in ("workspace.dashboard", "tasks.index", "projects.index", "comms.calendar", "programmes.index", "documents.index",
                    "meetings.index", "staff.index"):
             if ep in by_ep and len(tabs) < 4:
                 tabs.append(by_ep[ep])

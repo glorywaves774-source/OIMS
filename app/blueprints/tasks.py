@@ -23,9 +23,30 @@ def _owners(t):
     return tuple(u for u in (t.assigned_to_id, t.created_by_id) if u)
 
 
+def work_owner(t):
+    """The programme or project a task belongs to (directly, or through the issue or risk it corrects)."""
+    from app.programme_logic import owner_of
+    if t.project_id:
+        return t.project
+    for src in (t.issue, t.risk):
+        if src is not None:
+            return owner_of(src)
+    return None
+
+
+def _archived(t):
+    o = work_owner(t)
+    return o is not None and o.status in ("closed", "cancelled")
+
+
 def can_view_task(t):
     if current_user.id in _owners(t):
         return True
+    o = work_owner(t)
+    if o is not None:
+        from app.programme_logic import can_see
+        if can_see("programmes.view", o):
+            return True
     if t.meeting is not None:
         from app.blueprints.meetings import can_view_meeting
         if can_view_meeting(t.meeting):
@@ -34,11 +55,25 @@ def can_view_task(t):
 
 
 def can_update_status(t):
+    if _archived(t):
+        return False
+    o = work_owner(t)
+    if o is not None:
+        from app.programme_logic import can_do
+        if can_do("programmes.edit", o):
+            return True
     return (t.assigned_to_id == current_user.id or t.created_by_id == current_user.id
             or (can("tasks.manage") and in_scope("tasks.manage", t.department_id, _owners(t))))
 
 
 def can_edit_task(t):
+    if _archived(t):
+        return False
+    o = work_owner(t)
+    if o is not None:
+        from app.programme_logic import can_do
+        if can_do("programmes.edit", o):
+            return True
     return t.created_by_id == current_user.id or (can("tasks.manage") and in_scope("tasks.manage", t.department_id, _owners(t)))
 
 
@@ -112,7 +147,9 @@ def detail(task_id):
         abort(404)
     from app.blueprints.documents import attachments_for
     ro = g.get("support_request") is not None
-    return render_template("tasks/detail.html", t=t, files=attachments_for("task", t.id),
+    owner = work_owner(t)
+    return render_template("tasks/detail.html", t=t, files=attachments_for("task", t.id), owner=owner,
+                           archived=_archived(t),
                            status_form=TaskStatusForm(obj=t), comment_form=CommentForm(), today=date.today(),
                            can_status=can_update_status(t) and not ro, can_edit=can_edit_task(t) and not ro, ro=ro)
 
@@ -164,7 +201,7 @@ def set_status(task_id):
 @bp.route("/<int:task_id>/comment", methods=["POST"])
 def comment(task_id):
     t = tenant_get_or_404(Task, task_id)
-    if not can_view_task(t) or g.get("support_request") is not None:
+    if not can_view_task(t) or g.get("support_request") is not None or _archived(t):
         abort(403)
     form = CommentForm()
     if form.validate_on_submit():

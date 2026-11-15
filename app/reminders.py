@@ -8,8 +8,8 @@ from datetime import timedelta
 from flask import g
 
 from app.extensions import db
-from app.models import (Activity, Correspondence, Document, Meeting, Milestone, Organization, Programme,
-                        ProgrammeReport, Task, utcnow)
+from app.models import (Activity, Correspondence, Deliverable, Document, Meeting, Milestone, Organization,
+                        Programme, ProgrammeReport, Project, RiskItem, Task, utcnow)
 from app.notify import notify
 from app.tenancy import clear_tenant, set_tenant
 
@@ -19,7 +19,7 @@ def run_reminders(now=None):
     now = now or utcnow()
     today = now.date()
     totals = {"tasks": 0, "overdue": 0, "meetings": 0, "documents": 0, "correspondence": 0, "activities": 0,
-              "milestones": 0, "reports": 0}
+              "milestones": 0, "reports": 0, "deliverables": 0, "risks": 0}
     for org in Organization.query.filter_by(status=Organization.ACTIVE).all():
         set_tenant(org.id)
         g.tenant = org
@@ -69,28 +69,67 @@ def _org_reminders(org, now, today, totals):
 
 
 
+def _owner(obj):
+    """(programme or project, endpoint prefix) for a shared record; projects first."""
+    if getattr(obj, "project_id", None):
+        return db.session.get(Project, obj.project_id), "projects"
+    if getattr(obj, "programme_id", None):
+        return db.session.get(Programme, obj.programme_id), "programmes"
+    return None, None
+
+
+def _live(prog):
+    return prog is not None and prog.status not in ("closed", "cancelled")
+
+
 def _programme_reminders(org, today, totals):
+    """Programme and project dates: activity starts, milestones, report deadlines, deliverables, risk reviews."""
     kw = {"organization_id": org.id, "exclude_current": False}
     for a in Activity.query.filter(Activity.organization_id == org.id, Activity.status == "planned",
                                    Activity.planned_start.isnot(None), Activity.planned_start <= today + timedelta(days=3),
                                    Activity.planned_start >= today):
+        prog, perm = _owner(a)
+        if not _live(prog):
+            continue
         totals["activities"] += notify([a.responsible_id], "reminder", f"Activity starts {a.planned_start:%d %b}: {a.title}",
-                                       None, "programmes.activity_detail", dedupe_key=f"act-start-{a.id}-{a.planned_start}",
-                                       pid=a.programme_id, aid=a.id, org_slug=org.slug, **kw)
+                                       prog.code, f"{perm}.activity_detail", dedupe_key=f"act-start-{a.id}-{a.planned_start}",
+                                       pid=prog.id, aid=a.id, org_slug=org.slug, **kw)
     for m in Milestone.query.filter(Milestone.organization_id == org.id, Milestone.achieved_date.is_(None),
                                     Milestone.due_date <= today + timedelta(days=7)):
-        prog = db.session.get(Programme, m.programme_id) if m.programme_id else None
-        if prog is None:
+        prog, perm = _owner(m)
+        if not _live(prog):
             continue
         label = "overdue" if m.due_date < today else f"due {m.due_date:%d %b}"
         totals["milestones"] += notify([prog.manager_id], "reminder", f"Milestone {label}: {m.title}", prog.code,
-                                       "programmes.workplans", dedupe_key=f"ms-{m.id}-{m.due_date}-{'late' if m.due_date < today else 'soon'}",
+                                       f"{perm}.workplans", dedupe_key=f"ms-{m.id}-{m.due_date}-{'late' if m.due_date < today else 'soon'}",
                                        pid=prog.id, org_slug=org.slug, **kw)
     for r in ProgrammeReport.query.filter(ProgrammeReport.organization_id == org.id, ProgrammeReport.status == "draft",
                                           ProgrammeReport.due_date.isnot(None),
                                           ProgrammeReport.due_date <= today + timedelta(days=5)):
-        prog = db.session.get(Programme, r.programme_id) if r.programme_id else None
-        totals["reports"] += notify([r.prepared_by_id, prog.manager_id if prog else None], "reminder",
-                                    f"Report due {r.due_date:%d %b}: {r.title}", None, "programmes.report_view",
-                                    dedupe_key=f"rep-due-{r.id}-{r.due_date}", pid=r.programme_id, rid=r.id,
+        prog, perm = _owner(r)
+        if prog is None:
+            continue
+        totals["reports"] += notify([r.prepared_by_id, prog.manager_id], "reminder",
+                                    f"Report due {r.due_date:%d %b}: {r.title}", prog.code, f"{perm}.report_view",
+                                    dedupe_key=f"rep-due-{r.id}-{r.due_date}", pid=prog.id, rid=r.id,
                                     org_slug=org.slug, **kw)
+    for d in Deliverable.query.filter(Deliverable.organization_id == org.id,
+                                      Deliverable.status.in_(("pending", "rejected")), Deliverable.due_date.isnot(None),
+                                      Deliverable.due_date <= today + timedelta(days=5)):
+        prog = db.session.get(Project, d.project_id)
+        if not _live(prog):
+            continue
+        label = "overdue" if d.due_date < today else f"due {d.due_date:%d %b}"
+        totals["deliverables"] += notify([d.responsible_id or prog.manager_id], "reminder",
+                                         f"Deliverable {label}: {d.title}", prog.code, "projects.deliverables",
+                                         dedupe_key=f"del-{d.id}-{d.due_date}-{'late' if d.due_date < today else 'soon'}",
+                                         pid=prog.id, org_slug=org.slug, **kw)
+    for rk in RiskItem.query.filter(RiskItem.organization_id == org.id, RiskItem.status != "closed",
+                                    RiskItem.review_date.isnot(None), RiskItem.review_date <= today + timedelta(days=2)):
+        prog, perm = _owner(rk)
+        if not _live(prog):
+            continue
+        totals["risks"] += notify([rk.owner_id or prog.manager_id], "reminder",
+                                  f"Risk review {'overdue' if rk.review_date < today else 'due'}: {rk.title}", prog.code,
+                                  f"{perm}.risks", dedupe_key=f"risk-rev-{rk.id}-{rk.review_date}",
+                                  pid=prog.id, org_slug=org.slug, **kw)

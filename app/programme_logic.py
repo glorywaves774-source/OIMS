@@ -1,4 +1,10 @@
-"""Access rules and calculations for programmes (and, from Phase 4, projects)."""
+"""Access rules and calculations shared by programmes and projects.
+
+Functions take an *owner* — a Programme or a Project. Both expose ``kind``, ``fk``
+(the column name on shared tables), ``perm`` (permission prefix) and ``member_ids()``.
+Permission codes may be written as ``programmes.<action>``; for a project they are
+translated to ``projects.<action>`` automatically.
+"""
 from datetime import date
 from decimal import Decimal
 
@@ -8,10 +14,41 @@ from sqlalchemy import exists, func, or_, select
 
 from app.extensions import db
 from app.models import (Activity, BudgetLine, Expenditure, FundingAgreement, FundingReceipt, Indicator,
-                        IndicatorResult, Membership, Programme, ProgrammeTeamMember, StaffProfile)
+                        IndicatorResult, Membership, Programme, ProgrammeTeamMember, Project, ProjectTeamMember,
+                        StaffProfile)
 from app.rbac import DEPT, ORG, OWN, can, permissions_for_role, scope_of  # noqa: F401
 
 ZERO = Decimal("0")
+
+
+# --- Owner helpers --------------------------------------------------------------------------
+
+def own(owner):
+    """Keyword arguments that attach a shared record to its owner, e.g. {"project_id": 7}."""
+    return {owner.fk: owner.id}
+
+
+def of(model, owner):
+    """SQL condition: the shared record belongs to this owner."""
+    return getattr(model, owner.fk) == owner.id
+
+
+def owner_of(obj):
+    """The programme or project a shared record belongs to."""
+    if getattr(obj, "project_id", None):
+        return db.session.get(Project, obj.project_id)
+    if getattr(obj, "programme_id", None):
+        return db.session.get(Programme, obj.programme_id)
+    return None
+
+
+def pcode(code, owner):
+    if owner is not None and code.startswith("programmes."):
+        return owner.perm + code[len("programmes"):]
+    return code
+
+
+TEAM = {"programme": (Programme, ProgrammeTeamMember, "programme_id"), "project": (Project, ProjectTeamMember, "project_id")}
 
 
 # --- Access ------------------------------------------------------------------------------
@@ -22,7 +59,8 @@ def _my_department():
 
 
 def allowed(code, prog):
-    """Does the current person hold ``code`` for this programme, given their scope?"""
+    """Does the current person hold ``code`` for this programme/project, given their scope?"""
+    code = pcode(code, prog)
     scope = scope_of(code)
     if scope == ORG:
         return True
@@ -33,23 +71,32 @@ def allowed(code, prog):
     return scope == DEPT and prog.department_id is not None and prog.department_id == _my_department()
 
 
-def visible_programmes_stmt(code="programmes.view"):
-    stmt = select(Programme).where(Programme.organization_id == g.tenant.id)
-    scope = scope_of(code)
+def visible_owner_stmt(kind, action="view"):
+    model, team, fk = TEAM[kind]
+    stmt = select(model).where(model.organization_id == g.tenant.id)
+    scope = scope_of(f"{model.perm}.{action}")
     if scope == ORG:
         return stmt
     if scope is None:
-        return stmt.where(Programme.id == -1)
+        return stmt.where(model.id == -1)
     me = current_user.id
-    member = or_(Programme.manager_id == me, exists().where(ProgrammeTeamMember.programme_id == Programme.id,
-                                                            ProgrammeTeamMember.user_id == me))
+    member = or_(model.manager_id == me, exists().where(getattr(team, fk) == model.id, team.user_id == me))
     if scope == DEPT and _my_department():
-        return stmt.where(or_(member, Programme.department_id == _my_department()))
+        return stmt.where(or_(member, model.department_id == _my_department()))
     return stmt.where(member)
+
+
+def visible_programmes_stmt(code="programmes.view"):
+    return visible_owner_stmt("programme", code.split(".")[1])
+
+
+def visible_projects_stmt(action="view"):
+    return visible_owner_stmt("project", action)
 
 
 def holders(code, prog=None):
     """User ids in this organization whose role grants ``code`` covering ``prog`` (for notifications)."""
+    code = pcode(code, prog)
     out = []
     for m in Membership.query.filter_by(organization_id=g.tenant.id, status=Membership.ACTIVE):
         scope = permissions_for_role(m.role).get(code) if m.role else None
@@ -70,7 +117,14 @@ def read_only():
 
 
 def can_do(code, prog):
-    return not read_only() and can(code) and allowed(code, prog)
+    """Allowed to change this programme/project? Closed and cancelled ones are read-only (archived)."""
+    if prog is not None and prog.status in ("closed", "cancelled") and not code.endswith(".view"):
+        return False
+    return not read_only() and can(pcode(code, prog)) and allowed(code, prog)
+
+
+def can_see(code, prog):
+    return can(pcode(code, prog)) and allowed(code, prog)
 
 
 # --- Finance -----------------------------------------------------------------------------
@@ -80,17 +134,17 @@ def _sum(stmt):
 
 
 def finance_summary(prog):
-    budget = _sum(select(func.sum(BudgetLine.amount)).where(BudgetLine.programme_id == prog.id))
+    budget = _sum(select(func.sum(BudgetLine.amount)).where(of(BudgetLine, prog)))
     spent = _sum(select(func.sum(Expenditure.amount)).where(
-        Expenditure.programme_id == prog.id, Expenditure.kind == "expenditure", Expenditure.status == "approved"))
+        of(Expenditure, prog), Expenditure.kind == "expenditure", Expenditure.status == "approved"))
     committed = _sum(select(func.sum(Expenditure.amount)).where(
-        Expenditure.programme_id == prog.id, Expenditure.kind == "commitment", Expenditure.status == "approved"))
+        of(Expenditure, prog), Expenditure.kind == "commitment", Expenditure.status == "approved"))
     pending = _sum(select(func.sum(Expenditure.amount)).where(
-        Expenditure.programme_id == prog.id, Expenditure.status == "pending"))
+        of(Expenditure, prog), Expenditure.status == "pending"))
     funding_committed = _sum(select(func.sum(FundingAgreement.committed_amount)).where(
-        FundingAgreement.programme_id == prog.id))
+        of(FundingAgreement, prog)))
     funding_received = _sum(select(func.sum(FundingReceipt.amount)).join(FundingAgreement).where(
-        FundingAgreement.programme_id == prog.id))
+        of(FundingAgreement, prog)))
     available = budget - spent - committed
     return {
         "approved_budget": Decimal(prog.approved_budget or 0), "budget": budget, "spent": spent,
@@ -115,7 +169,7 @@ def line_figures(line):
 
 def category_breakdown(prog):
     rows = {}
-    for line in BudgetLine.query.filter_by(programme_id=prog.id).all():
+    for line in BudgetLine.query.filter_by(**own(prog)).all():
         f = line_figures(line)
         r = rows.setdefault(line.category.name, {"category": line.category.name, "amount": ZERO, "spent": ZERO,
                                                  "committed": ZERO})
@@ -130,9 +184,22 @@ def category_breakdown(prog):
 
 # --- Indicators ----------------------------------------------------------------------------
 
-def indicator_actual(ind, start=None, end=None, verified_only=True):
-    """Aggregate actual results for an indicator over a period, following its aggregation rule."""
-    q = IndicatorResult.query.filter(IndicatorResult.indicator_id == ind.id)
+def contributing_ids(ind):
+    """A programme indicator that adds up also counts results reported on linked project indicators."""
+    if ind.programme_id and ind.aggregation == "sum":
+        return [i for (i,) in db.session.execute(select(Indicator.id).where(Indicator.contributes_to_id == ind.id,
+                                                                            Indicator.is_active.is_(True)))]
+    return []
+
+
+def indicator_actual(ind, start=None, end=None, verified_only=True, include_projects=True):
+    """Aggregate actual results for an indicator over a period, following its aggregation rule.
+
+    Every result is stored once, on exactly one indicator. A programme indicator that adds up
+    includes the results of project indicators linked to it, so nothing is entered or counted twice.
+    """
+    ids = [ind.id] + (contributing_ids(ind) if include_projects else [])
+    q = IndicatorResult.query.filter(IndicatorResult.indicator_id.in_(ids))
     if verified_only:
         q = q.filter(IndicatorResult.status == "verified")
     else:
@@ -177,7 +244,7 @@ def overlapping_result(ind, start, end, location_id, exclude_id=None):
 
 def indicator_rows(prog, start=None, end=None):
     rows = []
-    for ind in Indicator.query.filter_by(programme_id=prog.id, is_active=True).order_by(Indicator.code, Indicator.id):
+    for ind in Indicator.query.filter_by(**own(prog), is_active=True).order_by(Indicator.code, Indicator.id):
         actual = indicator_actual(ind, start, end)
         pending = IndicatorResult.query.filter_by(indicator_id=ind.id, status="submitted").count()
         rows.append({"ind": ind, "actual": actual, "achievement": achievement(ind, actual), "pending": pending,
@@ -196,12 +263,29 @@ def period_target(ind, start, end):
     return total if found else None
 
 
+def consolidated(prog):
+    """A programme with its linked projects. Each expenditure belongs to one owner only, so sums never overlap."""
+    if prog.kind != "programme":
+        return None
+    own_fin = finance_summary(prog)
+    rows, budget, spent, other = [], own_fin["budget"], own_fin["spent"], False
+    for p in Project.query.filter_by(programme_id=prog.id).order_by(Project.code).all():
+        f = finance_summary(p)
+        if p.currency == prog.currency:
+            budget += f["budget"]
+            spent += f["spent"]
+        else:
+            other = True
+        rows.append({"p": p, "fin": f, "acts": activity_counts(p), "visible": can_see("programmes.view", p)})
+    return {"projects": rows, "budget": budget, "spent": spent, "other_currency": other}
+
+
 # --- Activities & timeline ----------------------------------------------------------------------
 
 def activity_counts(prog):
     counts = dict(db.session.execute(select(Activity.status, func.count()).where(
-        Activity.programme_id == prog.id).group_by(Activity.status)).all())
-    overdue = Activity.query.filter(Activity.programme_id == prog.id, Activity.status.in_(Activity.OPEN),
+        of(Activity, prog)).group_by(Activity.status)).all())
+    overdue = Activity.query.filter(of(Activity, prog), Activity.status.in_(Activity.OPEN),
                                     Activity.planned_end < date.today()).count()
     return {"by_status": counts, "total": sum(counts.values()), "overdue": overdue}
 

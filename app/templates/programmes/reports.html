@@ -8,11 +8,11 @@
   <section class="panel">
     <div class="panel-header"><h2>Quick status report</h2></div>
     <p class="small text-muted">Indicators, activities, participants, budget and milestones for any period — no writing needed.</p>
-    <form method="get" class="d-flex flex-wrap gap-2 align-items-end" action="{{ url_for('programmes.quick_export', pid=prog.id, fmt='pdf') }}">
+    <form method="get" class="d-flex flex-wrap gap-2 align-items-end" action="{{ url_for(bpn ~ '.quick_export', pid=prog.id, fmt='pdf') }}">
       <div><label class="form-label" for="qf">From</label><input class="form-control" type="date" id="qf" name="from" value="{{ prog.start_date.isoformat() if prog.start_date else '' }}"></div>
       <div><label class="form-label" for="qt">To</label><input class="form-control" type="date" id="qt" name="to" value="{{ today.isoformat() }}"></div>
       <button class="btn btn-soft" type="submit"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
-      <button class="btn btn-soft" type="submit" formaction="{{ url_for('programmes.quick_export', pid=prog.id, fmt='xlsx') }}"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel</button>
+      <button class="btn btn-soft" type="submit" formaction="{{ url_for(bpn ~ '.quick_export', pid=prog.id, fmt='xlsx') }}"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel</button>
     </form>
   </section>
   {% if p_can['reports.create'] %}
@@ -20,7 +20,7 @@
     <div class="panel-header"><h2>Write a report</h2></div>
     <div class="d-flex flex-wrap gap-2">
       {% for k, v in [('monthly', 'Monthly'), ('quarterly', 'Quarterly'), ('semi_annual', 'Semi-annual'), ('annual', 'Annual'), ('donor', 'Donor'), ('performance', 'Performance')] %}
-      <a class="btn btn-light" href="{{ url_for('programmes.report_edit', pid=prog.id, type=k) }}">{{ v }}</a>{% endfor %}
+      <a class="btn btn-light" href="{{ url_for(bpn ~ '.report_edit', pid=prog.id, type=k) }}">{{ v }}</a>{% endfor %}
     </div>
     <p class="small text-muted mt-2 mb-0">Write the narrative; figures for the period are added automatically and frozen when the report is approved.</p>
   </section>
@@ -30,12 +30,12 @@
   <div class="panel-header"><h2>Reports</h2></div>
   {% if rows %}<div class="table-scroll"><table class="table"><thead><tr><th>Report</th><th>Type</th><th>Period</th><th>Due</th><th>Status</th><th></th></tr></thead><tbody>
     {% for r in rows %}<tr>
-      <td><a href="{{ url_for('programmes.report_view', pid=prog.id, rid=r.id) }}" translate="no">{{ r.title }}</a><span class="cell-sub" translate="no">{{ r.prepared_by.full_name if r.prepared_by else '' }}{% if r.donor %} · for {{ r.donor.name }}{% endif %}</span></td>
+      <td><a href="{{ url_for(bpn ~ '.report_view', pid=prog.id, rid=r.id) }}" translate="no">{{ r.title }}</a><span class="cell-sub" translate="no">{{ r.prepared_by.full_name if r.prepared_by else '' }}{% if r.donor %} · for {{ r.donor.name }}{% endif %}</span></td>
       <td>{{ r.TYPES[r.report_type] }}</td><td class="date">{{ dt(r.period_start, '%d %b %Y') }} – {{ dt(r.period_end, '%d %b %Y') }}</td>
       <td class="date{% if r.due_date and r.due_date < today and r.status != 'approved' %} overdue{% endif %}">{{ dt(r.due_date, '%d %b %Y') if r.due_date else '—' }}</td>
       <td>{{ status(r.status) }}</td>
-      <td class="nowrap"><a class="btn btn-sm btn-light" href="{{ url_for('programmes.report_export', pid=prog.id, rid=r.id, fmt='pdf') }}" title="PDF"><i class="bi bi-file-earmark-pdf"></i><span class="visually-hidden">PDF</span></a>
-        <a class="btn btn-sm btn-light" href="{{ url_for('programmes.report_export', pid=prog.id, rid=r.id, fmt='xlsx') }}" title="Excel"><i class="bi bi-file-earmark-spreadsheet"></i><span class="visually-hidden">Excel</span></a></td>
+      <td class="nowrap"><a class="btn btn-sm btn-light" href="{{ url_for(bpn ~ '.report_export', pid=prog.id, rid=r.id, fmt='pdf') }}" title="PDF"><i class="bi bi-file-earmark-pdf"></i><span class="visually-hidden">PDF</span></a>
+        <a class="btn btn-sm btn-light" href="{{ url_for(bpn ~ '.report_export', pid=prog.id, rid=r.id, fmt='xlsx') }}" title="Excel"><i class="bi bi-file-earmark-spreadsheet"></i><span class="visually-hidden">Excel</span></a></td>
     </tr>{% endfor %}
   </tbody></table></div>{% else %}<div class="empty"><i class="bi bi-file-earmark-text"></i>No reports yet.</div>{% endif %}
 </section>
