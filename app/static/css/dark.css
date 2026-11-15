@@ -53,3 +53,6 @@ html[data-theme="dark"] .report-page th, html[data-theme="dark"] .report-page td
 html[data-theme="dark"] .lv-high { color: #f0a46a; }
 html[data-theme="dark"] .rm-high { color: #f6b27c; }
 html[data-theme="dark"] .rm-critical { color: #ff9c8f; }
+
+/* Phase 7: chart series colour for dark surfaces (validated) */
+html[data-theme="dark"] { --chart-1: #26a395; }

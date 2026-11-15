@@ -435,19 +435,20 @@ def review(fid, sid, action):
 def submissions_export(fid):
     import openpyxl
     from openpyxl.styles import Font
+    from app.analytics_export import safe_row
     f = _load_form(fid)
     if not can("meal.view"):
         abort(403)
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Answers"
-    ws.append(["#", "Date collected", "Collected by", "Location", "Beneficiary", "Status"] + [q.label for q in f.fields])
+    ws.append(safe_row(["#", "Date collected", "Collected by", "Location", "Beneficiary", "Status"] + [q.label for q in f.fields]))
     for c in ws[1]:
         c.font = Font(bold=True)
     for s in _visible_subs(f).order_by(FormSubmission.collected_on, FormSubmission.id):
-        ws.append([s.id, s.collected_on.isoformat(), s.collected_by.full_name if s.collected_by else "",
+        ws.append(safe_row([s.id, s.collected_on.isoformat(), s.collected_by.full_name if s.collected_by else "",
                    s.location.label if s.location else "", s.beneficiary.code if s.beneficiary else "", s.status] +
-                  [", ".join(v) if isinstance(v, list) else v for v in (s.answers.get(q.key) for q in f.fields)])
+                  [", ".join(v) if isinstance(v, list) else v for v in (s.answers.get(q.key) for q in f.fields)]))
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)

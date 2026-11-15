@@ -189,3 +189,39 @@
   var latest = document.getElementById("latest");
   if (latest && latest.scrollIntoView) latest.scrollIntoView({ block: "end" });
 })();
+
+// Chart tooltips: every bar and column shows its label and value on hover and on keyboard focus.
+(function () {
+  var tip = null;
+  function show(el) {
+    var text = el.getAttribute("data-tip");
+    if (!text) return;
+    if (!tip) {
+      tip = document.createElement("div");
+      tip.className = "chart-tip";
+      tip.setAttribute("role", "status");
+      document.body.appendChild(tip);
+    }
+    tip.textContent = text;
+    tip.hidden = false;
+    var r = el.getBoundingClientRect();
+    var x = Math.min(window.innerWidth - tip.offsetWidth - 8, Math.max(8, r.left + r.width / 2 - tip.offsetWidth / 2));
+    var y = r.top - tip.offsetHeight - 8;
+    if (y < 8) y = r.bottom + 8;
+    tip.style.left = x + "px";
+    tip.style.top = y + "px";
+  }
+  function hide() { if (tip) tip.hidden = true; }
+  document.addEventListener("pointerover", function (e) {
+    var el = e.target.closest && e.target.closest("[data-tip]");
+    if (el) show(el);
+  });
+  document.addEventListener("pointerout", function (e) {
+    if (e.target.closest && e.target.closest("[data-tip]")) hide();
+  });
+  document.addEventListener("focusin", function (e) {
+    var el = e.target.closest && e.target.closest("[data-tip]");
+    if (el) show(el); else hide();
+  });
+  window.addEventListener("scroll", hide, { passive: true });
+})();

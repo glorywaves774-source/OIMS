@@ -56,6 +56,9 @@ def build_nav():
             progs.append(_item("Projects", "bi-briefcase", "projects.index", "Projects", match="projects."))
         if can("programmes.view") or can("projects.view") or can("finance.view"):
             progs.append(_item("Donors & locations", "bi-geo-alt", "registers.index", "Registers"))
+        from app.analytics import available as _reports_available
+        if _reports_available():
+            home.append(_item("Reports", "bi-bar-chart-line", "analytics.index", "Reports", match="analytics."))
         ops = []
         if can("finance.view"):
             ops.append(_item("Finance overview", "bi-cash-coin", "finance.overview", "Finance", match="finance."))

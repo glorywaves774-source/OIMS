@@ -1,0 +1,13 @@
+{% extends "layout_app.html" %}
+{% block title %}Reports{% endblock %}
+{% block page_title %}Reports{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Reports</h2><p>Standard reports across the organization. Each shows only what you are allowed to see, and downloads as Excel, CSV or PDF.</p></div></div>
+{% for group, reports in groups.items() %}
+<section class="panel">
+  <div class="panel-header"><h2>{{ group }}</h2></div>
+  <div class="report-grid">{% for r in reports %}
+    <a class="report-card" href="{{ url_for('analytics.view', key=r.key) }}"><strong>{{ r.title }}</strong><span>{{ r.description }}</span></a>{% endfor %}</div>
+</section>
+{% endfor %}
+{% endblock %}

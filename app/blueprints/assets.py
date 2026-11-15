@@ -306,6 +306,7 @@ def _decide(a):
 def export():
     import openpyxl
     from openpyxl.styles import Font
+    from app.analytics_export import safe_row
     if not can("assets.view"):
         abort(403)
     wb = openpyxl.Workbook()
@@ -316,11 +317,11 @@ def export():
     for c in ws[1]:
         c.font = Font(bold=True)
     for a in db.session.execute(visible_assets_stmt().order_by(Asset.code)).scalars():
-        ws.append([a.code, a.name, a.category, a.make_model or "", a.serial_number or "", a.status.replace("_", " "),
+        ws.append(safe_row([a.code, a.name, a.category, a.make_model or "", a.serial_number or "", a.status.replace("_", " "),
                    a.condition, a.custodian.full_name if a.custodian else "", a.location.label if a.location else "",
                    a.owner.code if a.owner else "Organization", a.donor.name if a.donor else "",
                    a.purchase_date.isoformat() if a.purchase_date else "", a.currency, float(a.cost or 0),
-                   float(a.book_value()), a.last_verified_on.isoformat() if a.last_verified_on else ""])
+                   float(a.book_value()), a.last_verified_on.isoformat() if a.last_verified_on else ""]))
     for col in ("N", "O"):
         for cell in ws[col][1:]:
             cell.number_format = "#,##0.00"
