@@ -95,14 +95,27 @@ def create_app(config_name=None, overrides=None):
     return app
 
 
+WEAK_SECRETS = {"dev-only-not-secret", "test-secret", "change-me", "changeme", "secret"}
+
+
 def _check_production_config(app, config_name):
     if config_name != "production":
+        # A hosting platform is always production: never run the development or test settings there.
+        if os.environ.get("RENDER") and not app.config.get("TESTING_ON_HOST"):
+            raise RuntimeError("OIMS_ENV must be 'production' on the server")
         return
     missing = [k for k in ("SECRET_KEY", "SQLALCHEMY_DATABASE_URI") if not app.config.get(k)]
     if missing:
         raise RuntimeError(f"Missing required environment configuration: {', '.join(missing)}")
-    if len(app.config["SECRET_KEY"]) < 32:
-        raise RuntimeError("SECRET_KEY must be at least 32 characters long")
+    if len(app.config["SECRET_KEY"]) < 32 or app.config["SECRET_KEY"].lower() in WEAK_SECRETS:
+        raise RuntimeError("SECRET_KEY must be a random value of at least 32 characters")
+    if not app.config.get("SESSION_COOKIE_SECURE"):
+        raise RuntimeError("SESSION_COOKIE_SECURE must stay on in production (sign-in cookies only over https)")
+    base = app.config.get("PUBLIC_BASE_URL")
+    if base and not base.startswith("https://"):
+        raise RuntimeError("PUBLIC_BASE_URL must start with https://")
+    if not (app.config.get("PAYSTACK_API_BASE") or "").startswith("https://"):
+        raise RuntimeError("PAYSTACK_API_BASE must start with https://")
     backend = app.config["STORAGE_BACKEND"]
     if backend == "s3" and not app.config.get("S3_BUCKET"):
         raise RuntimeError("STORAGE_BACKEND=s3 requires S3_BUCKET")

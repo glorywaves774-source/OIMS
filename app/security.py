@@ -77,6 +77,10 @@ def external_url(endpoint, **values):
 def is_safe_next(target):
     if not target:
         return False
+    # Browsers read "\\" as "/", so "/\\evil.example" would leave the site; control characters are dropped
+    # by browsers too ("/\t/evil.example"). Only plain same-site paths are accepted.
+    if "\\" in target or any(ord(ch) < 32 or ord(ch) == 127 for ch in target):
+        return False
     parsed = urlparse(target)
     return not parsed.netloc and not parsed.scheme and target.startswith("/") and not target.startswith("//")
 
@@ -143,6 +147,14 @@ CSP = (
     "font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; "
     "form-action 'self'; object-src 'none'"
 )
+
+
+def csp_allowing_form_target(origin):
+    """The standard policy, plus one outside address that forms on this page may lead to.
+
+    Browsers apply form-action to the redirect after a form is sent, so a page whose button sends the
+    person on to a payment provider must name that provider."""
+    return CSP.replace("form-action 'self'", f"form-action 'self' {origin}")
 
 
 def apply_security_headers(response):
