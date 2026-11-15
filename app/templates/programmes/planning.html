@@ -1,0 +1,25 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}Planning · {{ prog.code }}{% endblock %}
+{% block page_title %}<span translate="no">{{ prog.code }}</span> · Planning{% endblock %}
+{% block content %}
+{% include "programmes/_header.html" %}
+{% if p_can['programmes.edit'] %}
+<form method="post" novalidate>
+  {{ form.hidden_tag() }}
+  <section class="panel">
+    {{ field(form.strategy, attrs={'rows': 5}) }}
+    {{ field(form.implementation_plan, attrs={'rows': 6}, help='Phasing, partners, delivery approach. Detailed activities go in Workplans & activities.') }}
+    {{ field(form.theory_of_change, attrs={'rows': 6}, help='If… then… because… — how the activities lead to the outcomes and goal.') }}
+    {{ field(form.assumptions, attrs={'rows': 3}) }}
+    {{ field(form.risks_summary, attrs={'rows': 3}) }}
+  </section>
+  <div class="toolbar mb-4"><button class="btn btn-primary" type="submit" data-loading>Save planning</button></div>
+</form>
+{% else %}
+<section class="panel"><dl class="kv">
+  {% for label, val in [('Strategy', prog.strategy), ('Implementation plan', prog.implementation_plan), ('Theory of change', prog.theory_of_change), ('Assumptions', prog.assumptions), ('Main risks', prog.risks_summary)] %}
+  <dt>{{ label }}</dt><dd class="prewrap" translate="no">{{ val or '—' }}</dd>{% endfor %}
+</dl></section>
+{% endif %}
+{% endblock %}

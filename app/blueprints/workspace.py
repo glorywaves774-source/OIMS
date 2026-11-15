@@ -87,11 +87,15 @@ def dashboard():
     if can("correspondence.approve"):
         pending_approvals["correspondence"] = Correspondence.query.filter_by(
             organization_id=org.id, status="awaiting_approval").count()
+    from app.models import Activity
+    my_activities = (Activity.query.filter(Activity.organization_id == org.id, Activity.responsible_id == current_user.id,
+                                           Activity.status.in_(Activity.OPEN))
+                     .order_by(Activity.planned_start.is_(None), Activity.planned_start).limit(5).all())
     recent = []
     if can("audit.view"):
         recent = (AuditLog.query.filter_by(organization_id=org.id)
                   .order_by(AuditLog.created_at.desc()).limit(6).all())
-    return render_template("workspace/dashboard.html", stats=stats, my_tasks=my_tasks, meetings=meetings,
+    return render_template("workspace/dashboard.html", my_activities=my_activities, stats=stats, my_tasks=my_tasks, meetings=meetings,
                            correspondence=correspondence, documents=documents, deadlines=deadlines, notes=notes,
                            announcements=announcements, pending_support=pending_support,
                            pending_approvals={k: v for k, v in pending_approvals.items() if v}, recent=recent,

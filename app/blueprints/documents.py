@@ -9,7 +9,7 @@ from app.blueprints.tenant import member_choices, my_department_id, page_arg, wo
 from app.extensions import db
 from app.forms import ActionForm
 from app.forms_office import CategoryForm, DecisionForm, DocumentForm, FolderForm, UploadForm, VersionForm
-from app.models import (Correspondence, Department, Document, DocumentAccessLog, DocumentCategory, DocumentFolder,
+from app.models import (Activity, Correspondence, Department, Document, Evaluation, Programme, DocumentAccessLog, DocumentCategory, DocumentFolder,
                         DocumentShare, DocumentVersion, Meeting, StaffProfile, Task, utcnow)
 from app.notify import notify
 from app.rbac import can, require_permission
@@ -18,7 +18,14 @@ from app.tenancy import tenant_get_or_404
 
 bp = workspace_blueprint("documents", __name__, "/documents")
 
-RELATED = {"staff": StaffProfile, "correspondence": Correspondence, "meeting": Meeting, "task": Task}
+RELATED = {"staff": StaffProfile, "correspondence": Correspondence, "meeting": Meeting, "task": Task,
+           "programme": Programme, "activity": Activity, "evaluation": Evaluation}
+
+
+def _programme_of(related_type, obj):
+    if related_type == "programme":
+        return obj
+    return db.session.get(Programme, obj.programme_id) if obj.programme_id else None
 
 
 # --- Access rules ----------------------------------------------------------------------
@@ -43,6 +50,14 @@ def parent_visible(related_type, related_id):
     if related_type == "task":
         from app.blueprints.tasks import can_view_task
         return can_view_task(obj)
+    if related_type in ("programme", "activity", "evaluation"):
+        from app.programme_logic import allowed
+        prog = _programme_of(related_type, obj)
+        if prog is None:
+            return False
+        if related_type == "evaluation":
+            return can("meal.view") and allowed("meal.view", prog)
+        return can("programmes.view") and allowed("programmes.view", prog)
     return False
 
 
@@ -53,6 +68,16 @@ def parent_editable(related_type, related_id):
         return False
     if related_type == "staff":
         return can("staff.manage") and obj.status != "exited"
+    if related_type in ("programme", "activity", "evaluation"):
+        from app.programme_logic import can_do
+        prog = _programme_of(related_type, obj)
+        if prog is None:
+            return False
+        if related_type == "evaluation":
+            return can_do("meal.edit", prog)
+        if related_type == "activity" and obj.responsible_id == current_user.id:
+            return True
+        return can_do("programmes.edit", prog) or (related_type == "activity" and can_do("meal.collect", prog))
     return parent_visible(related_type, related_id)
 
 
@@ -284,7 +309,12 @@ def _parent_url(rel_type, rel_id):
     return {"staff": lambda: url_for("staff.detail", staff_id=rel_id) + "#documents",
             "correspondence": lambda: url_for("correspondence.detail", item_id=rel_id),
             "meeting": lambda: url_for("meetings.detail", meeting_id=rel_id),
-            "task": lambda: url_for("tasks.detail", task_id=rel_id)}[rel_type]()
+            "task": lambda: url_for("tasks.detail", task_id=rel_id),
+            "programme": lambda: url_for("programmes.overview", pid=rel_id) + "#documents",
+            "activity": lambda: url_for("programmes.activity_detail", pid=db.session.get(Activity, rel_id).programme_id,
+                                        aid=rel_id),
+            "evaluation": lambda: url_for("programmes.evaluation_edit", pid=db.session.get(Evaluation, rel_id).programme_id,
+                                          eid=rel_id)}[rel_type]()
 
 
 @bp.route("/<int:doc_id>")

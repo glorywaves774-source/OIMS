@@ -1,0 +1,83 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt, meter, num %}
+{% block title %}{{ ind.name }}{% endblock %}
+{% block page_title %}<span translate="no">{{ prog.code }}</span> · Indicator{% endblock %}
+{% block content %}
+{% include "programmes/_header.html" %}
+<div class="page-head"><div><h2 class="h5 mb-0" translate="no">{{ ind.code ~ ' ' if ind.code }}{{ ind.name }}</h2>
+  <p>{{ ind.unit|capitalize }} · reported {{ ind.frequency|replace('_', ' ') }} · {{ ind.AGGREGATIONS[ind.aggregation] }}</p></div>
+  <div class="toolbar"><a class="btn btn-light" href="{{ url_for('programmes.indicators', pid=prog.id) }}"><i class="bi bi-arrow-left me-1"></i>Indicators</a>
+    {% if p_can['meal.edit'] %}<a class="btn btn-soft" href="{{ url_for('programmes.indicator_edit', pid=prog.id, iid=ind.id) }}"><i class="bi bi-pencil me-1"></i>Edit</a>{% endif %}</div></div>
+<div class="kpi-row mb-4">
+  <div class="kpi"><div class="v">{{ num(ind.baseline_value) }}</div><div class="l">Baseline{% if ind.baseline_date %} ({{ dt(ind.baseline_date, '%b %Y') }}){% endif %}</div></div>
+  <div class="kpi"><div class="v">{{ num(ind.target_value) }}</div><div class="l">Overall target</div></div>
+  <div class="kpi"><div class="v">{{ num(actual) }}</div><div class="l">Verified result{% if pending_actual != actual %} · {{ num(pending_actual) }} incl. unverified{% endif %}</div></div>
+  <div class="kpi"><div class="l mb-1">Progress to target</div>{{ meter(pct, 'Progress from baseline to target', over_ok=True) }}</div>
+</div>
+<div class="grid-2 mb-4">
+  <section class="panel"><div class="panel-header"><h2>Definition</h2></div>
+    <dl class="kv">
+      <dt>Measures</dt><dd translate="no">{{ (ind.result.code ~ ' ' if ind.result.code) ~ ind.result.statement if ind.result else 'Not linked to a result' }}</dd>
+      <dt>Definition</dt><dd class="prewrap" translate="no">{{ ind.definition or '—' }}</dd>
+      <dt>Means of verification</dt><dd class="prewrap" translate="no">{{ ind.means_of_verification or '—' }}</dd>
+      <dt>Data source</dt><dd translate="no">{{ ind.data_source or '—' }}</dd>
+      <dt>Responsible</dt><dd translate="no">{{ ind.responsible.full_name if ind.responsible else '—' }}</dd>
+      <dt>Good direction</dt><dd>{{ 'Higher is better' if ind.direction == 'increase' else 'Lower is better' }}</dd>
+      <dt>Disaggregation</dt><dd>{{ (ind.disaggregations or [])|join(', ') or 'None' }}</dd>
+    </dl></section>
+  <section class="panel panel-flush"><div class="panel-header"><h2>Targets by period</h2></div>
+    {% if ind.targets %}<div class="table-scroll"><table class="table"><thead><tr><th>Period</th><th>Dates</th><th class="text-end">Target</th><th></th></tr></thead><tbody>
+      {% for t in ind.targets %}<tr><td>{{ t.period_label }}</td><td class="date">{{ dt(t.period_start, '%d %b %Y') }} – {{ dt(t.period_end, '%d %b %Y') }}</td><td class="num">{{ num(t.target_value) }}</td>
+        <td>{% if p_can['meal.edit'] %}<form method="post" action="{{ url_for('programmes.target_delete', pid=prog.id, iid=ind.id, tid=t.id) }}" data-confirm="Delete this target?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit" title="Delete"><i class="bi bi-trash"></i><span class="visually-hidden">Delete</span></button></form>{% endif %}</td></tr>{% endfor %}
+    </tbody></table></div>{% else %}<p class="text-muted px-3 mb-3">No period targets yet.</p>{% endif %}
+    {% if p_can['meal.edit'] %}
+    <form method="post" class="p-3" novalidate>{{ target_form.hidden_tag() }}<input type="hidden" name="what" value="target">
+      <div class="row g-2"><div class="col-sm-6">{{ field(target_form.period_label, attrs={'placeholder': 'e.g. Q1 2027'}) }}</div><div class="col-sm-6">{{ field(target_form.target_value, attrs={'inputmode': 'decimal'}) }}</div>
+        <div class="col-sm-6">{{ field(target_form.period_start) }}</div><div class="col-sm-6">{{ field(target_form.period_end) }}</div></div>
+      <button class="btn btn-soft" type="submit">Add target</button></form>
+    {% endif %}
+  </section>
+</div>
+
+<section class="panel panel-flush" id="results">
+  <div class="panel-header"><h2>Reported results</h2></div>
+  {% if ind.results %}
+  <div class="table-scroll"><table class="table"><thead><tr><th>Period</th><th class="text-end">Result</th><th>Breakdown</th><th>Location</th><th>Reported by</th><th>Status</th><th></th></tr></thead><tbody>
+    {% for r in ind.results %}<tr>
+      <td class="date">{{ dt(r.period_start, '%d %b %Y') }} – {{ dt(r.period_end, '%d %b %Y') }}</td>
+      <td class="num">{{ num(r.value) }}</td>
+      <td class="small">{% for cat, parts in (r.breakdown or {}).items() %}<div>{{ cat|capitalize }}: {% for k, v in parts.items() %}{{ k }} {{ '%g'|format(v) }}{% if not loop.last %}, {% endif %}{% endfor %}</div>{% endfor %}</td>
+      <td translate="no">{{ r.location.label if r.location else 'Whole programme' }}</td>
+      <td translate="no">{{ r.reported_by.full_name if r.reported_by else '—' }}{% if r.source %}<span class="cell-sub">{{ r.source }}</span>{% endif %}</td>
+      <td>{{ status(r.status) }}{% if r.review_note %}<span class="cell-sub">{{ r.review_note }}</span>{% endif %}</td>
+      <td class="nowrap">{% if r.status == 'submitted' and not support_request %}<div class="d-flex gap-1">
+        {% if p_can['meal.edit'] and r.reported_by_id != current_user.id %}
+        <form method="post" action="{{ url_for('programmes.result_review', pid=prog.id, iid=ind.id, rid=r.id, action='verify') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-primary" type="submit">Verify</button></form>
+        <form method="post" action="{{ url_for('programmes.result_review', pid=prog.id, iid=ind.id, rid=r.id, action='reject') }}" data-confirm="Reject this result?" data-confirm-variant="btn-danger" data-confirm-label="Reject"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" type="submit">Reject</button></form>{% endif %}
+        {% if r.reported_by_id == current_user.id or p_can['meal.edit'] %}<form method="post" action="{{ url_for('programmes.result_review', pid=prog.id, iid=ind.id, rid=r.id, action='delete') }}" data-confirm="Delete this result?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit" title="Delete"><i class="bi bi-trash"></i><span class="visually-hidden">Delete</span></button></form>{% endif %}
+      </div>{% endif %}</td>
+    </tr>{% endfor %}
+  </tbody></table></div>
+  {% else %}<p class="text-muted px-3 pb-3 mb-0">No results reported yet.</p>{% endif %}
+</section>
+
+{% if p_can['meal.collect'] %}
+<section class="panel">
+  <div class="panel-header"><h2>Report a result</h2></div>
+  <form method="post" novalidate>{{ entry_form.hidden_tag() }}<input type="hidden" name="what" value="result">
+    <div class="row g-3">
+      <div class="col-md-3">{{ field(entry_form.period_start, required=True) }}</div>
+      <div class="col-md-3">{{ field(entry_form.period_end, required=True) }}</div>
+      <div class="col-md-3">{{ field(entry_form.value, required=True, attrs={'inputmode': 'decimal'}) }}</div>
+      <div class="col-md-3">{{ field(entry_form.location_id) }}</div>
+    </div>
+    {% for cat, opts in breakdown_cats.items() %}
+    <fieldset class="perm-module"><legend class="fs-6 fw-semibold">By {{ cat }} (must add up to the result)</legend>
+      <div class="row g-2">{% for o in opts %}<div class="col-6 col-md-3"><label class="form-label small" for="bd_{{ cat }}_{{ loop.index0 }}">{{ o }}</label><input class="form-control" id="bd_{{ cat }}_{{ loop.index0 }}" name="bd_{{ cat }}_{{ loop.index0 }}" inputmode="decimal"></div>{% endfor %}</div></fieldset>
+    {% endfor %}
+    <div class="row g-3"><div class="col-md-6">{{ field(entry_form.source) }}</div><div class="col-md-6">{{ field(entry_form.notes, attrs={'rows': 2}) }}</div></div>
+    <button class="btn btn-primary" type="submit" data-loading>Submit for verification</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

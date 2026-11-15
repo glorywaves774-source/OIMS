@@ -1,0 +1,69 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt %}
+{% block title %}Monitoring · {{ prog.code }}{% endblock %}
+{% block page_title %}<span translate="no">{{ prog.code }}</span> · Monitoring & learning{% endblock %}
+{% block content %}
+{% include "programmes/_header.html" %}
+<nav class="tabs-scroll" aria-label="Sections"><a href="#visits">Monitoring visits</a><a href="#evaluations">Evaluations</a><a href="#learning">Lessons & recommendations</a></nav>
+
+<section class="panel" id="visits">
+  <div class="panel-header"><h2>Monitoring visits ({{ visits|length }})</h2></div>
+  {% for v in visits %}<div class="perm-module">
+    <div class="d-flex flex-wrap justify-content-between gap-2"><strong>{{ dt(v.visit_date, '%d %b %Y') }} · <span translate="no">{{ v.purpose }}</span></strong>
+      <span class="small text-muted" translate="no">{{ v.location.label if v.location else '' }}{% if v.visited_by %} · {{ v.visited_by.full_name }}{% endif %}</span></div>
+    {% if v.findings %}<p class="prewrap small mb-1 mt-2"><strong>Findings:</strong> <span translate="no">{{ v.findings }}</span></p>{% endif %}
+    {% if v.recommendations %}<p class="prewrap small mb-1"><strong>Recommendations:</strong> <span translate="no">{{ v.recommendations }}</span></p>{% endif %}
+    {% if v.follow_up %}<p class="prewrap small mb-0"><strong>Follow-up:</strong> <span translate="no">{{ v.follow_up }}</span></p>{% endif %}
+  </div>{% else %}<p class="text-muted">No visits recorded.</p>{% endfor %}
+  {% if p_can['meal.collect'] %}
+  <details><summary class="btn btn-sm btn-soft">Record a visit</summary>
+    <form method="post" class="mt-3" novalidate>{{ visit_form.hidden_tag() }}<input type="hidden" name="what" value="visit">
+      <div class="row g-2"><div class="col-md-3">{{ field(visit_form.visit_date, required=True) }}</div><div class="col-md-4">{{ field(visit_form.location_id) }}</div><div class="col-md-5">{{ field(visit_form.purpose, required=True) }}</div></div>
+      {{ field(visit_form.findings, attrs={'rows': 3}) }}<div class="row g-2"><div class="col-md-6">{{ field(visit_form.recommendations, attrs={'rows': 2}) }}</div><div class="col-md-6">{{ field(visit_form.follow_up, attrs={'rows': 2}) }}</div></div>
+      <button class="btn btn-primary" type="submit">Save visit</button></form></details>
+  {% endif %}
+</section>
+
+<section class="panel" id="evaluations">
+  <div class="panel-header"><h2>Evaluations</h2></div>
+  {% if evals %}<div class="table-scroll mb-3"><table class="table"><thead><tr><th>Evaluation</th><th>Type</th><th>Dates</th><th>Evaluator</th><th>Status</th><th></th></tr></thead><tbody>
+    {% for e in evals %}<tr><td translate="no">{{ e.title }}{% if e.findings %}<span class="cell-sub">{{ e.findings|truncate(120) }}</span>{% endif %}</td><td>{{ e.eval_type }}</td>
+      <td class="date">{{ dt(e.start_date, '%b %Y') }} – {{ dt(e.end_date, '%b %Y') }}</td><td translate="no">{{ e.evaluator or '—' }}</td><td>{{ status(e.status) }}</td>
+      <td><a class="btn btn-sm btn-light" href="{{ url_for('programmes.evaluation_edit', pid=prog.id, eid=e.id) }}">{{ 'Open' if p_can['meal.edit'] else 'View' }}</a></td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="text-muted">No evaluations recorded.</p>{% endif %}
+  {% if p_can['meal.edit'] %}
+  <details><summary class="btn btn-sm btn-soft">Add an evaluation</summary>
+    <form method="post" class="mt-3" novalidate>{{ eval_form.hidden_tag() }}<input type="hidden" name="what" value="evaluation">
+      <div class="row g-2"><div class="col-md-3">{{ field(eval_form.eval_type) }}</div><div class="col-md-6">{{ field(eval_form.title, required=True) }}</div><div class="col-md-3">{{ field(eval_form.status) }}</div>
+        <div class="col-md-6">{{ field(eval_form.evaluator) }}</div><div class="col-md-3">{{ field(eval_form.start_date) }}</div><div class="col-md-3">{{ field(eval_form.end_date) }}</div></div>
+      {{ field(eval_form.findings, attrs={'rows': 3}) }}{{ field(eval_form.recommendations, attrs={'rows': 3}) }}
+      <button class="btn btn-primary" type="submit">Save evaluation</button></form></details>
+  {% endif %}
+</section>
+
+<section class="panel" id="learning">
+  <div class="panel-header"><h2>Lessons learned & recommendations</h2></div>
+  {% for l in learning %}<div class="perm-module">
+    <div class="d-flex flex-wrap justify-content-between gap-2"><strong translate="no">{{ l.title }}</strong><span>{{ status(l.response_status) }}</span></div>
+    <div class="small text-muted mb-1">{{ l.KINDS[l.kind] }}{% if l.evaluation %} · from <span translate="no">{{ l.evaluation.title }}</span>{% endif %}{% if l.responsible %} · responsible: <span translate="no">{{ l.responsible.full_name }}</span>{% endif %}{% if l.due_date %} · due {{ dt(l.due_date, '%d %b %Y') }}{% endif %}</div>
+    {% if l.description %}<p class="prewrap mb-1" translate="no">{{ l.description }}</p>{% endif %}
+    {% if l.management_response %}<p class="prewrap small mb-1"><strong>Management response:</strong> <span translate="no">{{ l.management_response }}</span></p>{% endif %}
+    {% if (p_can['programmes.manage'] or l.responsible_id == current_user.id) and not support_request %}
+    <details><summary class="small">Record the management response</summary>
+      <form method="post" action="{{ url_for('programmes.learning_respond', pid=prog.id, lid=l.id) }}" class="mt-2" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-2"><div class="col-md-4"><label class="form-label" for="rs{{ l.id }}">Response</label><select class="form-select" id="rs{{ l.id }}" name="response_status">{% for v, lab in response_form.response_status.choices %}<option value="{{ v }}"{% if v == l.response_status %} selected{% endif %}>{{ lab }}</option>{% endfor %}</select></div>
+          <div class="col-md-8"><label class="form-label" for="mr{{ l.id }}">Management response</label><textarea class="form-control" id="mr{{ l.id }}" name="management_response" rows="2">{{ l.management_response or '' }}</textarea></div></div>
+        <button class="btn btn-sm btn-soft mt-2" type="submit">Save response</button></form></details>
+    {% endif %}
+  </div>{% else %}<p class="text-muted">Nothing recorded yet.</p>{% endfor %}
+  {% if p_can['meal.edit'] or p_can['programmes.edit'] %}
+  <details><summary class="btn btn-sm btn-soft">Add a lesson or recommendation</summary>
+    <form method="post" class="mt-3" novalidate>{{ learn_form.hidden_tag() }}<input type="hidden" name="what" value="learning">
+      <div class="row g-2"><div class="col-md-3">{{ field(learn_form.kind) }}</div><div class="col-md-9">{{ field(learn_form.title, required=True) }}</div></div>
+      {{ field(learn_form.description, attrs={'rows': 3}) }}
+      <div class="row g-2"><div class="col-md-4">{{ field(learn_form.evaluation_id) }}</div><div class="col-md-4">{{ field(learn_form.responsible_id) }}</div><div class="col-md-4">{{ field(learn_form.due_date) }}</div></div>
+      <button class="btn btn-primary" type="submit">Save</button></form></details>
+  {% endif %}
+</section>
+{% endblock %}

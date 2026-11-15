@@ -48,6 +48,14 @@
       <span class="small nowrap{% if t.due_date and t.due_date < today %} overdue{% endif %}">{{ dt(t.due_date, '%d %b') if t.due_date else 'No deadline' }}</span></li>{% endfor %}</ul>
     {% else %}<p class="text-muted mb-0">Nothing assigned to you.</p>{% endif %}
   </section>
+  {% if my_activities %}
+  <section class="panel">
+    <div class="panel-header"><h2>My programme activities</h2>{% if can('programmes.view') %}<a class="small" href="{{ url_for('programmes.index') }}">Programmes</a>{% endif %}</div>
+    <ul class="list-plain mb-0">{% for a in my_activities %}<li class="py-2 border-bottom-soft d-flex flex-wrap justify-content-between gap-2">
+      <a href="{{ url_for('programmes.activity_detail', pid=a.programme_id, aid=a.id) }}" translate="no">{{ a.title }}</a>
+      <span class="small nowrap{% if a.planned_end and a.planned_end < today %} overdue{% endif %}">{{ dt(a.planned_start, '%d %b') if a.planned_start else 'No date' }}</span></li>{% endfor %}</ul>
+  </section>
+  {% endif %}
   <section class="panel">
     <div class="panel-header"><h2>Upcoming meetings</h2>{% if can('meetings.view') %}<a class="small" href="{{ url_for('meetings.index') }}">All meetings</a>{% endif %}</div>
     {% if meetings %}<ul class="list-plain mb-0">{% for m in meetings %}<li class="py-2 border-bottom-soft"><a href="{{ url_for('meetings.detail', meeting_id=m.id) }}" translate="no">{{ m.title }}</a>

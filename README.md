@@ -2,8 +2,21 @@
 
 A multi-tenant SaaS platform owned and operated by **HOLIDO — Holistic Development Organization**.
 
-**Current release:** `0.2.0-phase2` (Phase 2 — Office information management). See [CHANGELOG.md](CHANGELOG.md) and
+**Current release:** `0.3.0-phase3` (Phase 3 — Programmes management). See [CHANGELOG.md](CHANGELOG.md) and
 [docs/STATUS.md](docs/STATUS.md) for what is complete and what comes next.
+
+## What Phase 3 adds
+
+| Area | Delivered |
+|---|---|
+| Programme registration | ID (automatic `PRG/2026/001` or your own), description, background, rationale, goal, sector, target population, coverage, dates and duration, manager, lead department, team, currency, approved budget, status workflow (draft → planned → approved → active → completed → closed, plus on hold / cancelled), documents |
+| Planning | Strategy, implementation plan, theory of change, assumptions, risks; annual / quarterly / monthly workplans with approval; milestones; timeline (Gantt) chart |
+| Results & indicators | Logical framework (goal → objectives → outcomes → outputs) with assumptions; indicators with baseline, targets per period, means of verification, data source, frequency, disaggregation by sex / age / disability; results reported by field staff and verified by someone else; no double counting |
+| Implementation | Activities linked to workplans, outputs, budget lines and locations; responsible person, progress, actual dates; activity reports with participants (female/male, young people, disability), challenges and recommendations, photos and attendance sheets as attachments |
+| Finance | Budget lines by category; budget editable until approval, then only through approved revisions; funding agreements and receipts per donor; expenditure and commitments with **separate approval** (the recorder can never approve); available balance, utilization and variance by line and category |
+| Monitoring & learning | Monitoring visits, evaluations (baseline, mid-term, final…), lessons learned and recommendations with management responses |
+| Reporting | Monthly, quarterly, semi-annual, annual, donor and performance reports: narrative + automatic figures, approval by someone other than the author, figures frozen on approval; PDF and Excel export; quick status report for any period |
+| Registers | Donors and funding partners, locations, budget categories (shared with Phase 4 projects) |
 
 ## What Phase 2 adds
 
@@ -89,13 +102,16 @@ app/
   navigation.py      sidebar and phone tab bar per person
   blueprints/        public, auth, setup, account, platform (HOLIDO), workspace (/o/<org>),
                      people (departments, staff, leave, attendance), documents, correspondence,
-                     meetings, tasks, comms (notifications, announcements, messages, calendar)
+                     meetings, tasks, comms (notifications, announcements, messages, calendar),
+                     programmes (+ programme_finance, programme_reports and registers)
   storage.py         local-disk and S3 file storage, upload checks
   notify.py          notifications, reference numbers   reminders.py  scheduled reminders
   twofactor.py       two-step sign-in
+  programme_logic.py programme access, finance, indicator and timeline calculations
+  exporting.py       report figures, Excel and PDF exports
   templates/ static/ interface (Bootstrap 5 self-hosted; css/app.css, dark.css, mobile.css)
 migrations/          Alembic migrations
-tests/               110 automated tests
+tests/               126 automated tests
 docs/                architecture, deployment, status
 ```
 

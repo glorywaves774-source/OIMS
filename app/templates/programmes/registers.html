@@ -1,0 +1,42 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}Donors & locations{% endblock %}
+{% block page_title %}Donors & locations{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Registers</h2><p>Shared lists used by programmes (and later projects): donors and funding partners, locations, and budget categories.</p></div></div>
+<nav class="tabs-scroll" aria-label="Sections"><a href="#donors">Donors</a><a href="#locations">Locations</a><a href="#categories">Budget categories</a></nav>
+<div class="grid-2 mb-4">
+  <section class="panel panel-flush" id="donors">
+    <div class="panel-header"><h2>Donors & funding partners ({{ donors|length }})</h2></div>
+    {% if donors %}<div class="table-scroll"><table class="table"><thead><tr><th>Name</th><th>Type</th><th>Contact</th><th class="text-end">Agreements</th></tr></thead><tbody>
+      {% for d in donors %}<tr><td translate="no">{{ d.name }}</td><td>{{ d.donor_type or '—' }}</td><td translate="no">{{ d.contact_name or '' }}{% if d.contact_email %}<span class="cell-sub">{{ d.contact_email }}</span>{% endif %}</td><td class="num">{{ funded.get(d.id, 0) }}</td></tr>{% endfor %}
+    </tbody></table></div>{% else %}<p class="text-muted px-3">No donors yet.</p>{% endif %}
+    {% if (can('finance.manage') or can('programmes.create')) and not ro %}
+    <form method="post" class="p-3" novalidate>{{ donor_form.hidden_tag() }}<input type="hidden" name="what" value="donor">
+      <div class="row g-2"><div class="col-md-7">{{ field(donor_form.name, required=True) }}</div><div class="col-md-5">{{ field(donor_form.donor_type) }}</div>
+        <div class="col-md-6">{{ field(donor_form.contact_name) }}</div><div class="col-md-6">{{ field(donor_form.contact_email, attrs={'inputmode': 'email'}) }}</div></div>
+      <button class="btn btn-primary" type="submit">Add donor</button></form>
+    {% endif %}
+  </section>
+  <section class="panel panel-flush" id="locations">
+    <div class="panel-header"><h2>Locations ({{ locations|length }})</h2></div>
+    {% if locations %}<div class="table-scroll"><table class="table"><thead><tr><th>Community / site</th><th>District</th><th>Region</th><th></th></tr></thead><tbody>
+      {% for l in locations %}<tr><td translate="no">{{ l.name }}{% if not l.is_active %} <span class="badge-status st-ended">hidden</span>{% endif %}</td><td translate="no">{{ l.district or '—' }}</td><td translate="no">{{ l.region or '—' }}</td>
+        <td>{% if not ro %}<form method="post" action="{{ url_for('registers.toggle_location', loc_id=l.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit">{{ 'Hide' if l.is_active else 'Show' }}</button></form>{% endif %}</td></tr>{% endfor %}
+    </tbody></table></div>{% else %}<p class="text-muted px-3">No locations yet.</p>{% endif %}
+    {% if not ro %}
+    <form method="post" class="p-3" novalidate>{{ loc_form.hidden_tag() }}<input type="hidden" name="what" value="location">
+      <div class="row g-2"><div class="col-md-5">{{ field(loc_form.name, required=True) }}</div><div class="col-md-4">{{ field(loc_form.district) }}</div><div class="col-md-3">{{ field(loc_form.region) }}</div></div>
+      <button class="btn btn-primary" type="submit">Add location</button></form>
+    {% endif %}
+  </section>
+</div>
+<section class="panel" id="categories">
+  <div class="panel-header"><h2>Budget categories</h2></div>
+  <div class="d-flex flex-wrap gap-2 mb-3">{% for c in cats %}<span class="badge-status st-ended">{{ c.name }}{% if c.id in used %} · in use{% endif %}</span>{% endfor %}</div>
+  {% if can('finance.manage') and not ro %}
+  <form method="post" class="d-flex flex-wrap gap-2 align-items-end" novalidate>{{ cat_form.hidden_tag() }}<input type="hidden" name="what" value="category">
+    <div>{{ field(cat_form.name) }}</div><div class="mb-3"><button class="btn btn-soft" type="submit">Add category</button></div></form>
+  {% endif %}
+</section>
+{% endblock %}
