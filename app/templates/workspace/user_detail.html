@@ -25,6 +25,7 @@
       <dt>Member since</dt><dd>{{ dt(m.created_at, '%d %b %Y') }}</dd>
       <dt>Last sign-in</dt><dd>{{ dt(m.user.last_login_at) }}</dd>
       <dt>Phone</dt><dd translate="no">{{ m.user.phone or '—' }}</dd>
+      <dt>Two-step sign-in</dt><dd>{{ 'On' if m.user.has_2fa else 'Off' }}</dd>
     </dl>
     {% if can('users.manage') and not support_request and m.user_id != current_user.id %}
     <div class="toolbar">
@@ -33,6 +34,7 @@
       {% else %}
       <form method="post" action="{{ url_for('workspace.user_action', membership_id=m.id, action='suspend') }}" data-confirm="Suspend {{ m.user.full_name }}? They will lose access to this organization until reactivated." data-confirm-variant="btn-danger" data-confirm-label="Suspend"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-danger" type="submit">Suspend</button></form>
       {% endif %}
+      {% if m.user.has_2fa and not m.user.is_platform_staff %}<form method="post" action="{{ url_for('workspace.user_action', membership_id=m.id, action='reset-2fa') }}" data-confirm="Reset {{ m.user.full_name }}'s two-step sign-in? Only do this after confirming their identity. They will be signed out."><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-light" type="submit">Reset two-step sign-in</button></form>{% endif %}
       <form method="post" action="{{ url_for('workspace.user_action', membership_id=m.id, action='remove') }}" data-confirm="Remove {{ m.user.full_name }} from this organization? Their account stays, but they lose access here." data-confirm-variant="btn-danger" data-confirm-label="Remove"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-danger" type="submit">Remove</button></form>
     </div>
     {% endif %}

@@ -1,0 +1,38 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt, priority, attachments %}
+{% block title %}{{ t.title }}{% endblock %}
+{% block page_title %}<span translate="no">{{ t.title }}</span>{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ t.title }}</h2><p>{{ status(t.status) }} {{ priority(t.priority) }}</p></div>
+  <div class="toolbar"><a class="btn btn-light" href="{{ url_for('tasks.index') }}"><i class="bi bi-arrow-left me-1"></i>Tasks</a>
+    {% if can_edit %}<a class="btn btn-soft" href="{{ url_for('tasks.edit', task_id=t.id) }}"><i class="bi bi-pencil me-1"></i>Edit</a>{% endif %}</div></div>
+<div class="grid-2 mb-4">
+  <section class="panel">
+    <div class="panel-header"><h2>Details</h2></div>
+    <dl class="kv">
+      <dt>Assigned to</dt><dd translate="no">{{ t.assigned_to.full_name if t.assigned_to else '—' }}</dd>
+      <dt>Created by</dt><dd translate="no">{{ t.created_by.full_name if t.created_by else '—' }} · {{ dt(t.created_at, '%d %b %Y') }}</dd>
+      <dt>Deadline</dt><dd class="{% if t.due_date and t.due_date < today and t.status in ('todo', 'in_progress', 'blocked') %}overdue{% endif %}">{{ dt(t.due_date, '%d %b %Y') }}</dd>
+      <dt>Department</dt><dd translate="no">{{ t.department.name if t.department else '—' }}</dd>
+      {% if t.meeting %}<dt>From meeting</dt><dd><a href="{{ url_for('meetings.detail', meeting_id=t.meeting.id) }}" translate="no">{{ t.meeting.title }}</a></dd>{% endif %}
+      {% if t.completed_at %}<dt>Completed</dt><dd>{{ dt(t.completed_at) }}</dd>{% endif %}
+    </dl>
+    {% if t.description %}<h3 class="fs-6 mt-3">Details</h3><p class="prewrap mb-0" translate="no">{{ t.description }}</p>{% endif %}
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Status</h2></div>
+    {% if can_status %}
+    <form method="post" action="{{ url_for('tasks.set_status', task_id=t.id) }}" novalidate>{{ status_form.hidden_tag() }}
+      {{ field(status_form.status) }}<button class="btn btn-primary" type="submit">Update status</button></form>
+    {% else %}<p class="mb-0">{{ status(t.status) }}</p>{% endif %}
+  </section>
+</div>
+{{ attachments(files, 'task', t.id, can_status) }}
+<section class="panel" id="comments">
+  <div class="panel-header"><h2>Comments ({{ t.comments|length }})</h2></div>
+  {% for c in t.comments %}<div class="msg{% if c.author_id == current_user.id %} mine{% endif %}"><div class="meta"><span translate="no">{{ c.author.full_name if c.author else '' }}</span> · {{ dt(c.created_at) }}</div><div class="prewrap" translate="no">{{ c.body }}</div></div>
+  {% else %}<p class="text-muted">No comments yet.</p>{% endfor %}
+  {% if not ro %}<form method="post" action="{{ url_for('tasks.comment', task_id=t.id) }}" novalidate class="mt-3">{{ comment_form.hidden_tag() }}
+    {{ field(comment_form.body, label='Add a comment', attrs={'rows': 2}) }}<button class="btn btn-soft" type="submit">Post comment</button></form>{% endif %}
+</section>
+{% endblock %}

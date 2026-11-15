@@ -11,6 +11,7 @@
       <div class="mb-3"><label class="form-label">Email (sign-in)</label><input class="form-control" value="{{ current_user.email }}" readonly translate="no"></div>
       {{ field(form.full_name, required=True, attrs={'autocomplete': 'name'}) }}
       {{ field(form.phone, attrs={'autocomplete': 'tel', 'inputmode': 'tel'}) }}
+      {{ field(form.email_notifications) }}
       <button class="btn btn-primary" type="submit" data-loading>Save</button>
     </form>
   </section>
@@ -19,6 +20,7 @@
     <dl class="kv">
       <dt>Last sign-in</dt><dd>{{ dt(current_user.last_login_at) }}</dd>
       <dt>Password changed</dt><dd>{{ dt(current_user.password_changed_at) }}</dd>
+      <dt>Two-step sign-in</dt><dd>{{ 'On' if current_user.has_2fa else 'Off' }} · <a href="{{ url_for('account.two_factor') }}">{{ 'Manage' if current_user.has_2fa else 'Set up' }}</a></dd>
       {% if current_user.is_platform_staff %}<dt>Platform role</dt><dd>{{ current_user.platform_role_label }}</dd>{% endif %}
       <dt>Organizations</dt><dd>{% for m in current_user.active_memberships() %}<span translate="no">{{ m.organization.name }}</span> ({{ m.role.name if m.role else '—' }}){% if not loop.last %}<br>{% endif %}{% else %}—{% endfor %}</dd>
     </dl>

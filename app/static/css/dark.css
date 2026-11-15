@@ -45,3 +45,6 @@ html[data-theme="dark"] .alert-info { --bs-alert-bg: rgba(60, 196, 182, .12); --
 html[data-theme="dark"] .btn-light { --bs-btn-bg: var(--surface-2); --bs-btn-border-color: var(--border); --bs-btn-color: var(--text); --bs-btn-hover-bg: rgba(60, 196, 182, .18); --bs-btn-hover-border-color: var(--border); --bs-btn-hover-color: var(--text); --bs-btn-active-bg: rgba(60, 196, 182, .24); --bs-btn-active-color: var(--text); }
 html[data-theme="dark"] .modal-content, html[data-theme="dark"] .dropdown-menu { background: var(--surface-solid); }
 html[data-theme="dark"] .support-banner { border-color: rgba(240, 181, 74, .35); }
+html[data-theme="dark"] .badge-dot { color: #2a0905; }
+html[data-theme="dark"] .report-page { background: var(--surface-solid); color: var(--text); }
+html[data-theme="dark"] .report-page th, html[data-theme="dark"] .report-page td { border-color: var(--border); }

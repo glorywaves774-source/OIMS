@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.2.0-phase2 — 15 November 2026
+
+Office information management.
+
+**New modules**
+- **Departments** with heads, responsibilities and per-department staff, tasks and meetings.
+- **Staff & HR**: staff register and directory, employment details, emergency contacts, training,
+  performance reviews, transfers, exits, and a private staff file for contracts and certificates.
+- **Leave**: leave types with yearly entitlements, requests counted in working days, balance and
+  overlap checks, approval by the department head or HR, and a list of who is away.
+- **Attendance** register by day and department.
+- **Documents**: folders, categories, versions, approval, sharing, expiry reminders, archive and
+  download history. Files are checked by their content and stored on a persistent disk or in
+  S3-compatible storage. Storage limits from the subscription plan apply.
+- **Correspondence** register with automatic reference numbers, assignment, forwarding, approval,
+  reply deadlines, confidential items and a full routing history.
+- **Meetings** with invitations, responses, agenda, attendance, minutes, decisions, action points and
+  a printable report.
+- **Tasks** with priorities, deadlines, status, comments and attachments.
+- **Notifications**, **announcements**, private **messages** and a **calendar**.
+- A new dashboard with staff, departments, my tasks, meetings, deadlines, correspondence, documents,
+  announcements, notifications and items waiting for approval.
+
+**Security**
+- Two-step sign-in with an authenticator app and recovery codes; required for HOLIDO staff.
+  Administrators can reset it for someone who has lost their phone.
+- "Own department" and "own records" permission scopes now take effect.
+- HOLIDO support access stays read-only on every new module and cannot see private messages or HR records.
+
+**Operations**
+- Hourly reminders job; `render.yaml` adds it and a persistent disk for documents.
+- Database migration `0002` upgrades a Phase 1 database in place (tested with existing data, and
+  downgradable).
+
 ## 0.1.0-phase1 — 15 November 2026
 
 First release: the foundation every later module builds on.

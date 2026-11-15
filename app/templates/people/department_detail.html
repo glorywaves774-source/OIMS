@@ -1,0 +1,34 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import status %}
+{% block title %}{{ dept.name }}{% endblock %}
+{% block page_title %}<span translate="no">{{ dept.name }}</span>{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ dept.name }}{% if dept.code %} <small class="text-muted">({{ dept.code }})</small>{% endif %}</h2>
+  <p>{% if dept.head %}Head: <a href="{{ url_for('staff.detail', staff_id=dept.head.id) }}" translate="no">{{ dept.head.full_name }}</a>{% else %}No head assigned{% endif %}{% if not dept.is_active %} · <span class="badge-status st-ended">closed</span>{% endif %}</p></div>
+  <div class="toolbar">
+    <a class="btn btn-light" href="{{ url_for('departments.index') }}"><i class="bi bi-arrow-left me-1"></i>All departments</a>
+    {% if can('departments.manage') and not support_request %}
+      <a class="btn btn-soft" href="{{ url_for('departments.edit', dept_id=dept.id) }}"><i class="bi bi-pencil me-1"></i>Edit</a>
+      <form method="post" action="{{ url_for('departments.toggle', dept_id=dept.id) }}" data-confirm="{{ 'Close' if dept.is_active else 'Reopen' }} {{ dept.name }}?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-{{ 'danger' if dept.is_active else 'primary' }}" type="submit">{{ 'Close department' if dept.is_active else 'Reopen' }}</button></form>
+    {% endif %}
+  </div></div>
+<div class="stat-grid">
+  <div class="stat glass"><div class="stat-icon"><i class="bi bi-people"></i></div><div><div class="stat-value">{{ staff|length if can('staff.view') else '—' }}</div><div class="stat-label">Staff</div></div></div>
+  <div class="stat glass"><div class="stat-icon amber"><i class="bi bi-check2-square"></i></div><div><div class="stat-value">{{ open_tasks }}</div><div class="stat-label">Open tasks</div></div></div>
+  <div class="stat glass"><div class="stat-icon"><i class="bi bi-calendar-event"></i></div><div><div class="stat-value">{{ upcoming }}</div><div class="stat-label">Upcoming meetings</div></div></div>
+</div>
+<div class="grid-2 mb-4">
+  <section class="panel"><div class="panel-header"><h2>About</h2></div><p class="prewrap mb-0">{{ dept.description or 'No description yet.' }}</p></section>
+  <section class="panel"><div class="panel-header"><h2>Responsibilities</h2></div><p class="prewrap mb-0">{{ dept.responsibilities or 'Not recorded yet.' }}</p></section>
+</div>
+{% if can('staff.view') %}
+<section class="panel panel-flush">
+  <div class="panel-header"><h2>Staff in this department</h2></div>
+  {% if staff %}
+  <div class="table-scroll"><table class="table"><thead><tr><th>Name</th><th>Position</th><th>Status</th><th>Contact</th></tr></thead><tbody>
+    {% for s in staff %}<tr><td><a href="{{ url_for('staff.detail', staff_id=s.id) }}" translate="no">{{ s.full_name }}</a></td><td translate="no">{{ s.position or '—' }}</td><td>{{ status(s.status) }}</td><td class="nowrap" translate="no">{{ s.phone or s.email or '—' }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {% else %}<div class="empty">No staff are assigned to this department yet.</div>{% endif %}
+</section>
+{% endif %}
+{% endblock %}

@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from app.models import AuditLog, Membership, Organization, PlatformRole, User, utcnow
 from app.security import make_password_token
-from tests.conftest import PASSWORD, add_member, login, logout, make_org, make_staff, make_user
+from tests.conftest import PASSWORD, add_member, login, logout, make_org, make_staff
 
 
 # --- First-run setup ----------------------------------------------------------

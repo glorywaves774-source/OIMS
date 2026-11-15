@@ -1,0 +1,56 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import status, dt %}
+{% block title %}Leave{% endblock %}
+{% block page_title %}Leave{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Leave</h2><p>Requests, approvals and who is away.</p></div>
+  <div class="toolbar">
+    {% if can('leave.manage') and not support_request %}<a class="btn btn-light" href="{{ url_for('leave.types') }}"><i class="bi bi-gear me-1"></i>Leave types</a>{% endif %}
+    {% if me and not support_request %}<a class="btn btn-primary" href="{{ url_for('leave.request_leave') }}"><i class="bi bi-plus-lg me-1"></i>Request leave</a>{% endif %}
+  </div></div>
+
+{% if not me and not support_request %}<div class="alert alert-info">Your sign-in is not linked to a staff record, so you cannot request leave yet. Ask HR to link it.</div>{% endif %}
+
+{% if pending %}
+<section class="panel panel-flush">
+  <div class="panel-header"><h2>Waiting for your decision ({{ pending|length }})</h2></div>
+  <div class="table-scroll"><table class="table"><thead><tr><th>Staff</th><th>Type</th><th>Dates</th><th class="text-end">Days</th><th>Reason</th><th></th></tr></thead><tbody>
+  {% for r in pending %}<tr>
+    <td translate="no"><a href="{{ url_for('staff.detail', staff_id=r.staff_id) }}">{{ r.staff.full_name }}</a><span class="cell-sub">{{ r.staff.department.name if r.staff.department else '' }}</span></td>
+    <td>{{ r.leave_type.name }}</td><td class="date">{{ dt(r.start_date, '%d %b') }} – {{ dt(r.end_date, '%d %b %Y') }}</td><td class="num">{{ r.days }}</td>
+    <td>{{ r.reason or '' }}</td>
+    <td class="nowrap">{% if r.staff.user_id != current_user.id and not support_request %}<div class="d-flex gap-1">
+      <form method="post" action="{{ url_for('leave.decide', req_id=r.id, action='approve') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-primary" type="submit">Approve</button></form>
+      <form method="post" action="{{ url_for('leave.decide', req_id=r.id, action='reject') }}" data-confirm="Reject this leave request?" data-confirm-variant="btn-danger" data-confirm-label="Reject"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" type="submit">Reject</button></form>
+    </div>{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endif %}
+
+{% if me %}
+<div class="grid-2 mb-4">
+  <section class="panel">
+    <div class="panel-header"><h2>My balance this year</h2></div>
+    {% if balances %}<dl class="kv">{% for lt, used, left in balances %}<dt>{{ lt.name }}</dt><dd>{{ left }} of {{ lt.days_per_year }} days left <span class="text-muted">({{ used }} used)</span></dd>{% endfor %}</dl>
+    {% else %}<p class="text-muted mb-0">No leave types with a fixed entitlement.</p>{% endif %}
+  </section>
+  <section class="panel panel-flush">
+    <div class="panel-header"><h2>My requests</h2></div>
+    {% if mine %}<div class="table-scroll"><table class="table"><thead><tr><th>Type</th><th>Dates</th><th class="text-end">Days</th><th>Status</th><th></th></tr></thead><tbody>
+      {% for r in mine %}<tr><td>{{ r.leave_type.name }}</td><td class="date">{{ dt(r.start_date, '%d %b') }} – {{ dt(r.end_date, '%d %b %Y') }}</td><td class="num">{{ r.days }}</td>
+        <td>{{ status(r.status) }}{% if r.decision_note %}<span class="cell-sub">{{ r.decision_note }}</span>{% endif %}</td>
+        <td>{% if r.status in ('pending', 'approved') and r.start_date > today and not support_request %}<form method="post" action="{{ url_for('leave.decide', req_id=r.id, action='cancel') }}" data-confirm="Cancel this leave request?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit">Cancel</button></form>{% endif %}</td></tr>{% endfor %}
+    </tbody></table></div>{% else %}<p class="text-muted px-3 pb-3 mb-0">You have not requested leave yet.</p>{% endif %}
+  </section>
+</div>
+{% endif %}
+
+{% if can('staff.view') %}
+<section class="panel panel-flush">
+  <div class="panel-header"><h2>Away now and in the next 30 days</h2></div>
+  {% if on_leave %}<div class="table-scroll"><table class="table"><thead><tr><th>Staff</th><th>Type</th><th>Dates</th></tr></thead><tbody>
+    {% for r in on_leave %}<tr><td translate="no">{{ r.staff.full_name }}</td><td>{{ r.leave_type.name }}</td><td class="date">{{ dt(r.start_date, '%d %b') }} – {{ dt(r.end_date, '%d %b %Y') }}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="text-muted px-3 pb-3 mb-0">Nobody has approved leave in this period.</p>{% endif %}
+</section>
+{% endif %}
+{% endblock %}

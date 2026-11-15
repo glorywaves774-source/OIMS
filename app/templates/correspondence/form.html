@@ -1,0 +1,35 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}{{ item.reference_no if item else 'Register correspondence' }}{% endblock %}
+{% block page_title %}{{ ('Edit ' ~ item.reference_no) if item else 'Register correspondence' }}{% endblock %}
+{% block content %}
+{% if reply_to %}<div class="alert alert-info">Replying to <a href="{{ url_for('correspondence.detail', item_id=reply_to.id) }}">{{ reply_to.reference_no }}</a> — <span translate="no">{{ reply_to.subject }}</span></div>{% endif %}
+<form method="post" enctype="multipart/form-data" novalidate>
+  {{ form.hidden_tag() }}{% if reply_to %}<input type="hidden" name="reply_to" value="{{ reply_to.id }}">{% endif %}
+  <section class="panel">
+    <div class="row g-3">
+      <div class="col-md-4">{{ field(form.kind, help='A reference number like IN/2026/0001 is issued automatically.' if not item else None, attrs={'disabled': True} if item else {}) }}{% if item %}<input type="hidden" name="kind" value="{{ item.kind }}">{% endif %}</div>
+      <div class="col-md-8">{{ field(form.subject, required=True) }}</div>
+      <div class="col-md-6">{{ field(form.party, help='Sender for incoming letters; recipient for outgoing letters and memos.') }}</div>
+      <div class="col-md-6">{{ field(form.external_reference) }}</div>
+      <div class="col-md-4">{{ field(form.letter_date) }}</div>
+      <div class="col-md-4">{{ field(form.received_date) }}</div>
+      <div class="col-md-4">{{ field(form.priority) }}</div>
+      <div class="col-12">{{ field(form.summary, attrs={'rows': 4}) }}</div>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="form-section mb-0"><h3>Handling</h3>
+    <div class="row g-3">
+      <div class="col-md-4">{{ field(form.department_id) }}</div>
+      <div class="col-md-4">{{ field(form.assigned_to_id) }}</div>
+      <div class="col-md-4">{{ field(form.response_due) }}</div>
+      <div class="col-12">{{ field(form.confidential) }}</div>
+      {% if form.file %}<div class="col-12"><label class="form-label" for="file">{{ form.file.label.text }}</label><input class="form-control{% if form.file.errors %} is-invalid{% endif %}" type="file" id="file" name="file">
+        {% for e in form.file.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}</div>{% endif %}
+    </div></div>
+  </section>
+  <div class="toolbar mb-4"><button class="btn btn-primary" type="submit" data-loading>{{ 'Save' if item else 'Register' }}</button>
+    <a class="btn btn-light" href="{{ url_for('correspondence.detail', item_id=item.id) if item else url_for('correspondence.index') }}">Cancel</a></div>
+</form>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import status, dt, pager, priority %}
+{% block title %}Tasks{% endblock %}
+{% block page_title %}Tasks{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Tasks</h2><p>{{ page.total }} {{ 'task' if page.total == 1 else 'tasks' }}</p></div>
+  {% if can('tasks.create') and not support_request %}<a class="btn btn-primary" href="{{ url_for('tasks.new') }}"><i class="bi bi-plus-lg me-1"></i>New task</a>{% endif %}</div>
+<nav class="tabs-scroll" aria-label="Whose tasks">
+  {% for v, l in [('mine', 'Assigned to me'), ('created', 'Created by me'), ('all', 'All I can see')] %}<a href="{{ url_for('tasks.index', view=v, status=status) }}"{% if view == v %} aria-current="page"{% endif %}>{{ l }}</a>{% endfor %}
+</nav>
+<section class="panel panel-flush">
+  <form class="filters px-3 pt-3" method="get" role="search"><input type="hidden" name="view" value="{{ view }}">
+    <input class="form-control" type="search" name="q" value="{{ q }}" placeholder="Search tasks" aria-label="Search tasks">
+    <select class="form-select" name="status" data-autosubmit aria-label="Status">
+      {% for v, l in [('open', 'Open'), ('overdue', 'Overdue'), ('todo', 'To do'), ('in_progress', 'In progress'), ('blocked', 'Blocked'), ('done', 'Done'), ('cancelled', 'Cancelled'), ('any', 'Any status')] %}<option value="{{ v }}"{% if v == status %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <button class="btn btn-soft" type="submit">Search</button></form>
+  {% if page.items %}
+  <div class="table-scroll"><table class="table">
+    <thead><tr><th>Task</th><th>Priority</th><th>Assigned to</th><th>Deadline</th><th>Status</th></tr></thead>
+    <tbody>{% for t in page.items %}<tr>
+      <td><a href="{{ url_for('tasks.detail', task_id=t.id) }}" translate="no">{{ t.title }}</a>{% if t.meeting %}<span class="cell-sub">From meeting: <span translate="no">{{ t.meeting.title }}</span></span>{% endif %}</td>
+      <td>{{ priority(t.priority) }}</td>
+      <td translate="no">{{ t.assigned_to.full_name if t.assigned_to else '—' }}</td>
+      <td class="date{% if t.due_date and t.due_date < today and t.status in ('todo', 'in_progress', 'blocked') %} overdue{% endif %}">{{ dt(t.due_date, '%d %b %Y') if t.due_date else '—' }}</td>
+      <td>{{ status(t.status) }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {{ pager(page, 'tasks.index', view=view, status=status, q=q) }}
+  {% else %}<div class="empty"><i class="bi bi-check2-square"></i>No tasks here.</div>{% endif %}
+</section>
+{% endblock %}

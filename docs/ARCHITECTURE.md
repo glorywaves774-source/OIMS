@@ -22,6 +22,28 @@ Platform staff never enter a workspace except through support access.
   every permission, including permissions added in later phases.
 - **RolePermission** — `(role, permission_code, scope)`; scope is `organization`, `department` or `own`.
 
+## Permission scopes (enforced from Phase 2)
+
+Each permission is granted with a scope. `scoped()` and `in_scope()` in `app/blueprints/tenant.py`
+apply it to lists and to single records:
+
+| Scope | Lists show | Example |
+|---|---|---|
+| `organization` | everything in the organization | HR Officer: `staff.records` |
+| `department` | records of the person's own department, plus their own | Department Head: `tasks.view`, `leave.approve` |
+| `own` | records the person created or is assigned to | Staff Member: `tasks.view`, `meetings.view` |
+
+A person's department comes from their staff record (`StaffProfile.user_id`). Extra rules on top:
+
+- **Documents**: visible to the owner, to everyone / the department / chosen people once approved,
+  and to approvers while pending; attachments inherit the visibility of the record they belong to
+  (staff file → HR records access; task, meeting, letter → whoever can see that record).
+- **Correspondence**: confidential items are visible only to the people handling them and to
+  `correspondence.manage`.
+- **Messages** are visible only to the participants — not to administrators or HOLIDO support.
+- **HR records** (contracts, emergency contacts, leave, attendance, training, reviews, exit) need
+  `staff.records`; everyone with `staff.view` sees only the directory entry. People always see their own.
+
 ## Tenant isolation (app/tenancy.py)
 
 Every tenant-owned model inherits `TenantMixin` (adds an indexed, non-null `organization_id`).
@@ -69,6 +91,20 @@ they duplicate one as a custom role to adjust it.
 3. The requester enters the workspace with **read-only** permissions; any non-GET request is refused.
 4. Every page opened is written to the organization's audit log, flagged as support access.
 5. Access ends at expiry, when the requester ends it, or when the organization revokes it.
+
+## Notifications and reminders
+
+`app/notify.py::notify()` writes one in-app notification per recipient and emails those who allow it
+(when SMTP is configured). Reminders (`app/reminders.py`) use a de-duplication key per item and person.
+Reference numbers come from `SequenceCounter` rows, locked with `SELECT … FOR UPDATE` on PostgreSQL so
+two people registering letters at the same moment cannot get the same number.
+
+## Files
+
+`app/storage.py` validates every upload by content (magic bytes / Office zip structure), stores it
+under `org-<id>/<random>` on a local disk or S3-compatible store, and records size and SHA-256 in
+`DocumentVersion`. Downloads go through the app (permission check, access log, sandboxing CSP,
+`Content-Disposition: attachment`). Plan storage limits are enforced on upload.
 
 ## Audit log
 

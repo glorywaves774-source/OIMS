@@ -167,3 +167,25 @@
     s.addEventListener("change", function () { s.form.submit(); });
   });
 })();
+
+/* Filter boxes for checkbox lists */
+(function () {
+  var fold = function (s) { return (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); };
+  document.querySelectorAll("[data-filter-for]").forEach(function (input) {
+    var box = document.getElementById(input.getAttribute("data-filter-for"));
+    if (!box) return;
+    input.addEventListener("input", function () {
+      var q = fold(input.value.trim());
+      box.querySelectorAll(".checklist-item").forEach(function (it) {
+        it.hidden = q && fold(it.textContent).indexOf(q) === -1;
+      });
+    });
+  });
+  /* Print buttons */
+  document.querySelectorAll("[data-print]").forEach(function (b) {
+    b.addEventListener("click", function () { window.print(); });
+  });
+  /* Scroll conversation to the latest message */
+  var latest = document.getElementById("latest");
+  if (latest && latest.scrollIntoView) latest.scrollIntoView({ block: "end" });
+})();

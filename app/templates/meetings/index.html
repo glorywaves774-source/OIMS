@@ -1,0 +1,27 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import status, ldt, pager %}
+{% block title %}Meetings{% endblock %}
+{% block page_title %}Meetings{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Meetings</h2><p>Times are shown in <span translate="no">{{ tenant.timezone }}</span>.</p></div>
+  {% if can('meetings.create') and not support_request %}<a class="btn btn-primary" href="{{ url_for('meetings.edit') }}"><i class="bi bi-calendar-plus me-1"></i>Schedule a meeting</a>{% endif %}</div>
+<nav class="tabs-scroll" aria-label="When">
+  <a href="{{ url_for('meetings.index') }}"{% if when != 'past' %} aria-current="page"{% endif %}>Upcoming</a>
+  <a href="{{ url_for('meetings.index', when='past') }}"{% if when == 'past' %} aria-current="page"{% endif %}>Past</a>
+</nav>
+<section class="panel panel-flush">
+  {% if page.items %}
+  <div class="table-scroll"><table class="table">
+    <thead><tr><th>When</th><th>Meeting</th><th>Venue</th><th class="text-end">People</th><th>Status</th></tr></thead>
+    <tbody>{% for m in page.items %}<tr>
+      <td class="date">{{ ldt(m.starts_at, '%a %d %b %Y') }}<span class="cell-sub">{{ ldt(m.starts_at, '%H:%M') }}{% if m.ends_at %}–{{ ldt(m.ends_at, '%H:%M') }}{% endif %}</span></td>
+      <td><a href="{{ url_for('meetings.detail', meeting_id=m.id) }}" translate="no">{{ m.title }}</a><span class="cell-sub">{{ m.meeting_type or '' }}{% if m.department %} · <span translate="no">{{ m.department.name }}</span>{% endif %}</span></td>
+      <td translate="no">{{ m.location or ('Online' if m.online_link else '—') }}</td>
+      <td class="num">{{ m.participants|length }}</td>
+      <td>{{ status(m.status) }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {{ pager(page, 'meetings.index', when=when) }}
+  {% else %}<div class="empty"><i class="bi bi-calendar-event"></i>{{ 'No past meetings.' if when == 'past' else 'No upcoming meetings.' }}</div>{% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, checklist, status, dt %}
+{% block title %}{{ doc.title }}{% endblock %}
+{% block page_title %}<span translate="no">{{ doc.title }}</span>{% endblock %}
+{% block content %}
+{% set v = doc.current %}
+<div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ doc.title }}</h2>
+  <p>{{ status(doc.status) }}{% if doc.category %} · {{ doc.category.name }}{% endif %} · owner <span translate="no">{{ doc.owner.full_name if doc.owner else '—' }}</span></p></div>
+  <div class="toolbar">
+    {% if parent_url %}<a class="btn btn-light" href="{{ parent_url }}"><i class="bi bi-arrow-left me-1"></i>Back to record</a>
+    {% else %}<a class="btn btn-light" href="{{ url_for('documents.index', folder=doc.folder_id) }}"><i class="bi bi-arrow-left me-1"></i>{{ doc.folder.name if doc.folder else 'Documents' }}</a>{% endif %}
+    {% if v %}<a class="btn btn-primary" href="{{ url_for('documents.download', doc_id=doc.id) }}"><i class="bi bi-download me-1"></i>Download</a>
+      {% if v.mime_type in ('application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/gif') %}<a class="btn btn-soft" href="{{ url_for('documents.download', doc_id=doc.id, inline=1) }}" target="_blank" rel="noopener">Open</a>{% endif %}{% endif %}
+  </div></div>
+
+{% if doc.status == 'pending_approval' and can_approve and not support_request %}
+<section class="panel"><div class="panel-header"><h2>Approval</h2></div>
+  <form method="post" novalidate>{{ decision_form.hidden_tag() }}{{ field(decision_form.note) }}
+    <div class="toolbar"><button class="btn btn-primary" formaction="{{ url_for('documents.act', doc_id=doc.id, action='approve') }}" type="submit">Approve</button>
+      <button class="btn btn-outline-danger" formaction="{{ url_for('documents.act', doc_id=doc.id, action='reject') }}" type="submit">Reject</button></div></form>
+</section>
+{% endif %}
+{% if doc.decision_note %}<div class="alert alert-{{ 'warning' if doc.status == 'rejected' else 'info' }}"><strong>{{ 'Rejected' if doc.status == 'rejected' else 'Approval note' }}:</strong> {{ doc.decision_note }}{% if doc.approved_by %} — <span translate="no">{{ doc.approved_by.full_name }}</span>{% endif %}</div>{% endif %}
+
+<div class="grid-2 mb-4">
+  <section class="panel">
+    <div class="panel-header"><h2>Details</h2></div>
+    <dl class="kv">
+      {% if doc.description %}<dt>Description</dt><dd class="prewrap" translate="no">{{ doc.description }}</dd>{% endif %}
+      {% if not doc.related_type %}<dt>Who can see it</dt><dd>{{ doc.VISIBILITY[doc.visibility] }}{% if doc.visibility == 'department' and doc.department %} (<span translate="no">{{ doc.department.name }}</span>){% endif %}{% if doc.visibility == 'restricted' %}: <span translate="no">{{ doc.shares|map(attribute='user.full_name')|join(', ') or 'only the owner' }}</span>{% endif %}</dd>{% else %}<dt>Attached to</dt><dd>{{ doc.related_type|capitalize }} record</dd>{% endif %}
+      <dt>Current file</dt><dd translate="no">{{ v.filename if v else '—' }}{% if v %} · {{ human_size(v.size_bytes) }}{% endif %}</dd>
+      <dt>Expiry / review</dt><dd>{{ dt(doc.expiry_date, '%d %b %Y') if doc.expiry_date else '—' }}</dd>
+      <dt>Created</dt><dd>{{ dt(doc.created_at) }}</dd>
+      {% if doc.approved_at %}<dt>Decided</dt><dd>{{ dt(doc.approved_at) }}</dd>{% endif %}
+    </dl>
+    {% if editable %}
+    <div class="toolbar mt-3">
+      {% if doc.status == 'approved' %}<form method="post" action="{{ url_for('documents.act', doc_id=doc.id, action='archive') }}" data-confirm="Archive this document? It stays searchable but is hidden from normal lists."><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit"><i class="bi bi-archive me-1"></i>Archive</button></form>{% endif %}
+      {% if doc.status == 'archived' %}<form method="post" action="{{ url_for('documents.act', doc_id=doc.id, action='restore') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit">Restore</button></form>{% endif %}
+      {% if doc.status in ('rejected',) and doc.owner_id == current_user.id %}<form method="post" action="{{ url_for('documents.act', doc_id=doc.id, action='submit') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-soft" type="submit">Resubmit for approval</button></form>{% endif %}
+      {% if can('documents.manage') or doc.related_type %}<form method="post" action="{{ url_for('documents.act', doc_id=doc.id, action='delete') }}" data-confirm="Delete this document and all its versions permanently?" data-confirm-variant="btn-danger" data-confirm-label="Delete"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash me-1"></i>Delete</button></form>{% endif %}
+    </div>
+    {% endif %}
+  </section>
+  <section class="panel panel-flush">
+    <div class="panel-header"><h2>Versions</h2></div>
+    <div class="table-scroll"><table class="table"><thead><tr><th>Version</th><th>File</th><th>Uploaded</th><th></th></tr></thead><tbody>
+      {% for ver in doc.versions %}<tr><td class="code">v{{ ver.version_no }}</td><td translate="no">{{ ver.filename }}<span class="cell-sub">{{ human_size(ver.size_bytes) }}{% if ver.note %} · {{ ver.note }}{% endif %}</span></td>
+        <td class="date">{{ dt(ver.created_at) }}<span class="cell-sub" translate="no">{{ ver.uploaded_by.full_name if ver.uploaded_by else '' }}</span></td>
+        <td><a class="btn btn-sm btn-light" href="{{ url_for('documents.download', doc_id=doc.id, v=ver.version_no) }}" title="Download v{{ ver.version_no }}"><i class="bi bi-download"></i><span class="visually-hidden">Download version {{ ver.version_no }}</span></a></td></tr>{% endfor %}
+    </tbody></table></div>
+    {% if editable and doc.status != 'archived' %}
+    <form method="post" action="{{ url_for('documents.new_version', doc_id=doc.id) }}" enctype="multipart/form-data" class="p-3" novalidate>
+      {{ version_form.hidden_tag() }}
+      <div class="row g-2 align-items-end"><div class="col-md-6"><label class="form-label" for="vfile">Upload a new version</label><input class="form-control" type="file" id="vfile" name="file"></div>
+        <div class="col-md-4">{{ field(version_form.note) }}</div><div class="col-md-2 mb-3"><button class="btn btn-soft w-100" type="submit">Upload</button></div></div>
+    </form>
+    {% endif %}
+  </section>
+</div>
+
+{% if form %}
+<section class="panel">
+  <details><summary class="btn btn-sm btn-soft">Edit details and sharing</summary>
+  <form method="post" action="{{ url_for('documents.edit', doc_id=doc.id) }}" class="mt-3" novalidate>
+    {{ form.hidden_tag() }}
+    {{ field(form.title, required=True) }}{{ field(form.description, attrs={'rows': 2}) }}
+    <div class="row g-3"><div class="col-md-6">{{ field(form.folder_id) }}</div><div class="col-md-6">{{ field(form.category_id) }}</div>
+      <div class="col-md-6">{{ field(form.visibility) }}</div><div class="col-md-6">{{ field(form.department_id) }}</div>
+      <div class="col-md-6">{{ field(form.expiry_date) }}</div></div>
+    {{ checklist(form.shared_with) }}
+    <button class="btn btn-primary" type="submit">Save</button>
+  </form></details>
+</section>
+{% endif %}
+
+{% if logs %}
+<section class="panel panel-flush">
+  <div class="panel-header"><h2>Download history</h2></div>
+  <div class="table-scroll"><table class="table"><thead><tr><th>When</th><th>Who</th><th>Version</th></tr></thead><tbody>
+    {% for l in logs %}<tr><td class="date">{{ dt(l.created_at) }}</td><td translate="no">{{ l.user.full_name if l.user else '—' }}{% if l.via_support_access %} <span class="badge-status st-pending">HOLIDO support</span>{% endif %}</td><td class="code">v{{ l.version.version_no if l.version else '?' }}</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endif %}
+{% endblock %}

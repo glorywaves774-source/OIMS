@@ -1,0 +1,32 @@
+{% extends "layout_app.html" %}
+{% block title %}Attendance{% endblock %}
+{% block page_title %}Attendance register{% endblock %}
+{% block content %}
+<section class="panel">
+  <form class="filters mb-0" method="get">
+    <input class="form-control" type="date" name="date" value="{{ day.isoformat() }}" max="{{ day.today().isoformat() }}" aria-label="Date">
+    {% if scope == 'organization' %}<select class="form-select" name="department" aria-label="Department">
+      {% for v, l in departments %}<option value="{{ v or '' }}"{% if v == dept %} selected{% endif %}>{{ l }}</option>{% endfor %}
+    </select>{% endif %}
+    <button class="btn btn-soft" type="submit">Show</button>
+  </form>
+  {% if scope == 'department' and not my_dept %}<p class="text-muted mt-3 mb-0">Your sign-in is not linked to a staff record in a department, so there is nobody you can record.</p>{% endif %}
+</section>
+<form method="post" novalidate>
+  {{ form.hidden_tag() }}<input type="hidden" name="date" value="{{ day.isoformat() }}"><input type="hidden" name="department" value="{{ dept or '' }}">
+  <section class="panel panel-flush">
+    <div class="panel-header"><h2>{{ day.strftime('%A %d %B %Y') }}</h2><span class="small text-muted">{{ people|length }} {{ 'person' if people|length == 1 else 'people' }}</span></div>
+    {% if people %}
+    <div class="table-scroll"><table class="table"><thead><tr><th>Staff</th><th>Status</th><th>Note</th></tr></thead><tbody>
+      {% for p in people %}{% set rec = existing.get(p.id) %}{% set default = rec.status if rec else ('on_leave' if p.id in on_leave else '') %}
+      <tr><td translate="no">{{ p.full_name }}<span class="cell-sub">{{ p.department.name if p.department else '' }}{% if p.id in on_leave %} · approved leave{% endif %}</span></td>
+        <td><select class="form-select" name="status_{{ p.id }}" aria-label="Status for {{ p.full_name }}"><option value="">— Not recorded —</option>
+          {% for v, l in choices %}<option value="{{ v }}"{% if v == default %} selected{% endif %}>{{ l }}</option>{% endfor %}</select></td>
+        <td><input class="form-control" name="note_{{ p.id }}" value="{{ rec.note if rec and rec.note else '' }}" maxlength="300" aria-label="Note for {{ p.full_name }}"></td></tr>
+      {% endfor %}
+    </tbody></table></div>
+    {% else %}<div class="empty"><i class="bi bi-clipboard-check"></i>No staff to record for this selection.</div>{% endif %}
+  </section>
+  {% if people and not support_request %}<div class="toolbar mb-4"><button class="btn btn-primary" type="submit" data-loading>Save attendance</button></div>{% endif %}
+</form>
+{% endblock %}

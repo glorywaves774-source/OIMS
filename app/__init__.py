@@ -9,7 +9,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from app.config import CONFIGS
 from app.extensions import csrf, db, limiter, login_manager, migrate
 
-__version__ = "0.1.0-phase1"
+__version__ = "0.2.0-phase2"
 
 
 def create_app(config_name=None, overrides=None):
@@ -58,10 +58,18 @@ def create_app(config_name=None, overrides=None):
     from app.blueprints.public import bp as public_bp
     from app.blueprints.setup import bp as setup_bp
     from app.blueprints.workspace import bp as workspace_bp
+    from app.blueprints.people import attendance_bp, departments_bp, leave_bp, staff_bp
+    from app.blueprints.documents import bp as documents_bp
+    from app.blueprints.correspondence import bp as correspondence_bp
+    from app.blueprints.meetings import bp as meetings_bp
+    from app.blueprints.tasks import bp as tasks_bp
+    from app.blueprints.comms import bp as comms_bp
 
-    for bp in (public_bp, auth_bp, setup_bp, account_bp, platform_bp, workspace_bp):
+    for bp in (public_bp, auth_bp, setup_bp, account_bp, platform_bp, workspace_bp, departments_bp, staff_bp,
+               leave_bp, attendance_bp, documents_bp, correspondence_bp, meetings_bp, tasks_bp, comms_bp):
         app.register_blueprint(bp)
 
+    _register_template_globals(app)
     _register_hooks(app)
     _register_errors(app)
 
@@ -78,11 +86,19 @@ def _check_production_config(app, config_name):
         raise RuntimeError(f"Missing required environment configuration: {', '.join(missing)}")
     if len(app.config["SECRET_KEY"]) < 32:
         raise RuntimeError("SECRET_KEY must be at least 32 characters long")
+    backend = app.config["STORAGE_BACKEND"]
+    if backend == "s3" and not app.config.get("S3_BUCKET"):
+        raise RuntimeError("STORAGE_BACKEND=s3 requires S3_BUCKET")
+    if backend == "local" and not os.path.isabs(app.config.get("UPLOAD_ROOT") or ""):
+        raise RuntimeError("Set UPLOAD_ROOT to an absolute path on a persistent disk, or use STORAGE_BACKEND=s3")
+    if backend not in ("local", "s3"):
+        raise RuntimeError("STORAGE_BACKEND must be 'local' or 's3'")
 
 
 PASSWORD_CHANGE_EXEMPT = {
     "account.change_password", "auth.logout", "static", "public.health",
 }
+TWO_FACTOR_EXEMPT = PASSWORD_CHANGE_EXEMPT | {"account.two_factor"}
 
 
 def _register_hooks(app):
@@ -91,7 +107,7 @@ def _register_hooks(app):
     @app.before_request
     def reset_request_scope():
         # Never let tenant context leak from one request to the next (e.g. a shared app context).
-        for key in ("tenant_id", "tenant", "membership", "permissions", "support_request", "_login_user"):
+        for key in ("tenant_id", "tenant", "membership", "permissions", "support_request", "_login_user", "my_staff"):
             g.pop(key, None)
 
     @app.before_request
@@ -99,16 +115,25 @@ def _register_hooks(app):
         if (current_user.is_authenticated and current_user.must_change_password
                 and request.endpoint not in PASSWORD_CHANGE_EXEMPT):
             return redirect(url_for("account.change_password"))
+        if (current_user.is_authenticated and current_user.is_platform_staff and not current_user.has_2fa
+                and app.config.get("REQUIRE_PLATFORM_2FA") and request.endpoint not in TWO_FACTOR_EXEMPT):
+            return redirect(url_for("account.two_factor"))
 
     app.after_request(apply_security_headers)
 
     @app.context_processor
     def inject_globals():
-        from app.navigation import build_nav
+        from app.navigation import build_nav, header_counts
         from app.rbac import can
+        from app.timeutil import to_local
         return {
             "can": can,
             "build_nav": build_nav,
+            "header_counts": header_counts,
+            "local": to_local,
+            "human_size": _human_size,
+            "now_utc": _now_utc,
+            "file_icon": _file_icon,
             "app_name": app.config["APP_NAME"],
             "app_full_name": app.config["APP_FULL_NAME"],
             "platform_owner": app.config["PLATFORM_OWNER"],
@@ -138,3 +163,41 @@ def _register_errors(app):
     @app.errorhandler(CSRFError)
     def csrf_error(e):
         return render_error(400, "Session expired", "Your form session expired. Reload the page and try again.")
+
+
+def _human_size(n):
+    n = n or 0
+    for unit in ("bytes", "KB", "MB", "GB"):
+        if n < 1024 or unit == "GB":
+            return f"{n:.0f} {unit}" if unit == "bytes" else f"{n:.1f} {unit}"
+        n /= 1024
+
+
+def _file_icon(mime):
+    mime = mime or ""
+    if "pdf" in mime:
+        return "bi-file-earmark-pdf"
+    if "word" in mime or "opendocument.text" in mime:
+        return "bi-file-earmark-word"
+    if "sheet" in mime or "excel" in mime or mime == "text/csv":
+        return "bi-file-earmark-spreadsheet"
+    if "presentation" in mime or "powerpoint" in mime:
+        return "bi-file-earmark-slides"
+    if mime.startswith("image/"):
+        return "bi-file-earmark-image"
+    return "bi-file-earmark-text"
+
+
+def _now_utc():
+    from app.models import utcnow
+    return utcnow()
+
+
+def _register_template_globals(app):
+    """Helpers usable everywhere, including inside imported macros."""
+    from app.rbac import can
+    from app.timeutil import to_local
+
+    app.jinja_env.globals.update(
+        can=can, local=to_local, human_size=_human_size, file_icon=_file_icon, now_utc=_now_utc,
+        in_support=lambda: g.get("support_request") is not None)

@@ -6,7 +6,7 @@
       <label class="form-check-label" for="{{ f.id }}">{{ label or f.label.text }}</label>
     {% else %}
       <label class="form-label{% if required %} req{% endif %}" for="{{ f.id }}">{{ label or f.label.text }}</label>
-      {% set cls = 'form-select' if f.type == 'SelectField' else 'form-control' %}
+      {% set cls = 'form-select' if f.type in ('SelectField', 'SelectMultipleField') else 'form-control' %}
       {{ f(class_=cls + (' is-invalid' if f.errors else ''), **attrs) }}
     {% endif %}
     {% if help %}<div class="form-text">{{ help }}</div>{% endif %}
@@ -85,3 +85,40 @@
   </table>
   </div>
 {%- endmacro %}
+
+{% macro checklist(f, label=None, help=None, empty='Nobody to choose yet.') -%}
+  <fieldset class="mb-3">
+    <legend class="form-label fs-6">{{ label or f.label.text }}</legend>
+    {% if help %}<div class="form-text mt-0 mb-1">{{ help }}</div>{% endif %}
+    <input type="search" class="form-control form-control-sm mb-2 checklist-filter" placeholder="Filter names" aria-label="Filter names" data-filter-for="cl-{{ f.id }}">
+    <div class="checklist" id="cl-{{ f.id }}">
+      {% for value, text, selected, _ in f.iter_choices() %}
+        <label class="form-check checklist-item"><input class="form-check-input" type="checkbox" name="{{ f.name }}" value="{{ value }}"{% if selected %} checked{% endif %}> <span class="form-check-label" translate="no">{{ text }}</span></label>
+      {% else %}<p class="text-muted small mb-0">{{ empty }}</p>{% endfor %}
+    </div>
+    {% for e in f.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+  </fieldset>
+{%- endmacro %}
+
+{% macro attachments(docs, related_type, related_id, can_add) -%}
+  <section class="panel panel-flush" id="attachments">
+    <div class="panel-header"><h2>Attachments</h2>
+      {% if can_add and can('documents.upload') and not in_support() %}<a class="btn btn-sm btn-soft" href="{{ url_for('documents.upload', related_type=related_type, related_id=related_id) }}"><i class="bi bi-paperclip me-1"></i>Attach a file</a>{% endif %}</div>
+    {% if docs %}
+    <ul class="list-plain px-3 pb-3 mb-0">
+      {% for d in docs %}{% set v = d.current %}
+      <li class="d-flex flex-wrap gap-2 align-items-center justify-content-between py-2 border-bottom-soft">
+        <span><i class="bi {{ file_icon(v.mime_type if v else '') }} me-1"></i><a href="{{ url_for('documents.detail', doc_id=d.id) }}" translate="no">{{ d.title }}</a>
+          <span class="cell-sub">{{ v.filename if v else '' }} · {{ human_size(v.size_bytes) if v else '' }}{% if d.versions|length > 1 %} · v{{ v.version_no }}{% endif %}</span></span>
+        {% if v %}<a class="btn btn-sm btn-light" href="{{ url_for('documents.download', doc_id=d.id) }}"><i class="bi bi-download"></i><span class="visually-hidden">Download</span></a>{% endif %}
+      </li>{% endfor %}
+    </ul>
+    {% else %}<p class="text-muted px-3 pb-3 mb-0">No attachments.</p>{% endif %}
+  </section>
+{%- endmacro %}
+
+{% macro ldt(value, fmt='%d %b %Y, %H:%M') -%}
+  {%- if value %}{{ local(value).strftime(fmt) }}{% else %}—{% endif -%}
+{%- endmacro %}
+
+{% macro priority(p) -%}<span class="badge-status pr-{{ p }}">{{ p }}</span>{%- endmacro %}

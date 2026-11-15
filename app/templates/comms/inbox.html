@@ -1,0 +1,18 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import dt %}
+{% block title %}Messages{% endblock %}
+{% block page_title %}Messages{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Internal messages</h2><p>Private conversations with colleagues in this organization.</p></div>
+  <a class="btn btn-primary" href="{{ url_for('comms.new_message') }}"><i class="bi bi-pencil-square me-1"></i>New message</a></div>
+<section class="panel panel-flush">
+  {% if rows %}
+  <ul class="list-plain mb-0">{% for r in rows %}<li class="px-3 py-3 border-bottom-soft">
+    <a href="{{ url_for('comms.conversation', conv_id=r.conv.id) }}" class="d-flex flex-wrap justify-content-between gap-2 text-decoration-none">
+      <span class="{% if r.unread %}fw-bold{% endif %}" translate="no">{{ r.others|join(', ') or 'Just you' }}{% if r.conv.subject %} — {{ r.conv.subject }}{% endif %}</span>
+      <span class="small text-muted">{{ dt(r.conv.last_message_at, '%d %b, %H:%M') }}{% if r.unread %} <span class="badge-status st-pending">new</span>{% endif %}</span></a>
+    {% if r.last %}<div class="small text-muted text-truncate" translate="no">{{ r.last.body[:140] }}</div>{% endif %}
+  </li>{% endfor %}</ul>
+  {% else %}<div class="empty"><i class="bi bi-chat-dots"></i>No conversations yet.</div>{% endif %}
+</section>
+{% endblock %}

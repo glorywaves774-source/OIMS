@@ -1,0 +1,23 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}Leave types{% endblock %}
+{% block page_title %}Leave types{% endblock %}
+{% block content %}
+<div class="grid-2">
+  <section class="panel panel-flush">
+    <div class="panel-header"><h2>Leave types</h2></div>
+    <div class="table-scroll"><table class="table"><thead><tr><th>Type</th><th class="text-end">Days per year</th><th>Status</th><th></th></tr></thead><tbody>
+      {% for t in rows %}<tr><td>{{ t.name }}</td><td class="num">{{ t.days_per_year or 'No fixed limit' }}</td>
+        <td>{% if t.is_active %}<span class="badge-status st-active">in use</span>{% else %}<span class="badge-status st-ended">disabled</span>{% endif %}</td>
+        <td><form method="post" action="{{ url_for('leave.toggle_type', type_id=t.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit">{{ 'Disable' if t.is_active else 'Enable' }}</button></form></td></tr>
+      {% else %}<tr><td colspan="4" class="text-muted">No leave types yet.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Add a leave type</h2></div>
+    <form method="post" novalidate>{{ form.hidden_tag() }}{{ field(form.name, required=True) }}{{ field(form.days_per_year, attrs={'inputmode': 'numeric'}) }}
+      <button class="btn btn-primary" type="submit">Add</button></form>
+    <p class="small text-muted mt-3 mb-0">Set entitlements to match your country's labour law and your HR policy.</p>
+  </section>
+</div>
+{% endblock %}

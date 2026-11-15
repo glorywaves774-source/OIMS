@@ -1,0 +1,38 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}{{ staff.full_name if staff else 'Register staff' }}{% endblock %}
+{% block page_title %}{{ 'Edit staff record' if staff else 'Register staff' }}{% endblock %}
+{% block content %}
+<form method="post" novalidate>
+  {{ form.hidden_tag() }}
+  <section class="panel">
+    <div class="form-section"><h3>Identity and contact</h3>
+      <div class="row g-3">
+        <div class="col-md-6">{{ field(form.full_name, required=True) }}</div>
+        <div class="col-md-3">{{ field(form.employee_number, required=True) }}</div>
+        <div class="col-md-3">{{ field(form.user_id, help='Link to the person\'s OIMS account so they can see their own leave and records.') }}</div>
+        <div class="col-md-6">{{ field(form.email, attrs={'inputmode': 'email'}) }}</div>
+        <div class="col-md-6">{{ field(form.phone, attrs={'inputmode': 'tel'}) }}</div>
+      </div></div>
+    <div class="form-section"><h3>Employment</h3>
+      <div class="row g-3">
+        <div class="col-md-4">{{ field(form.department_id, help='Changing it records a transfer automatically.' if staff else None) }}</div>
+        <div class="col-md-4">{{ field(form.position) }}</div>
+        <div class="col-md-4">{{ field(form.work_location) }}</div>
+        <div class="col-md-4">{{ field(form.employment_type) }}</div>
+        <div class="col-md-4">{{ field(form.status) }}</div>
+        <div class="col-md-2">{{ field(form.start_date) }}</div>
+        <div class="col-md-2">{{ field(form.contract_end_date) }}</div>
+      </div></div>
+    <div class="form-section"><h3>Emergency contact</h3>
+      <div class="row g-3">
+        <div class="col-md-5">{{ field(form.emergency_name) }}</div>
+        <div class="col-md-4">{{ field(form.emergency_phone, attrs={'inputmode': 'tel'}) }}</div>
+        <div class="col-md-3">{{ field(form.emergency_relationship) }}</div>
+      </div></div>
+    {{ field(form.notes, attrs={'rows': 3}, help='Visible only to people who can see HR records.') }}
+  </section>
+  <div class="toolbar mb-4"><button class="btn btn-primary" type="submit" data-loading>Save staff record</button>
+    <a class="btn btn-light" href="{{ url_for('staff.detail', staff_id=staff.id) if staff else url_for('staff.index') }}">Cancel</a></div>
+</form>
+{% endblock %}

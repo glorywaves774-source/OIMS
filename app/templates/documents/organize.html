@@ -1,0 +1,28 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field %}
+{% block title %}Folders & categories{% endblock %}
+{% block page_title %}Folders & categories{% endblock %}
+{% block content %}
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-header"><h2>Folders</h2></div>
+    {% if folders %}<ul class="list-plain mb-3">{% for fid, path in folders %}<li class="d-flex flex-wrap justify-content-between align-items-center gap-2 py-2 border-bottom-soft">
+      <a href="{{ url_for('documents.index', folder=fid) }}" translate="no"><i class="bi bi-folder2 me-1"></i>{{ path }}</a>
+      <span class="small text-muted">{{ counts.get(fid, 0) }} docs
+      {% if not counts.get(fid) and fid not in child %}<form method="post" action="{{ url_for('documents.delete_folder', folder_id=fid) }}" class="d-inline" data-confirm="Delete this empty folder?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-light" type="submit" title="Delete folder"><i class="bi bi-trash"></i><span class="visually-hidden">Delete</span></button></form>{% endif %}</span></li>{% endfor %}</ul>
+    {% else %}<p class="text-muted">No folders yet.</p>{% endif %}
+    <form method="post" novalidate>{{ folder_form.hidden_tag() }}<input type="hidden" name="what" value="folder">
+      <div class="row g-2"><div class="col-sm-6">{{ field(folder_form.name, required=True) }}</div><div class="col-sm-6">{{ field(folder_form.parent_id) }}</div></div>
+      <button class="btn btn-primary" type="submit">Create folder</button></form>
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Categories</h2></div>
+    <ul class="list-plain mb-3">{% for c in cats %}<li class="d-flex flex-wrap justify-content-between align-items-center gap-2 py-2 border-bottom-soft"><span>{{ c.name }}</span>
+      <form method="post" action="{{ url_for('documents.toggle_category', cat_id=c.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm {{ 'btn-soft' if c.requires_approval else 'btn-light' }}" type="submit">{{ 'Needs approval' if c.requires_approval else 'No approval' }}</button></form></li>
+    {% else %}<li class="text-muted">No categories yet.</li>{% endfor %}</ul>
+    <form method="post" novalidate>{{ cat_form.hidden_tag() }}<input type="hidden" name="what" value="category">
+      {{ field(cat_form.name, required=True) }}{{ field(cat_form.requires_approval) }}
+      <button class="btn btn-primary" type="submit">Add category</button></form>
+  </section>
+</div>
+{% endblock %}

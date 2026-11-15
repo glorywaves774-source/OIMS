@@ -1,0 +1,33 @@
+{% extends "layout_app.html" %}
+{% block title %}Calendar{% endblock %}
+{% block page_title %}Calendar{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">{{ first.strftime('%B %Y') }}</h2><p>Meetings, deadlines, leave and expiring documents.</p></div>
+  <div class="toolbar">
+    <a class="btn btn-light" href="{{ url_for('comms.calendar', month=prev_m.strftime('%Y-%m'), scope=scope) }}" aria-label="Previous month"><i class="bi bi-chevron-left"></i></a>
+    <a class="btn btn-light" href="{{ url_for('comms.calendar', scope=scope) }}">Today</a>
+    <a class="btn btn-light" href="{{ url_for('comms.calendar', month=next_m.strftime('%Y-%m'), scope=scope) }}" aria-label="Next month"><i class="bi bi-chevron-right"></i></a>
+  </div></div>
+<nav class="tabs-scroll" aria-label="Whose calendar">
+  {% for v, l in [('me', 'My calendar'), ('department', 'My department'), ('organization', 'Organization')] %}<a href="{{ url_for('comms.calendar', month=first.strftime('%Y-%m'), scope=v) }}"{% if scope == v %} aria-current="page"{% endif %}>{{ l }}</a>{% endfor %}
+</nav>
+<section class="panel calendar-grid">
+  <table class="cal" aria-label="{{ first.strftime('%B %Y') }}">
+    <thead><tr>{% for d in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] %}<th scope="col">{{ d }}</th>{% endfor %}</tr></thead>
+    <tbody>{% for week in weeks %}<tr>{% for day in week %}
+      <td class="{% if day.month != first.month %}other{% endif %}{% if day == today %} today{% endif %}">
+        <div class="daynum">{{ day.day }}</div>
+        {% set evs = by_day.get(day, []) %}
+        {% for e in evs[:4] %}<a class="ev ev-{{ e.kind }}" href="{{ e.url }}" title="{{ e.time }} {{ e.title }}" translate="no">{% if e.time %}{{ e.time }} {% endif %}{{ e.title }}</a>{% endfor %}
+        {% if evs|length > 4 %}<span class="small text-muted">+{{ evs|length - 4 }} more</span>{% endif %}
+      </td>{% endfor %}</tr>{% endfor %}</tbody>
+  </table>
+</section>
+<section class="panel calendar-agenda">
+  <div class="panel-header"><h2>Agenda</h2></div>
+  {% if events %}{% for day, items in events|groupby('date') %}
+    <div class="agenda-day{% if day == today %} text-primary{% endif %}">{{ day.strftime('%A %d %B') }}</div>
+    <ul class="list-plain mb-0">{% for e in items %}<li class="py-1"><a class="ev ev-{{ e.kind }} d-inline-block" href="{{ e.url }}" translate="no">{% if e.time %}{{ e.time }} · {% endif %}{{ e.title }}</a></li>{% endfor %}</ul>
+  {% endfor %}{% else %}<p class="text-muted mb-0">Nothing scheduled this month.</p>{% endif %}
+</section>
+{% endblock %}

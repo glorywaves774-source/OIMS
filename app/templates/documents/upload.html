@@ -1,0 +1,36 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, checklist %}
+{% block title %}Upload{% endblock %}
+{% block page_title %}{{ 'Attach a file' if related_type else 'Upload a document' }}{% endblock %}
+{% block content %}
+<form method="post" enctype="multipart/form-data" novalidate>
+  {{ form.hidden_tag() }}
+  {% if related_type %}<input type="hidden" name="related_type" value="{{ related_type }}"><input type="hidden" name="related_id" value="{{ related_id }}">{% endif %}
+  <section class="panel">
+    <div class="mb-3">
+      <label class="form-label req" for="file">File</label>
+      <input class="form-control{% if form.file.errors %} is-invalid{% endif %}" type="file" id="file" name="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.csv,.txt,.png,.jpg,.jpeg,.webp,.gif">
+      <div class="form-text">PDF, Word, Excel, PowerPoint, OpenDocument, CSV, text or images. Up to {{ (config.MAX_CONTENT_LENGTH // 1048576) }} MB.</div>
+      {% for e in form.file.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+    </div>
+    {{ field(form.title, required=True) }}
+    {% if related_type %}
+      <p class="small text-muted mb-0">Attachments are visible to the people who can see the {{ related_type }} record.</p>
+      {{ field(form.expiry_date, help='Optional. The owner is reminded 30 days before.') }}
+    {% else %}
+    {{ field(form.description, attrs={'rows': 2}) }}
+    <div class="row g-3">
+      <div class="col-md-6">{{ field(form.folder_id) }}</div>
+      <div class="col-md-6">{{ field(form.category_id) }}</div>
+      <div class="col-md-6">{{ field(form.visibility) }}</div>
+      <div class="col-md-6">{{ field(form.department_id, help='Used when "My department" is chosen.') }}</div>
+      <div class="col-md-6">{{ field(form.expiry_date, help='Optional. The owner is reminded 30 days before.') }}</div>
+    </div>
+    {{ checklist(form.shared_with, help='Used when "Only people I choose" is selected.') }}
+    {{ field(form.submit_for_approval, label='Submit for approval before others can see it') }}
+    {% endif %}
+  </section>
+  <div class="toolbar mb-4"><button class="btn btn-primary" type="submit" data-loading>Upload</button>
+    <a class="btn btn-light" href="{{ url_for('documents.index') }}">Cancel</a></div>
+</form>
+{% endblock %}

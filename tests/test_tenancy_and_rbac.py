@@ -1,5 +1,4 @@
 import pytest
-from flask import g
 
 from app.models import Membership, Role, RolePermission, User
 from app.tenancy import TenantIsolationError, set_tenant, unscoped

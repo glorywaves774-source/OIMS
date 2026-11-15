@@ -1,0 +1,40 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import status, dt, pager, priority %}
+{% block title %}Correspondence{% endblock %}
+{% block page_title %}Correspondence{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Correspondence register</h2><p>Incoming and outgoing letters and internal memos, with reference numbers and routing.</p></div>
+  {% if can('correspondence.create') and not support_request %}<div class="toolbar">
+    <a class="btn btn-primary" href="{{ url_for('correspondence.new', kind='incoming') }}"><i class="bi bi-inbox me-1"></i>Register incoming</a>
+    <a class="btn btn-soft" href="{{ url_for('correspondence.new', kind='outgoing') }}"><i class="bi bi-send me-1"></i>Outgoing</a>
+    <a class="btn btn-soft" href="{{ url_for('correspondence.new', kind='memo') }}"><i class="bi bi-sticky me-1"></i>Memo</a></div>{% endif %}</div>
+<nav class="tabs-scroll" aria-label="Type">
+  <a href="{{ url_for('correspondence.index', mine=1 if mine else None, archived=1 if archived else None) }}"{% if not kind %} aria-current="page"{% endif %}>All</a>
+  {% for k, (pfx, label) in kinds.items() %}<a href="{{ url_for('correspondence.index', kind=k, mine=1 if mine else None, archived=1 if archived else None) }}"{% if kind == k %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+</nav>
+<section class="panel panel-flush">
+  <form class="filters px-3 pt-3" method="get" role="search">
+    {% if kind %}<input type="hidden" name="kind" value="{{ kind }}">{% endif %}
+    <input class="form-control" type="search" name="q" value="{{ q }}" placeholder="Reference, subject or sender" aria-label="Search correspondence">
+    <select class="form-select" name="status" data-autosubmit aria-label="Status"><option value="">Any status</option>
+      {% for s in statuses %}<option value="{{ s }}"{% if s == status %} selected{% endif %}>{{ s|replace('_', ' ')|capitalize }}</option>{% endfor %}</select>
+    <label class="form-check align-self-center mb-0"><input class="form-check-input" type="checkbox" name="mine" value="1"{% if mine %} checked{% endif %} data-autosubmit-check> <span class="form-check-label">Assigned to me</span></label>
+    <label class="form-check align-self-center mb-0"><input class="form-check-input" type="checkbox" name="archived" value="1"{% if archived %} checked{% endif %}> <span class="form-check-label">Archive</span></label>
+    <button class="btn btn-soft" type="submit">Filter</button>
+  </form>
+  {% if page.items %}
+  <div class="table-scroll"><table class="table">
+    <thead><tr><th>Reference</th><th>Subject</th><th>From / to</th><th>Assigned to</th><th>Status</th><th>Reply due</th></tr></thead>
+    <tbody>{% for c in page.items %}<tr>
+      <td class="code"><a href="{{ url_for('correspondence.detail', item_id=c.id) }}">{{ c.reference_no }}</a></td>
+      <td translate="no">{{ c.subject }}{% if c.confidential %} <i class="bi bi-lock-fill text-muted" title="Confidential"></i>{% endif %} {% if c.priority != 'normal' %}{{ priority(c.priority) }}{% endif %}<span class="cell-sub">{{ kinds[c.kind][1] }} · {{ dt(c.created_at, '%d %b %Y') }}</span></td>
+      <td translate="no">{{ c.party or '—' }}</td>
+      <td translate="no">{{ c.assigned_to.full_name if c.assigned_to else '—' }}</td>
+      <td>{{ status(c.status) }}</td>
+      <td class="date{% if c.response_due and c.response_due < today and c.status not in ('responded', 'closed') %} overdue{% endif %}">{{ dt(c.response_due, '%d %b %Y') if c.response_due else '—' }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {{ pager(page, 'correspondence.index', kind=kind, status=status, q=q, mine=1 if mine else '', archived=1 if archived else '') }}
+  {% else %}<div class="empty"><i class="bi bi-envelope-paper"></i>No correspondence here.</div>{% endif %}
+</section>
+{% endblock %}

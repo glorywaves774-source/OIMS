@@ -11,8 +11,8 @@ PASSWORD = "Str0ng!Passphrase"
 
 
 @pytest.fixture
-def app():
-    app = create_app("testing", {"WTF_CSRF_ENABLED": False})
+def app(tmp_path):
+    app = create_app("testing", {"WTF_CSRF_ENABLED": False, "UPLOAD_ROOT": str(tmp_path / "uploads")})
     with app.app_context():
         _db.drop_all()
         _db.create_all()
@@ -47,6 +47,8 @@ def make_org(name, admin_email=None, status=Organization.ACTIVE):
     _db.session.add(org)
     _db.session.flush()
     admin_role = seed_default_roles(org)
+    from app.services import seed_office_defaults
+    seed_office_defaults(org)
     admin = None
     if admin_email:
         admin = make_user(admin_email, name=f"{name} Admin")
@@ -82,3 +84,25 @@ def logout(client):
 def extract_link(html, path_fragment="/auth/reset/"):
     m = re.search(r'value="(https?://[^"]*' + re.escape(path_fragment) + r'[^"]+)"', html)
     return m.group(1) if m else None
+
+
+def make_staff_profile(org, user=None, name=None, number=None, department=None):
+    from app.models import StaffProfile
+    sp = StaffProfile(organization_id=org.id, user_id=user.id if user else None,
+                      full_name=name or (user.full_name if user else "Staff Person"),
+                      employee_number=number or f"EMP-{StaffProfile.query.count() + 1:03d}",
+                      department_id=department.id if department else None, status="active")
+    _db.session.add(sp)
+    _db.session.commit()
+    return sp
+
+
+def make_department(org, name):
+    from app.models import Department
+    d = Department(organization_id=org.id, name=name)
+    _db.session.add(d)
+    _db.session.commit()
+    return d
+
+
+PDF = b"%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n"

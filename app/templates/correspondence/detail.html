@@ -1,0 +1,79 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, status, dt, attachments, priority %}
+{% block title %}{{ item.reference_no }}{% endblock %}
+{% block page_title %}{{ item.reference_no }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ item.subject }}</h2>
+  <p><span class="code">{{ item.reference_no }}</span> · {{ item.KINDS[item.kind][1] }} · {{ status(item.status) }} {% if item.priority != 'normal' %}{{ priority(item.priority) }}{% endif %}{% if item.confidential %} · <i class="bi bi-lock-fill"></i> Confidential{% endif %}{% if item.archived %} · archived{% endif %}</p></div>
+  <div class="toolbar"><a class="btn btn-light" href="{{ url_for('correspondence.index') }}"><i class="bi bi-arrow-left me-1"></i>Register</a>
+    {% if can_edit %}<a class="btn btn-soft" href="{{ url_for('correspondence.edit', item_id=item.id) }}"><i class="bi bi-pencil me-1"></i>Edit</a>{% endif %}
+    {% if can_reply and item.kind == 'incoming' %}<a class="btn btn-soft" href="{{ url_for('correspondence.new', reply_to=item.id) }}"><i class="bi bi-reply me-1"></i>Draft reply</a>{% endif %}
+    <button class="btn btn-light" type="button" data-print><i class="bi bi-printer me-1"></i>Print</button></div></div>
+
+<div class="grid-2 mb-4">
+  <section class="panel">
+    <div class="panel-header"><h2>Details</h2></div>
+    <dl class="kv">
+      <dt>{{ 'From' if item.kind == 'incoming' else 'To' }}</dt><dd translate="no">{{ item.party or '—' }}</dd>
+      <dt>Their reference</dt><dd translate="no">{{ item.external_reference or '—' }}</dd>
+      <dt>Letter date</dt><dd>{{ dt(item.letter_date, '%d %b %Y') }}</dd>
+      <dt>{{ 'Received' if item.kind == 'incoming' else 'Sent' }}</dt><dd>{{ dt(item.received_date, '%d %b %Y') }}</dd>
+      <dt>Department</dt><dd translate="no">{{ item.department.name if item.department else '—' }}</dd>
+      <dt>Assigned to</dt><dd translate="no">{{ item.assigned_to.full_name if item.assigned_to else 'Not assigned' }}</dd>
+      <dt>Reply due</dt><dd class="{% if item.response_due and item.response_due < today and item.status not in ('responded', 'closed') %}overdue{% endif %}">{{ dt(item.response_due, '%d %b %Y') }}</dd>
+      <dt>Registered by</dt><dd translate="no">{{ item.created_by.full_name if item.created_by else '—' }} · {{ dt(item.created_at) }}</dd>
+      {% if item.in_reply_to %}<dt>In reply to</dt><dd><a href="{{ url_for('correspondence.detail', item_id=item.in_reply_to.id) }}">{{ item.in_reply_to.reference_no }}</a></dd>{% endif %}
+      {% if replies %}<dt>Replies</dt><dd>{% for r in replies %}<a href="{{ url_for('correspondence.detail', item_id=r.id) }}">{{ r.reference_no }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
+    </dl>
+    {% if item.summary %}<h3 class="fs-6 mt-3">Summary</h3><p class="prewrap mb-0" translate="no">{{ item.summary }}</p>{% endif %}
+  </section>
+  <section class="panel">
+    <div class="panel-header"><h2>Actions</h2></div>
+    {% if item.archived %}<p class="text-muted">This item is archived.</p>{% endif %}
+    {% set steps = [] %}
+    {% if can_handle and not item.archived %}
+      {% if item.status == 'assigned' %}{% set _ = steps.append(('start', 'Start working on it', 'btn-soft')) %}{% endif %}
+      {% if item.status in ('assigned', 'in_progress', 'registered') %}{% set _ = steps.append(('submit', 'Submit for approval', 'btn-soft')) %}{% endif %}
+      {% if item.status in ('assigned', 'in_progress', 'approved', 'registered') %}{% set _ = steps.append(('respond', 'Mark responded / dispatched', 'btn-primary')) %}{% endif %}
+      {% if item.status != 'closed' %}{% set _ = steps.append(('close', 'Close', 'btn-light')) %}{% endif %}
+    {% endif %}
+    {% if can_approve and item.status == 'awaiting_approval' and not item.archived %}{% set _ = steps.append(('approve', 'Approve', 'btn-primary')) %}{% set _ = steps.append(('return', 'Return for changes', 'btn-outline-danger')) %}{% endif %}
+    {% if can('correspondence.manage') and not support_request %}
+      {% if item.status == 'closed' and not item.archived %}{% set _ = steps.append(('reopen', 'Reopen', 'btn-light')) %}{% endif %}
+      {% set _ = steps.append(('unarchive' if item.archived else 'archive', 'Restore from archive' if item.archived else 'Archive', 'btn-light')) %}
+    {% endif %}
+    {% if steps %}
+    <form method="post" novalidate class="mb-3">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form-label" for="step-note">Note (optional)</label>
+      <textarea class="form-control mb-2" id="step-note" name="note" rows="2" maxlength="2000"></textarea>
+      <div class="toolbar">{% for a, label, cls in steps %}<button class="btn {{ cls }}" type="submit" formaction="{{ url_for('correspondence.transition', item_id=item.id, action=a) }}">{{ label }}</button>{% endfor %}</div>
+    </form>
+    {% endif %}
+    {% if can_handle and not item.archived %}
+    <form method="post" action="{{ url_for('correspondence.route', item_id=item.id) }}" novalidate class="perm-module">
+      {{ route_form.hidden_tag() }}
+      <strong class="d-block mb-2">{{ 'Forward to someone else' if item.assigned_to else 'Assign' }}</strong>
+      {{ field(route_form.to_user_id) }}{{ field(route_form.note, attrs={'rows': 2}) }}
+      <button class="btn btn-soft" type="submit">{{ 'Forward' if item.assigned_to else 'Assign' }}</button>
+    </form>
+    {% endif %}
+    {% if not steps and not can_handle %}<p class="text-muted mb-0">You can view this item. The person it is assigned to handles the next steps.</p>{% endif %}
+  </section>
+</div>
+
+{{ attachments(files, 'correspondence', item.id, can_comment) }}
+
+<section class="panel">
+  <div class="panel-header"><h2>Routing history</h2></div>
+  <ul class="timeline">
+    {% for a in item.actions %}<li><strong>{{ a.action|replace('_', ' ')|capitalize }}</strong>{% if a.to_user %} → <span translate="no">{{ a.to_user.full_name }}</span>{% endif %}
+      <span class="cell-sub"><span translate="no">{{ a.actor.full_name if a.actor else '' }}</span> · {{ dt(a.created_at) }}</span>
+      {% if a.note %}<div class="prewrap mt-1" translate="no">{{ a.note }}</div>{% endif %}</li>{% endfor %}
+  </ul>
+  {% if can_comment %}
+  <form method="post" action="{{ url_for('correspondence.note', item_id=item.id) }}" novalidate class="mt-3">{{ note_form.hidden_tag() }}
+    {{ field(note_form.note, label='Add a note', attrs={'rows': 2}) }}<button class="btn btn-soft" type="submit">Add note</button></form>
+  {% endif %}
+</section>
+{% endblock %}

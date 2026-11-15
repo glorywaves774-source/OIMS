@@ -67,9 +67,20 @@ class BaseConfig:
     MAIL_FROM = os.environ.get("MAIL_FROM", "no-reply@oims.local")
     PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL")  # e.g. https://oims.example.org
 
-    # Uploads (used from Phase 2)
+    # Document storage: "local" (a directory / persistent disk) or "s3" (S3-compatible object storage)
+    STORAGE_BACKEND = os.environ.get("STORAGE_BACKEND", "local").lower()
     UPLOAD_ROOT = os.environ.get("UPLOAD_ROOT", "")
+    S3_BUCKET = os.environ.get("S3_BUCKET")
+    S3_ENDPOINT_URL = os.environ.get("S3_ENDPOINT_URL")      # blank for AWS; set for R2, B2, Spaces, MinIO
+    S3_REGION = os.environ.get("S3_REGION")
+    S3_ACCESS_KEY_ID = os.environ.get("S3_ACCESS_KEY_ID")
+    S3_SECRET_ACCESS_KEY = os.environ.get("S3_SECRET_ACCESS_KEY")
+    S3_PREFIX = os.environ.get("S3_PREFIX", "")
+    S3_SERVER_SIDE_ENCRYPTION = _bool("S3_SERVER_SIDE_ENCRYPTION", True)
     MAX_CONTENT_LENGTH = int(os.environ.get("MAX_UPLOAD_MB", "25")) * 1024 * 1024
+
+    # Two-step sign-in is required for HOLIDO platform staff unless switched off.
+    REQUIRE_PLATFORM_2FA = _bool("REQUIRE_PLATFORM_2FA", True)
 
     ALLOW_PUBLIC_REGISTRATION = _bool("ALLOW_PUBLIC_REGISTRATION", True)
 
@@ -80,6 +91,8 @@ class DevelopmentConfig(BaseConfig):
     REMEMBER_COOKIE_SECURE = SESSION_COOKIE_SECURE
     SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-only-not-secret"
     SQLALCHEMY_DATABASE_URI = _database_url() or "sqlite:///oims-dev.sqlite3"
+    UPLOAD_ROOT = os.environ.get("UPLOAD_ROOT") or os.path.join(os.getcwd(), "uploads")
+    REQUIRE_PLATFORM_2FA = _bool("REQUIRE_PLATFORM_2FA", False)
 
 
 class TestingConfig(BaseConfig):
@@ -91,6 +104,8 @@ class TestingConfig(BaseConfig):
     RATELIMIT_ENABLED = False
     PASSWORD_MIN_LENGTH = 12
     SETUP_TOKEN = "test-setup-token"
+    STORAGE_BACKEND = "local"
+    REQUIRE_PLATFORM_2FA = False
 
 
 class ProductionConfig(BaseConfig):

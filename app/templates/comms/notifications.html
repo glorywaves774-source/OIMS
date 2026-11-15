@@ -1,0 +1,24 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import dt, pager %}
+{% block title %}Notifications{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Notifications</h2><p>Assignments, approvals, invitations and reminders.</p></div>
+  {% if not support_request %}<form method="post" action="{{ url_for('comms.read_all') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-light" type="submit"><i class="bi bi-check2-all me-1"></i>Mark all as read</button></form>{% endif %}</div>
+<section class="panel panel-flush">
+  {% if page.items %}
+  <ul class="list-plain mb-0">
+    {% for n in page.items %}<li class="px-3 py-3 border-bottom-soft d-flex gap-3 align-items-start">
+      <i class="bi {{ {'task': 'bi-check2-square', 'meeting': 'bi-calendar-event', 'document': 'bi-file-earmark', 'correspondence': 'bi-envelope-paper', 'leave': 'bi-airplane', 'message': 'bi-chat-dots', 'announcement': 'bi-megaphone', 'reminder': 'bi-alarm'}.get(n.kind, 'bi-bell') }} fs-5 text-muted"></i>
+      <div class="flex-grow-1 min-w-0">
+        <a href="{{ url_for('comms.open_notification', note_id=n.id) }}" class="{% if not n.read_at %}fw-bold{% endif %}" translate="no">{{ n.title }}</a>
+        {% if n.body %}<div class="small text-muted" translate="no">{{ n.body }}</div>{% endif %}
+        <div class="small text-muted">{{ dt(n.created_at) }}</div>
+      </div>
+      {% if not n.read_at %}<span class="badge-status st-pending">new</span>{% endif %}
+    </li>{% endfor %}
+  </ul>
+  {{ pager(page, 'comms.notifications') }}
+  {% else %}<div class="empty"><i class="bi bi-bell"></i>No notifications yet.</div>{% endif %}
+</section>
+{% endblock %}
