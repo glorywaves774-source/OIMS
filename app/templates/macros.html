@@ -70,6 +70,16 @@
   <button type="button" class="{{ extra_class }}" data-theme-toggle aria-pressed="false" title="Dark mode" aria-label="Dark mode"><i class="bi bi-moon-stars"></i></button>
 {%- endmacro %}
 
+{% macro lang_switch() -%}
+  {# EN / FR: shows the other language; the choice is kept for the person (or in a cookie for visitors) #}
+  {% set other = 'en' if lang == 'fr' else 'fr' %}
+  <form method="post" action="{{ url_for('public.set_language') }}" class="lang-switch">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="lang" value="{{ other }}">
+    <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
+    <button type="submit" class="btn-icon lang-btn" translate="no" lang="{{ other }}" title="{{ languages[other] }}" aria-label="{{ languages[other] }}">{{ other|upper }}</button>
+  </form>
+{%- endmacro %}
+
 {% macro audit_rows(rows, show_org=False) -%}
   <div class="table-scroll">
   <table class="table">

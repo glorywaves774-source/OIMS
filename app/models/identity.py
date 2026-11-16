@@ -44,6 +44,7 @@ class User(UserMixin, TimestampMixin, db.Model):
     totp_enabled_at = db.Column(db.DateTime(timezone=True))
     totp_last_counter = db.Column(db.BigInteger)
     recovery_codes = db.Column(db.JSON)
+    language = db.Column(db.String(5))           # "en" / "fr"; empty: the browser's cookie or English
     email_notifications = db.Column(db.Boolean, nullable=False, default=True)
 
     memberships = db.relationship(

@@ -9,7 +9,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from app.config import CONFIGS
 from app.extensions import csrf, db, limiter, login_manager, migrate
 
-__version__ = "0.9.1-rates"
+__version__ = "0.9.2-fr"
 
 
 def create_app(config_name=None, overrides=None):
@@ -90,6 +90,8 @@ def create_app(config_name=None, overrides=None):
 
     _register_template_globals(app)
     _register_hooks(app)
+    from app import i18n
+    i18n.init_app(app)
     _register_errors(app)
 
     from app.cli import register_cli
@@ -155,7 +157,7 @@ def _register_hooks(app):
     def reset_request_scope():
         # Never let tenant context leak from one request to the next (e.g. a shared app context).
         for key in ("tenant_id", "tenant", "membership", "permissions", "support_request", "_login_user", "my_staff",
-                    "billing"):
+                    "billing", "lang"):
             g.pop(key, None)
 
     @app.before_request

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros.html" import flashes, theme_button, wordmark with context %}
+{% from "macros.html" import lang_switch, flashes, theme_button, wordmark with context %}
 {% block body %}
 {% set nav = build_nav() %}
 <div class="app-shell">
@@ -47,6 +47,7 @@
         {% if can('messages.use') %}<a class="btn-icon icon-badge" href="{{ url_for('comms.inbox') }}" aria-label="Messages{% if hc.messages %}, {{ hc.messages }} unread{% endif %}" title="Messages"><i class="bi bi-chat-dots"></i>{% if hc.messages %}<span class="badge-dot">{{ hc.messages if hc.messages < 100 else '99+' }}</span>{% endif %}</a>{% endif %}
         <a class="btn-icon icon-badge" href="{{ url_for('comms.notifications') }}" aria-label="Notifications{% if hc.notifications %}, {{ hc.notifications }} unread{% endif %}" title="Notifications"><i class="bi bi-bell"></i>{% if hc.notifications %}<span class="badge-dot">{{ hc.notifications if hc.notifications < 100 else '99+' }}</span>{% endif %}</a>
         {% endif %}
+        {{ lang_switch() }}
         {{ theme_button() }}
         <div class="dropdown">
           <button class="user-chip dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu">

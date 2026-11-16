@@ -172,9 +172,18 @@ console errors.
 | Conversion | Positions (budget, spent so far, committed, available) at the latest rate; spending within a report period at the rate of each payment's day; via a third currency when needed; missing rates never guessed |
 | Where | Finance overview (combined total), programme roll-up and programme report (other-currency projects now included), Budget and spending report (combined totals and monthly chart) |
 
+## French ✅ complete (0.9.2-fr)
+
+| Area | Result |
+|---|---|
+| Switch | EN / FR button on every page (top bar, sign-in, public page); kept on the person's account, or in a cookie for visitors |
+| Translation | Pages are translated after they are built, from `app/static/i18n/fr.json` (about 2,300 sentences and 230 patterns for sentences with numbers, dates or names); dates in French; script texts too |
+| Typed-in data | Never translated: anything marked `translate="no"` (names, notes, records, the organization's name), records chosen from lists, form fields, scripts |
+| Checked | Every page crawled in French at 320–1440 px in both themes; English left on French pages checked by script |
+
 ## Not included (possible next steps)
 
-- **Help assistant** (chatbot) and **French / other languages**.
+- **Help assistant** (chatbot).
 - Offline data collection on phones; KoBo/ODK import.
 - Scheduled report emails; a custom report builder.
 
@@ -219,6 +228,8 @@ console errors.
 - **Persistent disk storage** limits the web service to one instance; switch to S3-compatible storage to scale.
 - **Rate limits** use per-process memory by default; set `RATELIMIT_STORAGE_URI` to Redis when running
   several instances.
+- **French covers the screens**: emails, PDF and Excel exports are still in English. Text added to the app later
+  needs a French entry in `app/static/i18n/fr.json`; until then it shows in English (never a wrong guess).
 - **Backups of documents on the Render disk** are Render's daily snapshots (7 days); off-site document copies
   need `STORAGE_BACKEND=s3` (recommended for go-live).
 - **Very large lists on one page**: a project's work breakdown and an indicator's results list show

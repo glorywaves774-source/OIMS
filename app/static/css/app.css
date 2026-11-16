@@ -698,3 +698,8 @@ html[data-theme="dark"] .tabs-scroll a[aria-current="page"] { color: #04201d; }
 .wordmark { white-space: nowrap; }
 .wm-brand { font-weight: 800; letter-spacing: .02em; }
 .wm-product { font-weight: 600; color: var(--link); letter-spacing: .04em; }
+
+/* Language switch (EN / FR) beside the light/dark button */
+.lang-switch { display: inline-flex; margin: 0; }
+.lang-btn { font-weight: 700; font-size: .8rem; letter-spacing: .04em; }
+.auth-tools { display: flex; gap: 8px; }

@@ -3,6 +3,15 @@
   "use strict";
   var html = document.documentElement;
 
+  /* ---------- Words written by this script (the server translates the page itself) ---------- */
+  var WORDS = {
+    fr: { "Light mode": "Mode clair", "Dark mode": "Mode sombre", "Confirm": "Confirmer", "Copied": "Copié" }
+  };
+  function t(text) {
+    var d = WORDS[html.getAttribute("lang")];
+    return (d && d[text]) || text;
+  }
+
   /* ---------- Theme ---------- */
   function setTheme(t, persist) {
     html.setAttribute("data-theme", t);
@@ -14,7 +23,7 @@
     document.querySelectorAll("[data-theme-toggle]").forEach(function (b) {
       var dark = t === "dark";
       b.setAttribute("aria-pressed", dark ? "true" : "false");
-      var label = dark ? "Light mode" : "Dark mode";
+      var label = t(dark ? "Light mode" : "Dark mode");
       b.setAttribute("title", label);
       b.setAttribute("aria-label", label);
       var icon = b.querySelector("i");
@@ -131,7 +140,7 @@
       modalEl.querySelector("[data-confirm-text]").textContent = form.getAttribute("data-confirm");
       var ok = modalEl.querySelector("[data-confirm-ok]");
       ok.className = "btn " + (form.getAttribute("data-confirm-variant") || "btn-primary");
-      ok.textContent = form.getAttribute("data-confirm-label") || "Confirm";
+      ok.textContent = form.getAttribute("data-confirm-label") || t("Confirm");
       window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
     } else if (window.confirm(form.getAttribute("data-confirm"))) {
       form.dataset.confirmed = "1"; form.requestSubmit();
@@ -151,7 +160,7 @@
     var src = document.getElementById(b.getAttribute("data-copy"));
     if (!src || !navigator.clipboard) return;
     navigator.clipboard.writeText(src.value || src.textContent).then(function () {
-      var old = b.textContent; b.textContent = "Copied"; setTimeout(function () { b.textContent = old; }, 1500);
+      var old = b.textContent; b.textContent = t("Copied"); setTimeout(function () { b.textContent = old; }, 1500);
     });
   });
 

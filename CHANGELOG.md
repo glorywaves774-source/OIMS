@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.2-fr — 16 November 2026
+
+French.
+
+- **EN / FR switch** on every page, including sign-in and the public page. The choice is kept on the person's
+  account (or in a cookie for visitors).
+- Every screen is available in French, with dates in French. What people type in (names, notes, records, the
+  organization's name) is never translated.
+- Also on this release line: the aurora background and the neumorphic sign-in page.
+
 ## 0.9.1-rates — 16 November 2026
 
 Exchange rates.
