@@ -2596,6 +2596,16 @@
   "— Top-level task —": "— Tâche de premier niveau —",
   "— Unchanged —": "— Inchangé —",
   "— Whole organization —": "— Toute l'organisation —",
-  "— Whole programme —": "— Tout le programme —"
+  "— Whole programme —": "— Tout le programme —",
+  "Install app": "Installer l'application",
+  "Install on iPhone or iPad": "Installer sur iPhone ou iPad",
+  "Open this page in Safari.": "Ouvrez cette page dans Safari.",
+  "Tap the Share button": "Touchez le bouton Partager",
+  "Choose “Add to Home Screen”, then tap Add.": "Choisissez « Sur l'écran d'accueil », puis touchez Ajouter.",
+  "You are offline": "Vous êtes hors ligne",
+  "This device has no internet connection right now.": "Cet appareil n'a pas de connexion Internet pour le moment.",
+  "Your work is kept safely on the server. Check your Wi-Fi or mobile data, then try again.": "Votre travail est conservé en sécurité sur le serveur. Vérifiez votre Wi-Fi ou vos données mobiles, puis réessayez.",
+  "Try again": "Réessayer",
+  "OK": "OK"
  }
 }

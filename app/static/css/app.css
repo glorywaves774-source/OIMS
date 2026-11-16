@@ -742,3 +742,9 @@ html[data-theme="dark"] .tabs-scroll a[aria-current="page"] { color: #04201d; }
 .assist-send { width: 42px; height: 42px; padding: 0; border-radius: 12px; }
 .assist-note { margin: 0; padding: 0 12px 10px; font-size: .72rem; color: var(--text-muted); }
 @media print { .assist { display: none !important; } }
+
+/* Installable app */
+[data-install][hidden] { display: none !important; }
+.install-steps { padding-left: 1.3rem; }
+.install-steps li { margin-bottom: .45rem; }
+.install-steps .bi { font-size: 1.1rem; color: var(--link); }

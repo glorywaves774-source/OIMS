@@ -13,15 +13,15 @@
   }
 
   /* ---------- Theme ---------- */
-  function setTheme(t, persist) {
-    html.setAttribute("data-theme", t);
-    html.setAttribute("data-bs-theme", t);
+  function setTheme(mode, persist) {
+    html.setAttribute("data-theme", mode);
+    html.setAttribute("data-bs-theme", mode);
     if (persist) {
-      try { localStorage.setItem("oims-theme", t); } catch (e) {}
-      document.cookie = "oims-theme=" + t + "; path=/; max-age=31536000; SameSite=Lax";
+      try { localStorage.setItem("oims-theme", mode); } catch (e) {}
+      document.cookie = "oims-theme=" + mode + "; path=/; max-age=31536000; SameSite=Lax";
     }
     document.querySelectorAll("[data-theme-toggle]").forEach(function (b) {
-      var dark = t === "dark";
+      var dark = mode === "dark";
       b.setAttribute("aria-pressed", dark ? "true" : "false");
       var label = t(dark ? "Light mode" : "Dark mode");
       b.setAttribute("title", label);

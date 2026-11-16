@@ -9,7 +9,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from app.config import CONFIGS
 from app.extensions import csrf, db, limiter, login_manager, migrate
 
-__version__ = "0.9.4-assistant"
+__version__ = "0.9.5-installable"
 
 
 def create_app(config_name=None, overrides=None):
@@ -81,12 +81,13 @@ def create_app(config_name=None, overrides=None):
     from app.blueprints.billing import bp as billing_bp, hooks as billing_hooks_bp
     from app.blueprints.platform_billing import bp as platform_billing_bp
     from app.blueprints.assistant import bp as assistant_bp, global_bp as assistant_global_bp
+    from app.blueprints.pwa import bp as pwa_bp
 
     for bp in (public_bp, auth_bp, setup_bp, account_bp, platform_bp, workspace_bp, departments_bp, staff_bp,
                leave_bp, attendance_bp, documents_bp, correspondence_bp, meetings_bp, tasks_bp, comms_bp,
                programmes_bp, projects_bp, registers_bp, beneficiaries_bp, meal_bp, feedback_bp, public_feedback_bp,
                procurement_bp, assets_bp, finance_bp, analytics_bp,
-               billing_bp, billing_hooks_bp, platform_billing_bp, assistant_bp, assistant_global_bp):
+               billing_bp, billing_hooks_bp, platform_billing_bp, assistant_bp, assistant_global_bp, pwa_bp):
         app.register_blueprint(bp)
 
     _register_template_globals(app)
@@ -147,6 +148,7 @@ def _check_production_config(app, config_name):
 
 PASSWORD_CHANGE_EXEMPT = {
     "account.change_password", "auth.logout", "static", "public.health",
+    "pwa.manifest", "pwa.service_worker", "pwa.offline",
 }
 TWO_FACTOR_EXEMPT = PASSWORD_CHANGE_EXEMPT | {"account.two_factor"}
 

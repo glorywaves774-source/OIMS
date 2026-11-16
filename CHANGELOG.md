@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.9.5-installable — 16 November 2026
+
+Installable app.
+
+- ZENTAVA OIMS can be installed on Android, iPhone, iPad, Windows, Mac and Chromebook. It opens in its own window
+  with the ZENTAVA icon, without the browser's address bar.
+- "Install app" button on the sign-in page (download icon) and in the account menu, shown only on devices that can
+  install. On iPhone and iPad it shows the three Safari steps.
+- Offline page: with no connection the app says so (English or French) instead of showing a browser error.
+- Privacy: only the app's public files (styles, scripts, icons, fonts, offline page) are kept on the device. Pages,
+  records, documents and downloads are never stored, so nothing private stays on a shared phone after signing out.
+- Each release replaces the stored files automatically.
+- **Fix:** since 0.9.2 (French), a script error on every page stopped the phone menu, the Back button in the
+  installed app, confirmation dialogs and "Copy" buttons from working. Fixed, and the page checks now report script
+  errors.
+
 ## 0.9.4-assistant — 16 November 2026
 
 ZENTAVA Assistant.

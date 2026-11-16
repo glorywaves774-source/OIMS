@@ -2,7 +2,7 @@
 {% from "macros.html" import flashes, theme_button, lang_switch, wordmark with context %}
 {% block body_class %}auth-body{% endblock %}
 {% block body %}
-<div class="auth-tools">{{ lang_switch() }}{{ theme_button() }}</div>
+<div class="auth-tools"><button type="button" class="btn-icon" data-install hidden aria-label="Install app" title="Install app"><i class="bi bi-download"></i></button>{{ lang_switch() }}{{ theme_button() }}</div>
 <main id="content" class="auth-card {% block card_class %}{% endblock %}">
   <div class="auth-brand">
     <div class="brand-mark logo"><img src="{{ url_for('static', filename='img/logo.svg') }}" alt=""></div>

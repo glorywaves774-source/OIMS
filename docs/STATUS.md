@@ -204,6 +204,17 @@ when there are many). Counting is done in the database. Record names in charts a
 | Safety | Signed-in only, CSRF token, rate limits; works in read-only workspaces (changes nothing) |
 | Phones | Round button above the tab bar; half-screen window just above it; compact header; suggested questions in one swipeable row; small privacy note; keyboard not opened on its own; while typing it fills the space above the keyboard and hides the suggestions and note |
 
+## Installable app ✅ complete (0.9.5-installable)
+
+| Area | Result |
+|---|---|
+| Install | Web app manifest (name, icons incl. maskable and Apple touch icon, standalone window, navy title bar); Chrome reports no installability errors |
+| Buttons | "Install app" on the sign-in page and in the account menu, only where the device can install; iPhone/iPad show Safari's Add to Home Screen steps |
+| Offline | Friendly offline page in the person's language; "Try again" reloads the page they were opening |
+| Privacy | Service worker keeps only /static files and the offline page; pages, records, uploads, downloads and form posts always go to the server |
+| Updates | Stored files are tied to the release number and replaced on each deploy |
+| In the app | Back button at top-left only inside the installed app (no browser Back there) |
+
 ## Not included (possible next steps)
 
 - Offline data collection on phones; KoBo/ODK import.
