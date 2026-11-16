@@ -5,6 +5,7 @@ from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from flask import abort, flash, g, redirect, render_template, request, url_for
 from flask_login import current_user
 from sqlalchemy import or_, select
+from sqlalchemy.orm import selectinload
 
 from app import audit
 from app.blueprints.beneficiaries import owner_key, parse_owner
@@ -61,15 +62,25 @@ def index():
     elif view == "approve":
         stmt = stmt.where(PurchaseRequest.status == "submitted")
     page = db.paginate(stmt.order_by(PurchaseRequest.id.desc()), page=page_arg(), per_page=30, error_out=False)
-    orders = []
+    orders = None
     if can("procurement.view"):
         visible_ids = visible_requests_stmt().with_only_columns(PurchaseRequest.id)
-        orders = PurchaseOrder.query.filter(PurchaseOrder.request_id.in_(visible_ids),
-                                            PurchaseOrder.status.in_(("draft", "approved", "partially_received",
-                                                                      "received"))).order_by(PurchaseOrder.id.desc()).all()
+        orders = db.paginate(
+            select(PurchaseOrder).where(PurchaseOrder.request_id.in_(visible_ids), PurchaseOrder.status.in_(
+                ("draft", "approved", "partially_received", "received")))
+            .options(selectinload(PurchaseOrder.items), selectinload(PurchaseOrder.supplier),
+                     selectinload(PurchaseOrder.request))
+            .order_by(PurchaseOrder.id.desc()), page=_int_arg("opage"), per_page=30, error_out=False)
     return render_template("procurement/index.html", page=page, status=status, view=view, orders=orders,
                            can_new=bool(_request_owners()), can_process=can_process(),
                            can_settings=can_process() and scope_of("procurement.manage") == ORG)
+
+
+def _int_arg(name):
+    try:
+        return max(1, int(request.args.get(name, 1)))
+    except ValueError:
+        return 1
 
 
 def _request_owners():

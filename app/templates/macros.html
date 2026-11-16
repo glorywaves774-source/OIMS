@@ -45,18 +45,21 @@
   {% endif %}
 {%- endmacro %}
 
-{% macro pager(page, endpoint) -%}
+{% macro pager(page, endpoint, param='page') -%}
+  {# param: the address parameter for the page number, so two lists on one page can page separately #}
+  {% set extra = kwargs %}
+  {% macro href(n) %}{% set q = dict(extra) %}{% set _ = q.update({param: n}) %}{{ url_for(endpoint, **q) }}{% endmacro %}
   {% if page.pages > 1 %}
   <nav aria-label="Pages" class="mt-3 px-3 pb-3">
     <ul class="pagination mb-0">
       <li class="page-item{% if not page.has_prev %} disabled{% endif %}">
-        <a class="page-link" href="{{ url_for(endpoint, page=page.prev_num, **kwargs) if page.has_prev else '#' }}">Previous</a></li>
+        <a class="page-link" href="{{ href(page.prev_num) if page.has_prev else '#' }}">Previous</a></li>
       {% for p in page.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
-        {% if p %}<li class="page-item{% if p == page.page %} active{% endif %}"><a class="page-link" href="{{ url_for(endpoint, page=p, **kwargs) }}">{{ p }}</a></li>
+        {% if p %}<li class="page-item{% if p == page.page %} active{% endif %}"><a class="page-link" href="{{ href(p) }}">{{ p }}</a></li>
         {% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
       {% endfor %}
       <li class="page-item{% if not page.has_next %} disabled{% endif %}">
-        <a class="page-link" href="{{ url_for(endpoint, page=page.next_num, **kwargs) if page.has_next else '#' }}">Next</a></li>
+        <a class="page-link" href="{{ href(page.next_num) if page.has_next else '#' }}">Next</a></li>
     </ul>
     <p class="small text-muted mt-2 mb-0">{{ page.total }} record{{ '' if page.total == 1 else 's' }}</p>
   </nav>

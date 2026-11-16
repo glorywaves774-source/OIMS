@@ -15,6 +15,7 @@ from app.models import BudgetCategory, BudgetLine, Donor, FundingAgreement, Loca
 from app.notify import notify
 from app.programme_logic import allowed, holders, own
 from app.rbac import can
+from app.security import heavy_download
 from app.tenancy import tenant_get_or_404
 
 
@@ -141,6 +142,7 @@ def _safe_name(s):
 
 
 @route("/<int:pid>/reports/<int:rid>/export.<fmt>")
+@heavy_download
 def report_export(pid, rid, fmt):
     prog = load(pid)
     _view(prog)
@@ -158,6 +160,7 @@ def report_export(pid, rid, fmt):
 
 
 @route("/<int:pid>/export.<fmt>")
+@heavy_download
 def quick_export(pid, fmt):
     """Status report for any period, without narrative (indicator, activity and financial figures)."""
     prog = load(pid)

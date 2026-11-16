@@ -508,14 +508,21 @@ def feedback(f):
 @report("procurement", "Procurement", "Purchase requests, orders, suppliers and how long buying takes.",
         "Finance", lambda: can("procurement.view"))
 def procurement(f):
+    from sqlalchemy.orm import selectinload
     from app.models import PurchaseOrder, PurchaseRequest
-    from app.procurement_logic import po_figures, visible_requests_stmt
+    from app.procurement_logic import po_figures_many, visible_requests_stmt
     stmt = visible_requests_stmt().where(PurchaseRequest.created_at >= f.start,
                                          PurchaseRequest.created_at < f.end + timedelta(days=1))
     if f.owner is not None:
         stmt = stmt.where(getattr(PurchaseRequest, f.owner.fk) == f.owner.id)
     reqs = db.session.execute(stmt).scalars().all()
-    orders = [o for r in reqs for o in PurchaseOrder.query.filter_by(request_id=r.id) if o.status != "cancelled"]
+    # All orders of these requests at once, with their items and suppliers (not one query per request/order)
+    orders = db.session.execute(
+        select(PurchaseOrder).where(PurchaseOrder.request_id.in_(stmt.with_only_columns(PurchaseRequest.id)),
+                                    PurchaseOrder.status != "cancelled")
+        .options(selectinload(PurchaseOrder.items), selectinload(PurchaseOrder.supplier),
+                 selectinload(PurchaseOrder.request))).scalars().all()
+    figs = po_figures_many(orders)
     by_supplier, cycle = {}, []
     for po in orders:
         cur = po.request.owner.currency
@@ -524,7 +531,7 @@ def procurement(f):
                                        "paid": ZERO})
         s["orders"] += 1
         s["value"] += po.total
-        s["paid"] += po_figures(po)["paid"]
+        s["paid"] += figs[po.id]["paid"]
         if po.approved_at and po.request.submitted_at:
             cycle.append((po.approved_at - po.request.submitted_at).days)
     status = OrderedDict((s.capitalize(), sum(1 for r in reqs if r.status == s)) for s in PurchaseRequest.STATUSES)

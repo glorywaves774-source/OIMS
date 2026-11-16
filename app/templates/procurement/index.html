@@ -8,12 +8,12 @@
     {% if can('procurement.view') %}<a class="btn btn-light" href="{{ url_for('procurement.suppliers') }}"><i class="bi bi-shop me-1"></i>Suppliers</a>{% endif %}
     {% if can_settings %}<a class="btn btn-light" href="{{ url_for('procurement.settings') }}"><i class="bi bi-sliders me-1"></i>Thresholds</a>{% endif %}
     {% if can_new %}<a class="btn btn-primary" href="{{ url_for('procurement.new') }}"><i class="bi bi-plus-lg me-1"></i>Purchase request</a>{% endif %}</div></div>
-{% if orders %}
-<section class="panel panel-flush"><div class="panel-header"><h2>Open purchase orders</h2></div>
+{% if orders and orders.total %}
+<section class="panel panel-flush" id="orders"><div class="panel-header"><h2>Open purchase orders</h2></div>
   <div class="table-scroll"><table class="table"><thead><tr><th>Order</th><th>Supplier</th><th>For</th><th class="text-end">Amount</th><th>Status</th></tr></thead><tbody>
-    {% for po in orders %}<tr><td><a href="{{ url_for('procurement.order', oid=po.id) }}" class="code">{{ po.code }}</a><span class="cell-sub" translate="no">{{ po.request.title }}</span></td>
+    {% for po in orders.items %}<tr><td><a href="{{ url_for('procurement.order', oid=po.id) }}" class="code">{{ po.code }}</a><span class="cell-sub" translate="no">{{ po.request.title }}</span></td>
       <td translate="no">{{ po.supplier.name }}</td><td class="code">{{ po.request.owner.code }}</td><td class="money">{{ money(po.total, po.request.owner.currency) }}</td><td>{{ status(po.status) }}</td></tr>{% endfor %}
-  </tbody></table></div></section>
+  </tbody></table></div>{{ pager(orders, 'procurement.index', param='opage', view=view, status=status, page=page.page) }}</section>
 {% endif %}
 <nav class="tabs-scroll" aria-label="Which requests">{% for v, l in [('all', 'All I can see'), ('mine', 'My requests'), ('approve', 'Waiting for approval')] %}<a href="{{ url_for('procurement.index', view=v, status=status) }}"{% if view == v %} aria-current="page"{% endif %}>{{ l }}</a>{% endfor %}</nav>
 <section class="panel panel-flush">

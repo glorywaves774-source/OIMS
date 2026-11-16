@@ -2,11 +2,12 @@
 import logging
 import re
 import smtplib
+import threading
 from email.message import EmailMessage
 from functools import wraps
 from urllib.parse import urljoin, urlparse
 
-from flask import abort, current_app, request, url_for
+from flask import abort, current_app, make_response, render_template, request, url_for
 from flask_login import current_user
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
@@ -168,3 +169,34 @@ def apply_security_headers(response):
     if request.endpoint and not request.endpoint.startswith("static"):
         response.headers.setdefault("Cache-Control", "no-store")
     return response
+
+
+# --- Large downloads ------------------------------------------------------------------------
+
+def _download_slots():
+    app = current_app._get_current_object()
+    if "heavy_downloads" not in app.extensions:
+        app.extensions["heavy_downloads"] = threading.BoundedSemaphore(app.config.get("HEAVY_DOWNLOADS", 1))
+    return app.extensions["heavy_downloads"]
+
+
+def heavy_download(view):
+    """Large exports (spreadsheets, PDFs of whole registers) take one turn at a time per server process.
+
+    Building them is CPU work; several at once would slow every other page for everyone. Someone who asks
+    while another is being prepared waits a few seconds, then gets a clear "try again" page."""
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        slots = _download_slots()
+        if not slots.acquire(timeout=current_app.config.get("HEAVY_DOWNLOAD_WAIT", 20)):
+            resp = make_response(render_template(
+                "errors/error.html", code=503, title="Another download is being prepared",
+                message="Large downloads are prepared one at a time so the system stays quick for everyone. "
+                        "Please try again in a minute."), 503)
+            resp.headers["Retry-After"] = "60"
+            return resp
+        try:
+            return view(*args, **kwargs)
+        finally:
+            slots.release()
+    return wrapped

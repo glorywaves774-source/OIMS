@@ -103,10 +103,14 @@ class User(UserMixin, TimestampMixin, db.Model):
         return PlatformRole.LABELS.get(self.platform_role, "")
 
     def active_memberships(self):
-        return [
-            m for m in self.memberships
-            if m.status == Membership.ACTIVE and m.organization.status == Organization.ACTIVE
-        ]
+        # One query for all of the person's organizations (the menu calls this on every page). The person's own
+        # memberships across organizations, so this deliberately looks beyond the current workspace.
+        from sqlalchemy import select
+        from sqlalchemy.orm import joinedload
+        from app.tenancy import unscoped
+        rows = db.session.execute(unscoped(select(Membership).options(joinedload(Membership.organization)).where(
+            Membership.user_id == self.id, Membership.status == Membership.ACTIVE))).scalars().all()
+        return [m for m in rows if m.organization.status == Organization.ACTIVE]
 
     def reset_two_factor(self):
         self.totp_secret_enc = None

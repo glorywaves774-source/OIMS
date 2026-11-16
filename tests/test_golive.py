@@ -60,3 +60,61 @@ def test_development_settings_refused_on_the_server(prod_env):
 def test_return_address_after_sign_in_stays_on_site(target, ok):
     from app.security import is_safe_next
     assert is_safe_next(target) is ok
+
+
+def test_page_links_keep_their_address_values(app):
+    """The pager keeps ids and filters in its links, and can use its own page parameter."""
+    from flask import render_template_string
+    from app.extensions import db as _db
+
+    class P:
+        pages, page, has_prev, has_next, prev_num, next_num, total = 3, 2, True, True, 1, 3, 70
+
+        def iter_pages(self, **kw):
+            return [1, 2, 3]
+    with app.test_request_context():
+        app.url_map  # routes are registered
+        html = render_template_string(
+            '{% from "macros.html" import pager %}{{ pager(p, "meal.submissions", org_slug="acme", fid=7, status="all") }}'
+            '{{ pager(p, "procurement.index", param="opage", org_slug="acme", view="mine", page=4) }}', p=P())
+    assert "/o/acme/meal/forms/7/answers?" in html and "page=3" in html and "status=all" in html
+    assert "opage=3" in html and "page=4" in html and "view=mine" in html
+
+
+def test_switch_workspace_link_inside_a_workspace(client, db):
+    """Someone in two organizations sees 'My workspaces' while working inside one of them."""
+    from tests.conftest import add_member, login, make_org
+    from app.tenancy import clear_tenant
+    a, admin = make_org("Alpha Trust", admin_email="both@alpha.org")
+    clear_tenant()
+    b, _ = make_org("Beta Trust")
+    clear_tenant()
+    add_member(b, "both@alpha.org")
+    clear_tenant()
+    login(client, "both@alpha.org")
+    html = client.get(f"/o/{a.slug}/").get_data(as_text=True)
+    assert "/account/workspaces" in html
+    page = client.get("/account/workspaces").get_data(as_text=True)
+    assert "Alpha Trust" in page and "Beta Trust" in page
+
+
+def test_large_downloads_take_turns(app, client, db):
+    """While one large download is being prepared, another gets a clear 'try again' page (503)."""
+    from tests.conftest import login, make_org
+    from app.security import _download_slots
+    org, _ = make_org("Turn Trust", admin_email="admin@turn.org")
+    login(client, "admin@turn.org")
+    app.config["HEAVY_DOWNLOAD_WAIT"] = 0
+    url = f"/o/{org.slug}/reports/staff.csv"
+    assert client.get(url).status_code == 200
+    with app.app_context():
+        slots = _download_slots()
+    assert slots.acquire(timeout=1)          # someone else's download is in progress
+    try:
+        r = client.get(url)
+        assert r.status_code == 503 and r.headers["Retry-After"] == "60"
+        assert b"Another download is being prepared" in r.data
+    finally:
+        slots.release()
+    assert client.get(url).status_code == 200
+    app.config["HEAVY_DOWNLOAD_WAIT"] = 20

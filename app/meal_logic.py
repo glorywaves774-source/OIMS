@@ -7,6 +7,7 @@ from sqlalchemy import and_, exists, false, func, or_, select, true
 from sqlalchemy.orm import aliased
 
 from app.crypto import blind_index, normalize
+from app.models.meal import ConsentRecord, age_band, age_from
 from app.extensions import db
 from app.models import (Activity, ActivityAttendance, ActivityReport, Beneficiary, Enrollment, Feedback, Programme,
                         ProgrammeTeamMember, Project, ProjectTeamMember, ServiceRecord)
@@ -61,11 +62,15 @@ def beneficiary_scope_clause(code="beneficiaries.view"):
     return or_(Beneficiary.registered_by_id == current_user.id, enrolled)
 
 
-def visible_beneficiaries_stmt(code="beneficiaries.view", include_merged=False):
-    stmt = select(Beneficiary).where(Beneficiary.organization_id == g.tenant.id, beneficiary_scope_clause(code))
+def visible_beneficiaries_where(code="beneficiaries.view", include_merged=False):
+    cond = [Beneficiary.organization_id == g.tenant.id, beneficiary_scope_clause(code)]
     if not include_merged:
-        stmt = stmt.where(Beneficiary.status != "merged")
-    return stmt
+        cond.append(Beneficiary.status != "merged")
+    return cond
+
+
+def visible_beneficiaries_stmt(code="beneficiaries.view", include_merged=False):
+    return select(Beneficiary).where(*visible_beneficiaries_where(code, include_merged))
 
 
 def _in(code, b):
@@ -165,13 +170,50 @@ def reached_ids_stmt(owner, start=None, end=None, include_projects=True):
     return e.union(s, a)
 
 
+PROFILE_COLUMNS = (Beneficiary.id, Beneficiary.sex, Beneficiary.date_of_birth, Beneficiary.birth_year,
+                   Beneficiary.disability, Beneficiary.registered_on)
+
+
+def profile_rows(where=None, ids=None):
+    """Just the columns needed for counting people (sex, age, disability), without loading whole records.
+
+    Pass either SQL conditions (`where`) or a set of ids. Rows carry `.age_band` like a Beneficiary."""
+    out = []
+    today = date.today()
+    if ids is not None:
+        id_list = sorted(ids)
+        chunks = [id_list[i:i + 900] for i in range(0, len(id_list), 900)]   # below database parameter limits
+        conds = [[Beneficiary.id.in_(c), Beneficiary.status != "merged"] for c in chunks]
+    else:
+        conds = [list(where or [])]
+    for cond in conds:
+        for r in db.session.execute(select(*PROFILE_COLUMNS).where(*cond)):
+            out.append(_Profile(r.id, r.sex, age_band(age_from(r.date_of_birth, r.birth_year, today)),
+                                r.disability, r.registered_on))
+    return out
+
+
+class _Profile:
+    __slots__ = ("id", "sex", "age_band", "disability", "registered_on")
+
+    def __init__(self, id_, sex, band, disability, registered_on):
+        self.id, self.sex, self.age_band, self.disability, self.registered_on = id_, sex, band, disability, registered_on
+
+
+def consent_given_ids(where):
+    """Ids (among beneficiaries matching `where`) whose most recent consent has not been withdrawn."""
+    ranked = (select(ConsentRecord.beneficiary_id, ConsentRecord.withdrawn_on,
+                     func.row_number().over(partition_by=ConsentRecord.beneficiary_id,
+                                            order_by=(ConsentRecord.given_on.desc(), ConsentRecord.id.desc()))
+                     .label("rn"))
+              .join(Beneficiary, Beneficiary.id == ConsentRecord.beneficiary_id).where(*where).subquery())
+    return set(db.session.execute(select(ranked.c.beneficiary_id).where(ranked.c.rn == 1,
+                                                                        ranked.c.withdrawn_on.is_(None))).scalars())
+
+
 def reach(owner, start=None, end=None, include_projects=True):
     ids = set(db.session.execute(reached_ids_stmt(owner, start, end, include_projects)).scalars())
-    rows = []
-    id_list = sorted(ids)
-    for i in range(0, len(id_list), 900):   # stay below database parameter limits
-        rows += db.session.execute(select(Beneficiary).where(Beneficiary.id.in_(id_list[i:i + 900]),
-                                                             Beneficiary.status != "merged")).scalars().all()
+    rows = profile_rows(ids=ids)
     by_sex, by_age = {}, {}
     disability = 0
     for b in rows:

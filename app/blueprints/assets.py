@@ -20,6 +20,7 @@ from app.notify import next_reference, notify
 from app.procurement_logic import can_manage_asset, can_see_asset, read_only, visible_assets_stmt
 from app.programme_logic import holders, visible_owner_stmt
 from app.rbac import can
+from app.security import heavy_download
 from app.tenancy import tenant_get_or_404
 
 bp = workspace_blueprint("assets", __name__, "/assets")
@@ -303,6 +304,7 @@ def _decide(a):
 
 
 @bp.route("/export.xlsx")
+@heavy_download
 def export():
     import openpyxl
     from openpyxl.styles import Font

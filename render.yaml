@@ -13,6 +13,10 @@ envVarGroups:
         generateValue: true
       - key: SESSION_COOKIE_SECURE
         value: "true"
+      - key: MALLOC_ARENA_MAX          # keeps memory use of the threaded web server low (measured: -15%)
+        value: "2"
+      - key: WEB_CONCURRENCY           # server processes; 1 suits the 512 MB starter plan (gunicorn.conf.py)
+        value: "1"
       - key: REQUIRE_PLATFORM_2FA
         value: "true"
       - key: STORAGE_BACKEND
@@ -39,7 +43,7 @@ services:
     plan: starter
     buildCommand: pip install -r requirements.txt
     preDeployCommand: flask --app wsgi db upgrade && flask --app wsgi oims sync-roles
-    startCommand: gunicorn wsgi:app --workers 3 --timeout 60 --access-logfile -
+    startCommand: gunicorn wsgi:app    # settings in gunicorn.conf.py
     healthCheckPath: /healthz
     disk:
       name: oims-files

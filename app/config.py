@@ -90,6 +90,10 @@ class BaseConfig:
 
     ALLOW_PUBLIC_REGISTRATION = _bool("ALLOW_PUBLIC_REGISTRATION", True)
 
+    # Large downloads prepared at the same time per server process, and how long to wait for a turn (seconds)
+    HEAVY_DOWNLOADS = int(os.environ.get("HEAVY_DOWNLOADS", "1"))
+    HEAVY_DOWNLOAD_WAIT = int(os.environ.get("HEAVY_DOWNLOAD_WAIT", "20"))
+
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True

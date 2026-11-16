@@ -13,17 +13,19 @@
   <div class="kpi"><div class="v">{{ money(t.available, cur) }}</div><div class="l">Still available</div></div>
 </div>{% endfor %}
 {% if approvals or orders %}
-<section class="panel panel-flush"><div class="panel-header"><h2>Waiting for your approval</h2></div>
+<section class="panel panel-flush"><div class="panel-header"><h2>Waiting for your approval</h2>{% if counts.approvals + counts.orders > limit %}<span class="text-muted small">{{ counts.approvals + counts.orders }} in all</span>{% endif %}</div>
   <div class="table-scroll"><table class="table"><thead><tr><th>What</th><th>For</th><th class="text-end">Amount</th><th></th></tr></thead><tbody>
     {% for o, po in orders %}<tr><td>Purchase order <span class="code">{{ po.code }}</span><span class="cell-sub" translate="no">{{ po.supplier.name }}</span></td><td class="code">{{ o.code }}</td><td class="money">{{ money(po.total, o.currency) }}</td><td><a class="btn btn-sm btn-soft" href="{{ url_for('procurement.order', oid=po.id) }}">Open</a></td></tr>{% endfor %}
     {% for o, e in approvals %}<tr><td>{{ e.KINDS[e.kind] }}{% if e.purchase_order_id %} (payment){% endif %}<span class="cell-sub" translate="no">{{ e.description }}</span></td><td class="code">{{ o.code }}</td><td class="money">{{ money(e.amount, o.currency) }}</td><td><a class="btn btn-sm btn-soft" href="{{ url_for(o.perm ~ '.finance', pid=o.id) }}#expenditure">Open</a></td></tr>{% endfor %}
-  </tbody></table></div></section>
+  </tbody></table></div>
+  {% if counts.approvals > approvals|length or counts.orders > orders|length %}<p class="small text-muted px-3 py-2 mb-0">Showing the oldest {{ orders|length + approvals|length }} of {{ counts.approvals + counts.orders }}. The rest are on each programme's and project's finance page{% if counts.orders > orders|length %} and under Procurement → Orders{% endif %}.</p>{% endif %}</section>
 {% endif %}
 {% if payable %}
-<section class="panel panel-flush"><div class="panel-header"><h2>Goods received, not yet paid</h2></div>
+<section class="panel panel-flush"><div class="panel-header"><h2>Goods received, not yet paid</h2>{% if counts.payable > payable|length %}<span class="text-muted small">{{ counts.payable }} in all</span>{% endif %}</div>
   <div class="table-scroll"><table class="table"><thead><tr><th>Order</th><th>Supplier</th><th class="text-end">Can be paid</th><th></th></tr></thead><tbody>
     {% for o, po, fig in payable %}<tr><td class="code">{{ po.code }}</td><td translate="no">{{ po.supplier.name }}</td><td class="money">{{ money(fig.payable, o.currency) }}</td><td><a class="btn btn-sm btn-soft" href="{{ url_for('procurement.order', oid=po.id) }}#payments">Pay</a></td></tr>{% endfor %}
-  </tbody></table></div></section>
+  </tbody></table></div>
+  {% if counts.payable > payable|length %}<p class="small text-muted px-3 py-2 mb-0">Showing the oldest {{ payable|length }} of {{ counts.payable }}. The rest are under Procurement → Orders.</p>{% endif %}</section>
 {% endif %}
 <section class="panel panel-flush"><div class="panel-header"><h2>By programme and project</h2></div>
   {% if rows %}<div class="table-scroll"><table class="table"><thead><tr><th>Programme / project</th><th class="text-end">Budget</th><th class="text-end">Spent</th><th class="text-end">Committed</th><th class="text-end">Available</th><th>Used</th></tr></thead><tbody>
