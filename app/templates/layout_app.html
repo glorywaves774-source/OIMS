@@ -97,5 +97,7 @@
     {% endfor %}
     <button type="button" id="tab-menu" data-open-menu aria-controls="sidebar" aria-label="Open menu"><i class="bi bi-list"></i><span>Menu</span></button>
   </nav>
+  {% if config.HELP_ASSISTANT %}{% include "partials/assistant.html" %}{% endif %}
 </div>
 {% endblock %}
+{% block extra_scripts %}{% if config.HELP_ASSISTANT %}<script src="{{ url_for('static', filename='js/assistant.js') }}"></script>{% endif %}{% endblock %}

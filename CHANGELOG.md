@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.4-assistant — 16 November 2026
+
+ZENTAVA Assistant.
+
+- A help assistant on every signed-in page (round ✦ button): ask "how do I…" in English or French. Answers come
+  from the help guide, with links only to pages your role can open; when something is another role's job it says so.
+- Optional AI phrasing (set `HELP_AI_API_KEY`): personal details are removed from questions first and no records
+  are ever sent. Without a key it answers straight from the guide.
+- Phone layout: half-screen window above the button, swipeable suggested questions, keyboard-aware.
+- French fixes: role names, the plan label on the dashboard, placeholders of text boxes, text between "·".
+
 ## 0.9.3-charts — 16 November 2026
 
 Charts on the dashboards.

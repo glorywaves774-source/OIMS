@@ -49,8 +49,8 @@ def _enter_tenant():
                 session.pop("support_request_id", None)
                 flash("Your support access has expired.", "warning")
                 return redirect(url_for("platform.organization_detail", org_id=org.id))
-            if request.method not in ("GET", "HEAD"):
-                abort(403)
+            if request.method not in ("GET", "HEAD") and request.blueprint != "assistant":
+                abort(403)   # read-only; asking the help assistant changes nothing
             g.support_request = req
             _activate(org, None, read_only_permissions())
             return None
@@ -69,7 +69,7 @@ def _enter_tenant():
     if st["locked"]:
         # Lapsed or cancelled subscription: everyone can still read and export; only billing stays open.
         perms = {c: sc for c, sc in perms.items() if c.split(".")[1] in READ_ONLY_ACTIONS or c.startswith("billing.")}
-        if request.method not in ("GET", "HEAD") and request.blueprint != "billing":
+        if request.method not in ("GET", "HEAD") and request.blueprint not in ("billing", "assistant"):
             g.tenant = org
             return render_template("workspace/billing_locked.html", org=org, st=st), 403
     _activate(org, m, perms)

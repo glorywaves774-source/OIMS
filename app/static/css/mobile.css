@@ -81,3 +81,18 @@ input, select, textarea, .form-control, .form-select { font-size: 16px; }
   .kpi { padding: 12px; }
   .kpi .v { font-size: 1rem; overflow-wrap: anywhere; }
 }
+
+/* ZENTAVA Assistant on phones: round button above the tab bar; a half-screen window just above it */
+@media (max-width: 760px) {
+  .assist-fab { right: 14px; bottom: calc(84px + env(safe-area-inset-bottom)); width: 52px; height: 52px; }
+  .assist-panel { left: 8px; right: 8px; width: auto; border-radius: 20px;
+    bottom: calc(144px + env(safe-area-inset-bottom)); height: 52vh; height: 52dvh; }
+  .assist-head { padding: 6px 6px 6px 12px; }
+  .assist-head strong { font-size: .92rem; }
+  .assist-note { font-size: .68rem; padding-bottom: 8px; }
+  /* typing: use the space above the keyboard; suggestions and note step aside */
+  .assist.typing .assist-panel { top: calc(var(--assist-top, 0px) + 8px); bottom: auto;
+    height: calc(var(--assist-vh, 60vh) - 16px); }
+  .assist.typing .assist-suggest, .assist.typing .assist-note { display: none; }
+  .assist.typing .assist-fab { display: none; }
+}

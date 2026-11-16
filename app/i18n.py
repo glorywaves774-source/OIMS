@@ -34,6 +34,7 @@ TAG = re.compile(r"<\s*(/)?\s*([a-zA-Z][a-zA-Z0-9-]*)([^>]*?)(/)?\s*>", re.S)
 ATTR = re.compile(r'(\s)([a-zA-Z-]+)="([^"]*)"')
 WS = re.compile(r"\s+")
 LABEL_VALUE = re.compile(r"^(.+?)(: )(.*\d.*)$")                      # "Male: 3", "Apr: 1,200.00"
+SEPARATED = re.compile(r"^([·•|]\s*|)(.*?)(\s*[·•|]|)$")                 # "· Department Head ·"
 CURRENCY_SUFFIX = re.compile(r"^(.+?)( \([A-Z]{3}\))$")               # "Budget (USD)"
 
 MONTHS = {"Jan": "janv.", "Feb": "févr.", "Mar": "mars", "Apr": "avr.", "May": "mai", "Jun": "juin",
@@ -115,6 +116,12 @@ def _translate(text, lang):
                 # the filled-in parts are data (names, codes, amounts): kept as they are, dates in the language
                 out = out.replace("{%d}" % n, _dates(val))
             return lead + out + trail
+    # Separators around the text: "· Department Head ·" (a name or code sits on either side)
+    m = SEPARATED.match(core)
+    if m and m.group(2) and (m.group(1) or m.group(3)):
+        inner = translate_text(m.group(2), lang)
+        if inner != m.group(2):
+            return lead + m.group(1) + inner + m.group(3) + trail
     # Built from parts: "Activities · PRJ/2026/001 · ZENTAVA OIMS", "Apr: 1,200.00", "Budget (USD)"
     if " · " in core:
         parts = core.split(" · ")
@@ -185,7 +192,9 @@ def translate_html(html, lang):
                 keep = True
             # attributes people read, unless this element (or a parent) is kept as typed. A "value" is data
             # sent with the form, so it is translated only on input buttons, where it is also the label.
-            if not (frozen() or keep):
+            # scripts, styles and text boxes keep their content, but their labels (placeholder, title) are read
+            attrs_kept = frozen() or 'translate="no"' in attrs or (name == "option" and keep)
+            if not attrs_kept:
                 label_value = name == "input" and re.search(r'type="(submit|button|reset)"', attrs) is not None
                 tok = ATTR.sub(lambda mm: mm.group(0) if mm.group(2) == "value" and not label_value
                                else attr_sub(mm), tok)

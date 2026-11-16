@@ -40,7 +40,7 @@ def test_switch_refuses_odd_input(client):
 def test_typed_in_data_is_never_translated(app):
     with app.app_context():
         html = ('<p>Sign in</p><span translate="no">Sign in</span><option value="7">Finance</option>'
-                '<option value="">— Choose —</option><script>var a = "Sign in";</script><textarea>Sign in</textarea>'
+                '<option value="">— Choose —</option><script>var a = "Sign in";</script><textarea placeholder="Ask a question…">Sign in</textarea>'
                 '<input type="text" value="Sign in"><input type="submit" value="Save">'
                 '<a title="Edit" data-confirm="Cancel this meeting and notify everyone?">x</a>')
         out = translate_html(html, "fr")
@@ -48,7 +48,7 @@ def test_typed_in_data_is_never_translated(app):
     assert '<span translate="no">Sign in</span>' in out          # marked as typed in
     assert '<option value="7">Finance</option>' in out            # a record chosen from a list
     assert "— Choisir —" in out                                    # the list's own prompt
-    assert 'var a = "Sign in";' in out and "<textarea>Sign in</textarea>" in out
+    assert 'var a = "Sign in";' in out and 'placeholder="Posez une question…">Sign in</textarea>' in out
     assert 'value="Sign in"' in out and 'value="Enregistrer"' in out   # field content kept; button label translated
     assert 'title="Modifier"' in out and "Annuler cette réunion" in out
 
@@ -63,6 +63,7 @@ def test_patterns_dates_and_numbers(app):
             "Activités · PRJ/2026/001 · ZENTAVA OIMS"
         assert translate_text("Something nobody wrote", "fr") == "Something nobody wrote"   # never guessed
         assert translate_text("  Sign in \n", "fr") == "  Se connecter \n"              # spacing kept
+        assert translate_text("· Department Head ·", "fr") == "· Chef de département ·"   # between separators
 
 
 def test_dictionary_placeholders_match():

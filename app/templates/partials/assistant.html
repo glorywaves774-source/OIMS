@@ -1,0 +1,28 @@
+{# ZENTAVA Assistant: round button and its window (behaviour in static/js/assistant.js). #}
+{% set ask_url = url_for('assistant.ask', org_slug=g.tenant.slug) if g.get('tenant') else url_for('assistant_global.ask_global') %}
+<div class="assist" data-assistant data-ask-url="{{ ask_url }}" data-csrf="{{ csrf_token() }}">
+  <button type="button" class="assist-fab" aria-controls="assist-panel" aria-expanded="false" aria-label="Help assistant" title="Help assistant"><i class="bi bi-stars" aria-hidden="true"></i></button>
+  <section id="assist-panel" class="assist-panel" role="dialog" aria-modal="false" aria-labelledby="assist-title" hidden>
+    <header class="assist-head">
+      <span class="assist-avatar" aria-hidden="true"><img src="{{ url_for('static', filename='img/logo.svg') }}" alt=""></span>
+      <strong id="assist-title" translate="no">ZENTAVA Assistant</strong>
+      <button type="button" class="btn-icon assist-close" aria-label="Close"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+    </header>
+    <div class="assist-log" aria-live="polite">
+      <div class="assist-msg bot"><p>Hello! Ask me how to do something in ZENTAVA OIMS.</p></div>
+    </div>
+    <div class="assist-suggest">
+      <button type="button" class="assist-chip">How do I request leave?</button>
+      <button type="button" class="assist-chip">How do I add a task?</button>
+      <button type="button" class="assist-chip">How do I upload a document?</button>
+      <button type="button" class="assist-chip">Who approves expenditure?</button>
+      <button type="button" class="assist-chip">How do I change my password?</button>
+    </div>
+    <form class="assist-form" novalidate>
+      <label class="visually-hidden" for="assist-q">Your question</label>
+      <textarea id="assist-q" rows="1" maxlength="500" placeholder="Ask a question…" enterkeyhint="send"></textarea>
+      <button type="submit" class="btn btn-primary assist-send" aria-label="Send"><i class="bi bi-send" aria-hidden="true"></i></button>
+    </form>
+    <p class="assist-note"><i class="bi bi-shield-lock me-1" aria-hidden="true"></i>Answers come from the help guide. Phone numbers, emails and ID numbers are removed before a question is sent to the AI service; your records are never sent.</p>
+  </section>
+</div>

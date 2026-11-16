@@ -6,7 +6,7 @@
 {% block content %}
 <div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ tenant.name }}</h2>
   <p>{% if g.membership %}Hello, <span translate="no">{{ current_user.full_name.split()[0] }}</span> · {{ g.membership.role.name if g.membership.role else 'member' }}{% else %}Kayron support view{% endif %}
-  {% if tenant.subscription %} · {{ tenant.subscription.plan.name }} plan ({{ tenant.subscription.status|replace('_', ' ') }}){% endif %}</p></div>
+  {% if tenant.subscription %} · <span class="plan-label">{{ tenant.subscription.plan.name }} plan ({{ tenant.subscription.status|replace('_', ' ') }})</span>{% endif %}</p></div>
   {% if not support_request %}<div class="toolbar">
     {% if can('tasks.create') %}<a class="btn btn-primary" href="{{ url_for('tasks.new') }}"><i class="bi bi-plus-lg me-1"></i>Task</a>{% endif %}
     {% if can('meetings.create') %}<a class="btn btn-soft" href="{{ url_for('meetings.edit') }}"><i class="bi bi-calendar-plus me-1"></i>Meeting</a>{% endif %}

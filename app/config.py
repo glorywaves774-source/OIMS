@@ -102,6 +102,11 @@ class BaseConfig:
     BACKUP_KEEP_DAILY = int(os.environ.get("BACKUP_KEEP_DAILY", "14"))
     BACKUP_KEEP_MONTHLY = int(os.environ.get("BACKUP_KEEP_MONTHLY", "12"))
 
+    # Help assistant: answers from the help guide; with a key, an AI service phrases the answers
+    HELP_AI_API_KEY = os.environ.get("HELP_AI_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
+    HELP_AI_MODEL = os.environ.get("HELP_AI_MODEL", "claude-haiku-5-5")
+    HELP_ASSISTANT = _bool("HELP_ASSISTANT", True)
+
     # Large downloads prepared at the same time per server process, and how long to wait for a turn (seconds)
     HEAVY_DOWNLOADS = int(os.environ.get("HEAVY_DOWNLOADS", "1"))
     HEAVY_DOWNLOAD_WAIT = int(os.environ.get("HEAVY_DOWNLOAD_WAIT", "20"))

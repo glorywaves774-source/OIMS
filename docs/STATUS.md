@@ -193,9 +193,19 @@ console errors.
 Same chart style as the reports (validated colours, values on bars, hover and keyboard tips, every other month label
 when there are many). Counting is done in the database. Record names in charts are never translated.
 
+## Help assistant ✅ complete (0.9.4-assistant)
+
+| Area | Result |
+|---|---|
+| Knowledge | A help guide in English and French (25 topics), with the links each topic may offer and who does the job |
+| Answers | The best-matching topics; with an AI key the answer is phrased by Anthropic's API from those topics only, in the person's language, naming the right role when the task is someone else's job; without a key, straight from the guide |
+| Links | Built by the app, only for pages the person's role can open (workspace or Kayron console) |
+| Privacy | Phone numbers, emails and ID/account numbers removed before sending; no records, names or organization details sent; questions not stored |
+| Safety | Signed-in only, CSRF token, rate limits; works in read-only workspaces (changes nothing) |
+| Phones | Round button above the tab bar; half-screen window just above it; compact header; suggested questions in one swipeable row; small privacy note; keyboard not opened on its own; while typing it fills the space above the keyboard and hides the suggestions and note |
+
 ## Not included (possible next steps)
 
-- **Help assistant** (chatbot).
 - Offline data collection on phones; KoBo/ODK import.
 - Scheduled report emails; a custom report builder.
 

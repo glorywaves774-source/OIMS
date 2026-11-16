@@ -35,6 +35,8 @@ envVarGroups:
         sync: false
       - key: PAYSTACK_SECRET_KEY       # optional: online card / mobile money payments for subscriptions
         sync: false
+      - key: HELP_AI_API_KEY           # optional: an Anthropic API key so the help assistant phrases answers
+        sync: false
 
 services:
   - type: web
