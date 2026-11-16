@@ -27,7 +27,8 @@
   <div class="panel-header"><h2>Agenda</h2></div>
   {% if events %}{% for day, items in events|groupby('date') %}
     <div class="agenda-day{% if day == today %} text-primary{% endif %}">{{ day.strftime('%A %d %B') }}</div>
-    <ul class="list-plain mb-0">{% for e in items %}<li class="py-1"><a class="ev ev-{{ e.kind }} d-inline-block" href="{{ e.url }}" translate="no">{% if e.time %}{{ e.time }} · {% endif %}{{ e.title }}</a></li>{% endfor %}</ul>
+    <ul class="list-plain mb-0">{% for e in items[:8] %}<li class="py-1"><a class="ev ev-{{ e.kind }} d-inline-block" href="{{ e.url }}" translate="no">{% if e.time %}{{ e.time }} · {% endif %}{{ e.title }}</a></li>{% endfor %}
+      {% if items|length > 8 %}<li class="py-1 small text-muted">and {{ items|length - 8 }} more — see <a href="{{ url_for('tasks.index') }}">Tasks</a></li>{% endif %}</ul>
   {% endfor %}{% else %}<p class="text-muted mb-0">Nothing scheduled this month.</p>{% endif %}
 </section>
 {% endblock %}

@@ -3,15 +3,19 @@ from decimal import Decimal
 
 from flask import abort, render_template
 from flask_login import current_user
+from sqlalchemy import or_, select
+from sqlalchemy.orm import selectinload
 
 from app.blueprints.tenant import workspace_blueprint
 from app.extensions import db
 from app.models import Expenditure, PurchaseOrder, PurchaseRequest
-from app.procurement_logic import po_figures, read_only
+from app.procurement_logic import po_figures_many, read_only
 from app.programme_logic import can_do, can_see, finance_summary, visible_owner_stmt
 from app.rbac import can
 
 bp = workspace_blueprint("finance", __name__, "/finance")
+
+QUEUE_LIMIT = 50
 
 
 @bp.route("/")
@@ -30,21 +34,34 @@ def overview():
                                                                    "available")})
         for k in t:
             t[k] += f[k]
+    # Work queues. Each shows the oldest QUEUE_LIMIT items and how many there are in all; the full lists are
+    # on each programme's or project's finance page.
     approvals, orders, payable = [], [], []
+    counts = {"approvals": 0, "orders": 0, "payable": 0}
+    me = current_user.id
     for o in owners:
         if not read_only() and can_do("finance.approve", o):
-            approvals += [(o, e) for e in Expenditure.query.filter_by(**{o.fk: o.id}, status="pending")
-                          .order_by(Expenditure.spent_on) if e.recorded_by_id != current_user.id]
-            reqs = PurchaseRequest.query.filter_by(**{o.fk: o.id}).with_entities(PurchaseRequest.id)
-            orders += [(o, po) for po in PurchaseOrder.query.filter(PurchaseOrder.request_id.in_(reqs),
-                                                                     PurchaseOrder.status == "draft")
-                       if po.created_by_id != current_user.id]
+            q = Expenditure.query.filter_by(**{o.fk: o.id}, status="pending").filter(
+                or_(Expenditure.recorded_by_id.is_(None), Expenditure.recorded_by_id != me))
+            counts["approvals"] += q.count()
+            if len(approvals) < QUEUE_LIMIT:
+                approvals += [(o, e) for e in q.order_by(Expenditure.spent_on, Expenditure.id)
+                              .limit(QUEUE_LIMIT - len(approvals))]
+            reqs = select(PurchaseRequest.id).where(getattr(PurchaseRequest, o.fk) == o.id)
+            q = PurchaseOrder.query.filter(PurchaseOrder.request_id.in_(reqs), PurchaseOrder.status == "draft",
+                                           or_(PurchaseOrder.created_by_id.is_(None), PurchaseOrder.created_by_id != me))
+            counts["orders"] += q.count()
+            if len(orders) < QUEUE_LIMIT:
+                orders += [(o, po) for po in q.options(selectinload(PurchaseOrder.items))
+                           .order_by(PurchaseOrder.id).limit(QUEUE_LIMIT - len(orders))]
         if can_do("finance.record", o):
-            reqs = PurchaseRequest.query.filter_by(**{o.fk: o.id}).with_entities(PurchaseRequest.id)
-            for po in PurchaseOrder.query.filter(PurchaseOrder.request_id.in_(reqs),
-                                                 PurchaseOrder.status.in_(("partially_received", "received"))):
-                fig = po_figures(po)
-                if fig["payable"] > 0:
-                    payable.append((o, po, fig))
+            reqs = select(PurchaseRequest.id).where(getattr(PurchaseRequest, o.fk) == o.id)
+            pos = PurchaseOrder.query.filter(PurchaseOrder.request_id.in_(reqs), PurchaseOrder.status.in_(
+                ("partially_received", "received"))).options(selectinload(PurchaseOrder.items)) \
+                .order_by(PurchaseOrder.id).all()
+            figs = po_figures_many(pos)
+            due = [(o, po, figs[po.id]) for po in pos if figs[po.id]["payable"] > 0]
+            counts["payable"] += len(due)
+            payable += due[:max(0, QUEUE_LIMIT - len(payable))]
     return render_template("finance/overview.html", rows=rows, totals=totals, approvals=approvals, orders=orders,
-                           payable=payable)
+                           payable=payable, counts=counts, limit=QUEUE_LIMIT)

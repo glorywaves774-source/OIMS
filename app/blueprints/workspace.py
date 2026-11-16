@@ -197,7 +197,7 @@ def user_action(membership_id, action):
             audit.record("user.suspended", f"{m.user.email} suspended", entity=m)
     elif action == "reset-2fa":
         if m.user.is_platform_staff:
-            abort(403)  # HOLIDO staff are managed by HOLIDO
+            abort(403)  # Kayron staff are managed by Kayron
         m.user.reset_two_factor()
         audit.record("user.2fa_reset", f"Two-step sign-in reset for {m.user.email}", entity=m)
     elif action == "reactivate":
@@ -349,7 +349,7 @@ def audit_log():
     return render_template("workspace/audit.html", page=page, action=action)
 
 
-# --- HOLIDO support access ------------------------------------------------------------------
+# --- Kayron support access ------------------------------------------------------------------
 
 @bp.route("/support")
 @require_permission("support.view")

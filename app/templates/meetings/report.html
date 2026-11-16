@@ -21,6 +21,6 @@
   {% if actions %}<table><thead><tr><th>Action</th><th>Responsible</th><th>Deadline</th><th>Status</th></tr></thead><tbody>
     {% for t in actions %}<tr><td translate="no">{{ t.title }}</td><td translate="no">{{ t.assigned_to.full_name if t.assigned_to else '—' }}</td><td>{{ dt(t.due_date, '%d %b %Y') }}</td><td>{{ t.status|replace('_', ' ') }}</td></tr>{% endfor %}
   </tbody></table>{% else %}<p>None recorded.</p>{% endif %}
-  <p class="small mt-4 mb-0">Generated from OIMS on {{ ldt(now_utc(), '%d %b %Y %H:%M') }}.</p>
+  <p class="small mt-4 mb-0">Generated from ZENTAVA OIMS on {{ ldt(now_utc(), '%d %b %Y %H:%M') }}.</p>
 </article>
 {% endblock %}

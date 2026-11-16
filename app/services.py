@@ -81,7 +81,7 @@ def _start_subscription(org, plan_id):
 
 
 def register_organization(form):
-    """Public self-registration: organization and its administrator await HOLIDO approval."""
+    """Public self-registration: organization and its administrator await Kayron approval."""
     admin_email = form.admin_email.data
     user = User.query.filter_by(email=admin_email).first()
     if user is not None:
@@ -103,7 +103,7 @@ def register_organization(form):
 
 
 def platform_create_organization(form, actor):
-    """HOLIDO creates and activates an organization; returns (org, admin_user, set_password_link_or_None)."""
+    """Kayron creates and activates an organization; returns (org, admin_user, set_password_link_or_None)."""
     org = Organization(status=Organization.PENDING, slug=unique_slug(form.name.data))
     apply_org_fields(org, form)
     db.session.add(org)
@@ -116,7 +116,7 @@ def platform_create_organization(form, actor):
     db.session.add(Membership(organization_id=org.id, user_id=user.id, status=Membership.PENDING,
                               job_title="Organization Administrator"))
     _start_subscription(org, form.plan_id.data)
-    audit.record("organization.created", f"{org.name} created by HOLIDO", entity=org, organization_id=org.id, actor=actor)
+    audit.record("organization.created", f"{org.name} created by Kayron", entity=org, organization_id=org.id, actor=actor)
     link = approve_organization(org, actor)
     return org, user, link
 
@@ -168,13 +168,13 @@ def approve_organization(org, actor):
         m.role_id = admin_role.id
         if m.user.has_password:
             m.status = Membership.ACTIVE
-            send_email(m.user.email, f"{org.name} is approved on OIMS",
+            send_email(m.user.email, f"{org.name} is approved on ZENTAVA OIMS",
                        f"Hello {m.user.full_name},\n\n{org.name} has been approved. Sign in at "
                        f"{external_url('auth.login')}\n")
         else:
             m.status = Membership.INVITED
             link = external_url("auth.reset_password", token=make_password_token(m.user))
-            sent = send_email(m.user.email, f"Set up your OIMS account for {org.name}",
+            sent = send_email(m.user.email, f"Set up your ZENTAVA OIMS account for {org.name}",
                               f"Hello {m.user.full_name},\n\nSet your password to access {org.name}: {link}\n")
             if not sent:
                 link_to_show = link
@@ -221,12 +221,12 @@ def invite_user(org, form, actor):
     db.session.flush()
     link_to_show = None
     if user.has_password:
-        send_email(user.email, f"You were added to {org.name} on OIMS",
+        send_email(user.email, f"You were added to {org.name} on ZENTAVA OIMS",
                    f"Hello {user.full_name},\n\n{actor.full_name} added you to {org.name}. "
                    f"Sign in at {external_url('auth.login')}\n")
     else:
         link = external_url("auth.reset_password", token=make_password_token(user))
-        if not send_email(user.email, f"Your OIMS invitation to {org.name}",
+        if not send_email(user.email, f"Your ZENTAVA OIMS invitation to {org.name}",
                           f"Hello {user.full_name},\n\n{actor.full_name} invited you to {org.name}. "
                           f"Set your password: {link}\n\nThe link expires in 24 hours."):
             link_to_show = link

@@ -1,9 +1,9 @@
-# OIMS architecture
+# ZENTAVA architecture
 
 ## Hierarchy
 
 ```
-HOLIDO platform (console at /platform)
+Kayron platform (console at /platform)
 └── Organizations / tenants (workspace at /o/<slug>)
     └── Departments → Programmes → Projects → Activities → Tasks   (Phases 2–4)
         (projects may also exist without a programme)
@@ -14,7 +14,7 @@ Platform staff never enter a workspace except through support access.
 
 ## Identity model
 
-- **User** — one global account per email. `platform_role` is set only for HOLIDO staff.
+- **User** — one global account per email. `platform_role` is set only for Kayron staff.
 - **Organization** — a tenant. Status: `pending → active ⇄ suspended / deactivated`, or `rejected`.
 - **Membership** — links a user to an organization with exactly one **Role**. Status: `pending`
   (registration awaiting approval), `invited` (no password yet), `active`, `suspended`.
@@ -40,7 +40,7 @@ A person's department comes from their staff record (`StaffProfile.user_id`). Ex
   (staff file → HR records access; task, meeting, letter → whoever can see that record).
 - **Correspondence**: confidential items are visible only to the people handling them and to
   `correspondence.manage`.
-- **Messages** are visible only to the participants — not to administrators or HOLIDO support.
+- **Messages** are visible only to the participants — not to administrators or Kayron support.
 - **HR records** (contracts, emergency contacts, leave, attendance, training, reviews, exit) need
   `staff.records`; everyone with `staff.view` sees only the directory entry. People always see their own.
 
@@ -83,11 +83,11 @@ they duplicate one as a custom role to adjust it.
 5. Add tests, including a cross-tenant access test.
 6. Deploy, then run `oims sync-roles`.
 
-## HOLIDO support access
+## Kayron support access
 
 1. Platform staff request access from the organization page, giving a reason and duration (30 min – 2 h).
 2. If the organization requires approval (default), its administrators approve or deny in
-   **HOLIDO support access**. Organizations may choose to waive approval in their settings.
+   **Kayron support access**. Organizations may choose to waive approval in their settings.
 3. The requester enters the workspace with **read-only** permissions; any non-GET request is refused.
 4. Every page opened is written to the organization's audit log, flagged as support access.
 5. Access ends at expiry, when the requester ends it, or when the organization revokes it.

@@ -1,7 +1,7 @@
-"""SaaS billing (Phase 8): invoices, payments and HOLIDO's billing settings.
+"""SaaS billing (Phase 8): invoices, payments and Kayron's billing settings.
 
 Invoices belong to an organization (so its administrators can see them in their workspace) but are
-issued and numbered by HOLIDO. Payments arrive online (Paystack) or are recorded by HOLIDO staff for
+issued and numbered by Kayron. Payments arrive online (Paystack) or are recorded by Kayron staff for
 bank transfers and mobile money.
 """
 from decimal import Decimal
@@ -16,7 +16,7 @@ class BillingSettings(TimestampMixin, db.Model):
     __tablename__ = "billing_settings"
 
     id = db.Column(db.Integer, primary_key=True)
-    company_name = db.Column(db.String(200), nullable=False, default="HOLIDO — Holistic Development Organization")
+    company_name = db.Column(db.String(200), nullable=False, default="Kayron Global Tech Services")
     company_address = db.Column(db.Text)
     company_tax_id = db.Column(db.String(60))
     company_email = db.Column(db.String(255))
@@ -33,7 +33,7 @@ class BillingSettings(TimestampMixin, db.Model):
         """The settings row. Without ``create`` a missing row gives unsaved defaults (no write on page views)."""
         s = db.session.get(cls, 1)
         if s is None:
-            s = cls(id=1, company_name="HOLIDO — Holistic Development Organization", tax_rate=0,
+            s = cls(id=1, company_name="Kayron Global Tech Services", tax_rate=0,
                     invoice_days_before=7, grace_days=14, next_invoice_number=1)
             if create:
                 db.session.add(s)
@@ -87,7 +87,7 @@ class Payment(TenantMixin, TimestampMixin, db.Model):
     __tablename__ = "payments"
 
     METHODS = {"paystack": "Online (card or mobile money)", "bank_transfer": "Bank transfer",
-               "mobile_money": "Mobile money", "cheque": "Cheque", "cash": "Cash", "waiver": "Waived by HOLIDO"}
+               "mobile_money": "Mobile money", "cheque": "Cheque", "cash": "Cash", "waiver": "Waived by Kayron"}
     STATUSES = ("pending", "succeeded", "failed")
 
     id = db.Column(db.Integer, primary_key=True)

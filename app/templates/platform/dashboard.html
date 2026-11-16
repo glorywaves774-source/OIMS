@@ -1,7 +1,7 @@
 {% extends "layout_app.html" %}
 {% from "macros.html" import status, dt, audit_rows %}
 {% block title %}Platform dashboard{% endblock %}
-{% block page_title %}HOLIDO platform{% endblock %}
+{% block page_title %}Kayron platform{% endblock %}
 {% block content %}
 <div class="page-head"><div><h2 class="h4 mb-0">Welcome, <span translate="no">{{ current_user.full_name.split()[0] }}</span></h2><p>{{ current_user.platform_role_label }} · live figures from the platform database</p></div>
   {% if current_user.platform_role in ('super_admin', 'platform_admin') %}<a class="btn btn-primary" href="{{ url_for('platform.organization_new') }}"><i class="bi bi-plus-lg me-1"></i>New organization</a>{% endif %}</div>

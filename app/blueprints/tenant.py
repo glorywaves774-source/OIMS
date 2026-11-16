@@ -40,7 +40,7 @@ def _enter_tenant():
     if org is None:
         abort(404)
 
-    # 1. HOLIDO support access: read-only, time-limited, audited.
+    # 1. Kayron support access: read-only, time-limited, audited.
     req_id = session.get("support_request_id")
     if req_id and current_user.is_platform_staff:
         req = db.session.get(SupportAccessRequest, req_id)
@@ -84,7 +84,7 @@ def _activate(org, membership, permissions):
 
 
 def _audit_support_views(response):
-    """Every page HOLIDO support opens inside a tenant workspace is recorded."""
+    """Every page Kayron support opens inside a tenant workspace is recorded."""
     req = g.get("support_request")
     if req is not None and response.status_code < 400:
         audit.record("support.viewed", f"Viewed {request.path}", entity=req, organization_id=req.organization_id)

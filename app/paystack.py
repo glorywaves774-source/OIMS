@@ -14,6 +14,9 @@ from decimal import Decimal
 from flask import current_app
 
 
+CHECKOUT_ORIGIN = "https://checkout.paystack.com"   # where Paystack's payment pages live
+
+
 class PaystackError(Exception):
     pass
 
@@ -27,6 +30,8 @@ def _call(method, path, payload=None):
     if not key:
         raise PaystackError("Online payments are not set up.")
     url = current_app.config.get("PAYSTACK_API_BASE", "https://api.paystack.co").rstrip("/") + path
+    if not url.startswith("https://"):
+        raise PaystackError("The Paystack address must start with https://.")
     data = json.dumps(payload).encode() if payload is not None else None
     req = urllib.request.Request(url, data=data, method=method, headers={
         "Authorization": f"Bearer {key}", "Content-Type": "application/json", "Accept": "application/json"})
@@ -56,6 +61,8 @@ def initialize(email, amount, currency, reference, callback_url, metadata):
         "callback_url": callback_url, "metadata": metadata})
     if not data.get("authorization_url"):
         raise PaystackError("Paystack did not return a payment page.")
+    if not data["authorization_url"].startswith(CHECKOUT_ORIGIN + "/"):
+        raise PaystackError("Paystack returned an unexpected payment address.")
     return data["authorization_url"]
 
 

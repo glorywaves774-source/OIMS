@@ -4,7 +4,7 @@
 {% block page_title %}Dashboard{% endblock %}
 {% block content %}
 <div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ tenant.name }}</h2>
-  <p>{% if g.membership %}Hello, <span translate="no">{{ current_user.full_name.split()[0] }}</span> · {{ g.membership.role.name if g.membership.role else 'member' }}{% else %}HOLIDO support view{% endif %}
+  <p>{% if g.membership %}Hello, <span translate="no">{{ current_user.full_name.split()[0] }}</span> · {{ g.membership.role.name if g.membership.role else 'member' }}{% else %}Kayron support view{% endif %}
   {% if tenant.subscription %} · {{ tenant.subscription.plan.name }} plan ({{ tenant.subscription.status|replace('_', ' ') }}){% endif %}</p></div>
   {% if not support_request %}<div class="toolbar">
     {% if can('tasks.create') %}<a class="btn btn-primary" href="{{ url_for('tasks.new') }}"><i class="bi bi-plus-lg me-1"></i>Task</a>{% endif %}
@@ -15,7 +15,7 @@
 
 {% if pending_support %}
 <div class="alert alert-warning d-flex flex-wrap gap-2 align-items-center justify-content-between">
-  <span><i class="bi bi-life-preserver me-1"></i>HOLIDO support has asked for access to this workspace ({{ pending_support|length }} pending).</span>
+  <span><i class="bi bi-life-preserver me-1"></i>Kayron support has asked for access to this workspace ({{ pending_support|length }} pending).</span>
   <a class="btn btn-sm btn-primary" href="{{ url_for('workspace.support') }}">Review</a></div>
 {% endif %}
 {% if pending_approvals %}

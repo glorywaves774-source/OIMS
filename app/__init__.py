@@ -1,4 +1,4 @@
-"""OIMS — Office Information Management System (HOLIDO). Application factory."""
+"""ZENTAVA OIMS (Kayron). Application factory. Internal package and CLI names stay "oims"."""
 import logging
 import os
 
@@ -9,7 +9,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from app.config import CONFIGS
 from app.extensions import csrf, db, limiter, login_manager, migrate
 
-__version__ = "0.8.0-phase8"
+__version__ = "0.9.0-phase9"
 
 
 def create_app(config_name=None, overrides=None):
@@ -19,8 +19,10 @@ def create_app(config_name=None, overrides=None):
     if overrides:
         app.config.update(overrides)
     app.config["OIMS_VERSION"] = __version__
+    app.config["OIMS_CONFIG_NAME"] = config_name
 
     _check_production_config(app, config_name)
+    _tune_database(app)
     logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"),
                         format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -95,14 +97,42 @@ def create_app(config_name=None, overrides=None):
     return app
 
 
+def _tune_database(app):
+    """PostgreSQL: plan every query for its actual values.
+
+    After a few repeats PostgreSQL may switch a prepared query to a generic plan; for lists of ids that plan
+    can be many times slower (measured: 0.2 s instead of 0.007 s). Planning each time costs well under a
+    millisecond."""
+    uri = app.config.get("SQLALCHEMY_DATABASE_URI") or ""
+    if uri.startswith("postgresql"):
+        opts = dict(app.config.get("SQLALCHEMY_ENGINE_OPTIONS") or {})
+        args = dict(opts.get("connect_args") or {})
+        args["options"] = (args.get("options", "") + " -c plan_cache_mode=force_custom_plan").strip()
+        opts["connect_args"] = args
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = opts
+
+
+WEAK_SECRETS = {"dev-only-not-secret", "test-secret", "change-me", "changeme", "secret"}
+
+
 def _check_production_config(app, config_name):
     if config_name != "production":
+        # A hosting platform is always production: never run the development or test settings there.
+        if os.environ.get("RENDER") and not app.config.get("TESTING_ON_HOST"):
+            raise RuntimeError("OIMS_ENV must be 'production' on the server")
         return
     missing = [k for k in ("SECRET_KEY", "SQLALCHEMY_DATABASE_URI") if not app.config.get(k)]
     if missing:
         raise RuntimeError(f"Missing required environment configuration: {', '.join(missing)}")
-    if len(app.config["SECRET_KEY"]) < 32:
-        raise RuntimeError("SECRET_KEY must be at least 32 characters long")
+    if len(app.config["SECRET_KEY"]) < 32 or app.config["SECRET_KEY"].lower() in WEAK_SECRETS:
+        raise RuntimeError("SECRET_KEY must be a random value of at least 32 characters")
+    if not app.config.get("SESSION_COOKIE_SECURE"):
+        raise RuntimeError("SESSION_COOKIE_SECURE must stay on in production (sign-in cookies only over https)")
+    base = app.config.get("PUBLIC_BASE_URL")
+    if base and not base.startswith("https://"):
+        raise RuntimeError("PUBLIC_BASE_URL must start with https://")
+    if not (app.config.get("PAYSTACK_API_BASE") or "").startswith("https://"):
+        raise RuntimeError("PAYSTACK_API_BASE must start with https://")
     backend = app.config["STORAGE_BACKEND"]
     if backend == "s3" and not app.config.get("S3_BUCKET"):
         raise RuntimeError("STORAGE_BACKEND=s3 requires S3_BUCKET")
@@ -154,6 +184,8 @@ def _register_hooks(app):
             "file_icon": _file_icon,
             "app_name": app.config["APP_NAME"],
             "app_full_name": app.config["APP_FULL_NAME"],
+            "brand_name": app.config["BRAND_NAME"],
+            "product_name": app.config["PRODUCT_NAME"],
             "platform_owner": app.config["PLATFORM_OWNER"],
             "app_version": app.config["OIMS_VERSION"],
             "tenant": g.get("tenant"),

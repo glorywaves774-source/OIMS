@@ -53,7 +53,7 @@ class Subscription(TimestampMixin, db.Model):
 
 
 class SupportAccessRequest(TenantMixin, TimestampMixin, db.Model):
-    """Time-limited, read-only, audited access by HOLIDO staff to a tenant workspace."""
+    """Time-limited, read-only, audited access by Kayron staff to a tenant workspace."""
 
     __tablename__ = "support_access_requests"
 

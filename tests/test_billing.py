@@ -77,9 +77,9 @@ def test_invoice_renewal_grace_and_read_only_lock(client, app, env, db):
     assert run(app, T)["invoices"] == 1                                # 7 days before the period ends
     assert run(app, T)["invoices"] == 0                                # never twice
     inv = Invoice.query.one()
-    assert inv.number == f"OIMS-{T.year}-00001" and inv.total == Decimal("115.00") and inv.tax_amount == Decimal("15.00")
+    assert inv.number == f"ZTV-{T.year}-00001" and inv.total == Decimal("115.00") and inv.tax_amount == Decimal("15.00")
     assert inv.period_start == T + timedelta(days=7) and inv.due_on == T + timedelta(days=7)
-    assert inv.bill_to["name"] == "Hope Trust" and inv.issuer["name"].startswith("HOLIDO")
+    assert inv.bill_to["name"] == "Hope Trust" and inv.issuer["name"] == "Kayron Global Tech Services"
     assert Notification.query.filter_by(user_id=env["admin"].id, kind="billing").count() == 1
     as_(client, "admin")
     html = client.get(W(env, "/billing/")).data.decode()
@@ -257,7 +257,11 @@ def test_online_payment(client, app, env, db, paystack_on):
     run(app, T)
     inv = Invoice.query.one()
     as_(client, "admin")
-    assert "Pay online" in client.get(W(env, "/billing/")).data.decode()
+    page = client.get(W(env, "/billing/"))
+    assert "Pay online" in page.data.decode()
+    # Browsers apply form-action to the redirect, so the page must allow Paystack's checkout (and nothing else)
+    assert "form-action 'self' https://checkout.paystack.com;" in page.headers["Content-Security-Policy"]
+    assert "form-action 'self';" in client.get(W(env, "/")).headers["Content-Security-Policy"]
     r = client.post(W(env, f"/billing/invoices/{inv.id}/pay"), data={})
     assert r.status_code == 302 and r.headers["Location"] == "https://checkout.paystack.com/abc"
     call = paystack_on["init"]
@@ -359,3 +363,20 @@ def test_manual_arrangements_are_not_invoiced(client, app, env, db):
     sub.current_period_end = None
     db.session.commit()
     assert run(app, T)["invoices"] == 0 and Invoice.query.count() == 0
+
+
+def test_paystack_addresses_are_checked(app, monkeypatch):
+    """Only https is used for the API, and only Paystack's checkout is accepted as a payment page."""
+    from app import paystack
+    with app.app_context():
+        app.config["PAYSTACK_SECRET_KEY"] = "sk_test_secret"
+        app.config["PAYSTACK_API_BASE"] = "file:///etc"
+        with pytest.raises(paystack.PaystackError):
+            paystack._call("GET", "/x")
+        app.config["PAYSTACK_API_BASE"] = "https://api.paystack.co"
+        monkeypatch.setattr(paystack, "_call", lambda *a, **k: {"authorization_url": "https://evil.example/pay"})
+        with pytest.raises(paystack.PaystackError):
+            paystack.initialize("a@b.org", 1, "GHS", "r1", "https://x/cb", {})
+        monkeypatch.setattr(paystack, "_call", lambda *a, **k: {"authorization_url": "https://checkout.paystack.com/ok"})
+        assert paystack.initialize("a@b.org", 1, "GHS", "r2", "https://x/cb", {}) == "https://checkout.paystack.com/ok"
+        app.config["PAYSTACK_SECRET_KEY"] = None

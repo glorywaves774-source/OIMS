@@ -6,6 +6,7 @@ from datetime import date
 from flask import abort, flash, g, redirect, render_template, request, send_file, url_for
 from flask_login import current_user
 from sqlalchemy import func, or_, select
+from sqlalchemy.orm import selectinload
 
 from app import audit
 from app.blueprints.tenant import page_arg, workspace_blueprint
@@ -16,12 +17,13 @@ from app.forms_meal import (BeneficiaryForm, ConsentForm, EndEnrollmentForm, Enr
                             MergeForm, ServiceForm, WithdrawForm)
 from app.meal_logic import (can_manage_beneficiary, can_register_for, can_see_beneficiary, can_see_sensitive,
                             can_update_beneficiary, enrollable_owners, possible_duplicates,
-                            visible_beneficiaries_stmt)
+                            visible_beneficiaries_stmt, visible_beneficiaries_where)
 from app.models import (Activity, ActivityAttendance, Beneficiary, ConsentRecord, Enrollment, Feedback,
                         FormSubmission, Household, Location, Programme, Project, ServiceRecord, utcnow)
 from app.models.meal import AGE_BANDS, SEXES
 from app.notify import next_reference
 from app.rbac import can, require_permission
+from app.security import heavy_download
 from app.tenancy import tenant_get_or_404
 
 bp = workspace_blueprint("beneficiaries", __name__, "/beneficiaries")
@@ -505,40 +507,59 @@ def anonymize(bid):
 
 @bp.route("/export.xlsx")
 @require_permission("beneficiaries.export")
+@heavy_download
 def export():
     import openpyxl
+    from openpyxl.cell import WriteOnlyCell
     from openpyxl.styles import Font
+    from openpyxl.utils import get_column_letter
     from app.analytics_export import safe_row
     personal = can("beneficiaries.sensitive") and request.args.get("personal") == "1"
-    stmt = visible_beneficiaries_stmt().order_by(Beneficiary.code)
-    rows = db.session.execute(stmt).scalars().all()
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Beneficiaries"
-    head = ["Code", "First name", "Surname", "Sex", "Age group", "Disability", "Location", "Community", "Household",
-            "Status", "Consent", "Enrolled in", "Registered on"]
+    ids = db.session.execute(visible_beneficiaries_stmt().with_only_columns(Beneficiary.id)
+                             .order_by(Beneficiary.code)).scalars().all()
+    if personal:   # who of these the person may see personal details for: one query for all
+        allowed = set(db.session.execute(select(Beneficiary.id).where(
+            *visible_beneficiaries_where("beneficiaries.sensitive"))).scalars())
+        ids = [i for i in ids if i in allowed]
+    # Write-only workbook: rows go straight to a temporary file instead of being kept in memory.
+    wb = openpyxl.Workbook(write_only=True)
+    ws = wb.create_sheet("Beneficiaries")
+    cols = [("Code", 14), ("First name", 18), ("Surname", 18), ("Sex", 10), ("Age group", 10), ("Disability", 10),
+            ("Location", 28), ("Community", 18), ("Household", 14), ("Status", 10), ("Consent", 10),
+            ("Enrolled in", 24), ("Registered on", 13)]
     if personal:
-        head += ["Date of birth", "Phone", "ID type", "ID number", "Vulnerability"]
-    ws.append(head)
-    for c in ws[1]:
-        c.font = Font(bold=True)
-    for b in rows:
-        if personal and not can_see_sensitive(b):
-            continue
-        row = [b.code, b.first_name, b.last_name, SEXES.get(b.sex), b.age_band,
-               {True: "Yes", False: "No"}.get(b.disability, ""), b.location.label if b.location else "",
-               b.community or "", b.household.code if b.household else "", b.status, b.consent_state,
-               ", ".join(e.owner.code for e in b.enrollments), b.registered_on.isoformat()]
-        if personal:
-            row += [b.date_of_birth.isoformat() if b.date_of_birth else "", decrypt_text(b.phone_enc) or "",
-                    b.id_type or "", decrypt_text(b.id_number_enc) or "", ", ".join(b.vulnerabilities or [])]
-        ws.append(safe_row(row))
-    for col in ws.columns:
-        ws.column_dimensions[col[0].column_letter].width = max(10, min(40, max(len(str(c.value or "")) for c in col) + 2))
+        cols += [("Date of birth", 13), ("Phone", 16), ("ID type", 14), ("ID number", 18), ("Vulnerability", 28)]
+    for i, (_, width) in enumerate(cols):   # widths must be set before the first row in write-only mode
+        ws.column_dimensions[get_column_letter(i + 1)].width = width
+    bold = []
+    for h, _ in cols:
+        cell = WriteOnlyCell(ws, value=h)
+        cell.font = Font(bold=True)
+        bold.append(cell)
+    ws.append(bold)
+    # People are read and written 500 at a time, so memory stays the same however long the list is.
+    by_code = {i: n for n, i in enumerate(ids)}
+    for start in range(0, len(ids), 500):
+        batch = db.session.execute(select(Beneficiary).where(Beneficiary.id.in_(ids[start:start + 500])).options(
+            selectinload(Beneficiary.consents), selectinload(Beneficiary.household),
+            selectinload(Beneficiary.location),
+            selectinload(Beneficiary.enrollments).selectinload(Enrollment.programme),
+            selectinload(Beneficiary.enrollments).selectinload(Enrollment.project))).scalars().all()
+        for b in sorted(batch, key=lambda b: by_code[b.id]):
+            row = [b.code, b.first_name, b.last_name, SEXES.get(b.sex), b.age_band,
+                   {True: "Yes", False: "No"}.get(b.disability, ""), b.location.label if b.location else "",
+                   b.community or "", b.household.code if b.household else "", b.status, b.consent_state,
+                   ", ".join(e.owner.code for e in b.enrollments), b.registered_on.isoformat()]
+            if personal:
+                row += [b.date_of_birth.isoformat() if b.date_of_birth else "", decrypt_text(b.phone_enc) or "",
+                        b.id_type or "", decrypt_text(b.id_number_enc) or "", ", ".join(b.vulnerabilities or [])]
+            ws.append(safe_row(row))
+        del batch
+    written = len(ids)
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)
-    audit.record("beneficiary.exported", f"Beneficiary list exported ({len(rows)} rows"
+    audit.record("beneficiary.exported", f"Beneficiary list exported ({written} rows"
                  f"{', with personal details' if personal else ''})")
     db.session.commit()
     return send_file(buf, as_attachment=True, download_name=f"beneficiaries-{date.today()}.xlsx",

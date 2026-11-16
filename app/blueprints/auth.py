@@ -25,9 +25,9 @@ def _access_problem(user):
     if any(ms == Membership.ACTIVE and os_ == Organization.ACTIVE for ms, os_ in statuses):
         return None
     if any(os_ == Organization.PENDING for _, os_ in statuses):
-        return "Your organization's registration is awaiting approval by HOLIDO. You will be notified when it is approved."
+        return "Your organization's registration is awaiting approval by Kayron Global Tech Services. You will be notified when it is approved."
     if any(os_ == Organization.SUSPENDED for _, os_ in statuses):
-        return "Your organization's workspace is currently suspended. Please contact HOLIDO support."
+        return "Your organization's workspace is currently suspended. Please contact Kayron support."
     return "Your account does not currently have access to any active organization."
 
 
@@ -144,7 +144,7 @@ def forgot_password():
         user = User.query.filter_by(email=form.email.data).first()
         if user is not None and user.is_enabled:
             link = external_url("auth.reset_password", token=make_password_token(user))
-            send_email(user.email, "Reset your OIMS password",
+            send_email(user.email, "Reset your ZENTAVA OIMS password",
                        f"Hello {user.full_name},\n\nUse this link within 24 hours to set a new password:\n{link}\n\n"
                        "If you did not ask for this, you can ignore this email.")
             audit.record("auth.password_reset_requested", "Password reset requested", entity=user, actor=user)

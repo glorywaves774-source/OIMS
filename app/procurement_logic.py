@@ -83,6 +83,28 @@ def po_figures(po):
             "payable": max(Decimal(0), received - paid - pending), "unpaid": total - paid}
 
 
+def po_figures_many(pos):
+    """po_figures for many orders at once: two queries in total instead of three per order.
+
+    The orders' items should already be loaded (selectinload) by the caller's query."""
+    ids = [po.id for po in pos]
+    paid = {}
+    for i in range(0, len(ids), 900):   # stay below database parameter limits
+        for po_id, status, amount in db.session.execute(
+                select(Expenditure.purchase_order_id, Expenditure.status, func.sum(Expenditure.amount))
+                .where(Expenditure.purchase_order_id.in_(ids[i:i + 900]), Expenditure.kind == "expenditure",
+                       Expenditure.status.in_(("approved", "pending")))
+                .group_by(Expenditure.purchase_order_id, Expenditure.status)):
+            paid[(po_id, status)] = Decimal(amount or 0)
+    out = {}
+    for po in pos:
+        total, received = po.total, po.received_value
+        p, pend = paid.get((po.id, "approved"), Decimal(0)), paid.get((po.id, "pending"), Decimal(0))
+        out[po.id] = {"total": total, "received": received, "paid": p, "pending": pend,
+                      "payable": max(Decimal(0), received - p - pend), "unpaid": total - p}
+    return out
+
+
 def open_orders_for(owner):
     """Orders of a programme/project that are approved but not yet closed (for the closure checklist)."""
     reqs = select(PurchaseRequest.id).where(getattr(PurchaseRequest, owner.fk) == owner.id)

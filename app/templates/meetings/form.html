@@ -17,7 +17,7 @@
       <div class="col-12">{{ field(form.agenda, attrs={'rows': 5}, help='One item per line.') }}</div>
     </div>
   </section>
-  <section class="panel">{{ checklist(form.participants, help='Each person gets an invitation in OIMS (and by email if they allow it). You are included automatically.') }}</section>
+  <section class="panel">{{ checklist(form.participants, help='Each person gets an invitation in ZENTAVA OIMS (and by email if they allow it). You are included automatically.') }}</section>
   <div class="toolbar mb-4"><button class="btn btn-primary" type="submit" data-loading>{{ 'Save changes' if meeting else 'Schedule and invite' }}</button>
     <a class="btn btn-light" href="{{ url_for('meetings.detail', meeting_id=meeting.id) if meeting else url_for('meetings.index') }}">Cancel</a></div>
 </form>

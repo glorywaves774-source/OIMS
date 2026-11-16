@@ -9,7 +9,7 @@ Lifecycle of a paid plan
   cancel at period end → cancelled when the period ends (read-only)
 
 Free plans are never invoiced. A subscription with no period end and no trial end is on a manual
-arrangement with HOLIDO and is skipped by the automatic run.
+arrangement with Kayron and is skipped by the automatic run.
 """
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import ROUND_HALF_UP, Decimal
@@ -74,7 +74,7 @@ def _next_number(today):
     n = s.next_invoice_number
     s.next_invoice_number = n + 1
     db.session.flush()
-    return f"OIMS-{today.year}-{n:05d}"
+    return f"ZTV-{today.year}-{n:05d}"
 
 
 def issue_invoice(sub, start, plan=None, cycle=None, today=None, due_on=None, note=None):
@@ -88,7 +88,7 @@ def issue_invoice(sub, start, plan=None, cycle=None, today=None, due_on=None, no
     subtotal = price(plan, cycle).quantize(CENT)
     rate = Decimal(s.tax_rate or 0) if s.tax_label else Decimal(0)
     tax = (subtotal * rate / 100).quantize(CENT, ROUND_HALF_UP)
-    desc = (f"OIMS {plan.name} plan, {'yearly' if cycle == 'annual' else 'monthly'} subscription: "
+    desc = (f"ZENTAVA OIMS {plan.name} plan, {'yearly' if cycle == 'annual' else 'monthly'} subscription: "
             f"{start:%d %b %Y} to {end - timedelta(days=1):%d %b %Y}")
     inv = Invoice(organization_id=org.id, number=_next_number(today), subscription_id=sub.id, plan_id=plan.id,
                   billing_cycle=cycle, period_start=start, period_end=end, issued_on=today,
@@ -133,7 +133,7 @@ def state(org):
                           "An administrator can pay the open invoice on the Billing page to restore full access.")
     elif sub.status == Subscription.CANCELLED:
         st.update(locked=True, level="danger",
-                  message="The subscription was cancelled, so the workspace is read-only. Contact HOLIDO to restart it.")
+                  message="The subscription was cancelled, so the workspace is read-only. Contact Kayron to restart it.")
     elif sub.status == Subscription.PAST_DUE:
         lock_on = (as_date(sub.current_period_end) or today) + timedelta(days=grace)
         st.update(level="warning",
@@ -230,7 +230,7 @@ def run(today=None):
                 sub.status = Subscription.CANCELLED
                 audit.record("billing.cancelled", "Subscription ended (cancelled at period end)", entity=sub,
                              organization_id=org.id)
-                notify(billing_admins(org), "billing", "Your OIMS subscription has ended",
+                notify(billing_admins(org), "billing", "Your ZENTAVA OIMS subscription has ended",
                        "The workspace is now read-only.", "billing.index", organization_id=org.id,
                        exclude_current=False, dedupe_key=f"sub-cancel-{sub.id}-{pe}", org_slug=org.slug)
                 totals["cancelled"] += 1
@@ -260,7 +260,7 @@ def run(today=None):
                 if sub.current_period_end is None or as_date(sub.current_period_end) < pe:
                     sub.current_period_end = to_dt(pe)
                 audit.record("billing.past_due", "Payment overdue", entity=sub, organization_id=org.id)
-                notify(billing_admins(org), "billing", "OIMS payment overdue",
+                notify(billing_admins(org), "billing", "ZENTAVA OIMS payment overdue",
                        f"Pay before {pe + timedelta(days=s.grace_days):%d %b %Y} to keep full access.",
                        "billing.index", organization_id=org.id, exclude_current=False,
                        dedupe_key=f"sub-pastdue-{sub.id}-{pe}", org_slug=org.slug)
@@ -269,7 +269,7 @@ def run(today=None):
                 sub.status = Subscription.EXPIRED
                 audit.record("billing.expired", "Unpaid after the grace period: workspace read-only", entity=sub,
                              organization_id=org.id)
-                notify(billing_admins(org), "billing", "OIMS workspace is now read-only",
+                notify(billing_admins(org), "billing", "ZENTAVA OIMS workspace is now read-only",
                        "Pay the open invoice on the Billing page to restore full access.", "billing.index",
                        organization_id=org.id, exclude_current=False, dedupe_key=f"sub-expired-{sub.id}-{pe}",
                        org_slug=org.slug)

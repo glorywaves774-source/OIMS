@@ -40,7 +40,7 @@ def notify(user_ids, kind, title, body=None, endpoint=None, organization_id=None
             if endpoint:
                 text += f"\nOpen: {external_url(endpoint, **url_values)}\n"
             text += "\nYou can turn off these emails in My profile."
-            send_email(user.email, f"OIMS: {title}", text)
+            send_email(user.email, f"ZENTAVA OIMS: {title}", text)
     return sent
 
 

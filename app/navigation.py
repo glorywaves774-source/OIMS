@@ -94,7 +94,7 @@ def build_nav():
         if can("audit.view"):
             gov.append(_item("Audit log", "bi-journal-text", "workspace.audit_log", "Audit"))
         if can("support.view"):
-            gov.append(_item("HOLIDO support access", "bi-life-preserver", "workspace.support", "Support",
+            gov.append(_item("Kayron support access", "bi-life-preserver", "workspace.support", "Support",
                              match="workspace.support"))
         if can("organization.view"):
             gov.append(_item("Organization settings", "bi-building-gear", "workspace.settings", "Settings"))
@@ -122,7 +122,7 @@ def build_nav():
             adm.append(_item("Platform staff", "bi-person-badge", "platform.staff", "Staff"))
         adm.append(_item("Audit log", "bi-journal-text", "platform.audit_log", "Audit"))
         home = [_item("Platform dashboard", "bi-speedometer2", "platform.dashboard", "Home")]
-        groups = [("HOLIDO platform", home), ("Tenants", tenants), ("Administration", adm)]
+        groups = [("Kayron platform", home), ("Tenants", tenants), ("Administration", adm)]
         tabs = (home + tenants + adm)[:4]
 
     acct = [_item("My profile", "bi-person-circle", "account.profile", "Profile"),
@@ -131,7 +131,7 @@ def build_nav():
     if len(current_user.active_memberships()) > 1 or (current_user.is_platform_staff and current_user.active_memberships()):
         acct.insert(0, _item("My workspaces", "bi-collection", "account.workspaces", "Spaces"))
     if current_user.is_platform_staff and g.get("tenant") is not None:
-        acct.insert(0, _item("HOLIDO console", "bi-speedometer2", "platform.dashboard", "Console"))
+        acct.insert(0, _item("Kayron console", "bi-speedometer2", "platform.dashboard", "Console"))
     groups.append(("My account", acct))
     if not tabs:
         tabs = acct[:3]

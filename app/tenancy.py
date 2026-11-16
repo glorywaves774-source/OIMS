@@ -9,7 +9,7 @@ Defence in depth:
 
 Tenant context is set per request by the organization workspace blueprint after it
 has verified an active membership or a live, approved support-access grant.
-Platform (HOLIDO) pages run without a tenant context and are protected by
+Platform (Kayron) pages run without a tenant context and are protected by
 platform-role checks instead.
 """
 from flask import abort, g, has_app_context

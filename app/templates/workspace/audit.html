@@ -6,7 +6,7 @@
 <section class="panel panel-flush">
   <form class="filters px-3 pt-3" method="get" role="search">
     <select class="form-select" name="action" data-autosubmit aria-label="Type of action">
-      {% for val, label in [('', 'All actions'), ('auth.', 'Sign-ins'), ('user.', 'Users'), ('role.', 'Roles'), ('organization.', 'Organization'), ('support.', 'HOLIDO support'), ('subscription.', 'Subscription')] %}
+      {% for val, label in [('', 'All actions'), ('auth.', 'Sign-ins'), ('user.', 'Users'), ('role.', 'Roles'), ('organization.', 'Organization'), ('support.', 'Kayron support'), ('subscription.', 'Subscription')] %}
       <option value="{{ val }}"{% if val == action %} selected{% endif %}>{{ label }}</option>{% endfor %}
     </select>
   </form>

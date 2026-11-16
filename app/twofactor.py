@@ -10,7 +10,7 @@ from cryptography.fernet import Fernet, InvalidToken
 from flask import current_app
 from werkzeug.security import check_password_hash, generate_password_hash
 
-ISSUER = "HOLIDO OIMS"
+ISSUER = "ZENTAVA OIMS"
 
 
 def _fernet():

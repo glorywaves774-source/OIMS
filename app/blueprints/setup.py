@@ -1,4 +1,4 @@
-"""First-run HOLIDO Super Admin setup.
+"""First-run Kayron Super Admin setup.
 
 Only reachable when OIMS_SETUP_TOKEN is set in the environment AND no Super Admin
 exists yet. After the first Super Admin is created the route returns 404 forever.

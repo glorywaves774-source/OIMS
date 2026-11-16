@@ -22,9 +22,11 @@ def _database_url():
 
 
 class BaseConfig:
-    APP_NAME = "OIMS"
-    APP_FULL_NAME = "Office Information Management System"
-    PLATFORM_OWNER = "HOLIDO — Holistic Development Organization"
+    APP_NAME = "ZENTAVA OIMS"
+    BRAND_NAME = "ZENTAVA"          # the brand (wordmark, logo)
+    PRODUCT_NAME = "OIMS"           # the product shown beside the brand
+    APP_FULL_NAME = "Organized. Transparent. Accountable."
+    PLATFORM_OWNER = "Kayron Global Tech Services"
 
     SECRET_KEY = os.environ.get("SECRET_KEY")
     SQLALCHEMY_DATABASE_URI = _database_url()
@@ -68,8 +70,8 @@ class BaseConfig:
     SMTP_USERNAME = os.environ.get("SMTP_USERNAME")
     SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
     SMTP_USE_TLS = _bool("SMTP_USE_TLS", True)
-    MAIL_FROM = os.environ.get("MAIL_FROM", "no-reply@oims.local")
-    PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL")  # e.g. https://oims.example.org
+    MAIL_FROM = os.environ.get("MAIL_FROM", "no-reply@zentava.local")
+    PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL")  # e.g. https://zentava.example.org
 
     # Document storage: "local" (a directory / persistent disk) or "s3" (S3-compatible object storage)
     STORAGE_BACKEND = os.environ.get("STORAGE_BACKEND", "local").lower()
@@ -83,10 +85,26 @@ class BaseConfig:
     S3_SERVER_SIDE_ENCRYPTION = _bool("S3_SERVER_SIDE_ENCRYPTION", True)
     MAX_CONTENT_LENGTH = int(os.environ.get("MAX_UPLOAD_MB", "25")) * 1024 * 1024
 
-    # Two-step sign-in is required for HOLIDO platform staff unless switched off.
+    # Two-step sign-in is required for Kayron platform staff unless switched off.
     REQUIRE_PLATFORM_2FA = _bool("REQUIRE_PLATFORM_2FA", True)
 
     ALLOW_PUBLIC_REGISTRATION = _bool("ALLOW_PUBLIC_REGISTRATION", True)
+
+    # Off-site backups (see docs/DEPLOYMENT.md): a separate S3-compatible bucket, or a folder
+    BACKUP_ENCRYPTION_KEY = os.environ.get("BACKUP_ENCRYPTION_KEY")      # flask oims backup-key
+    BACKUP_S3_BUCKET = os.environ.get("BACKUP_S3_BUCKET")
+    BACKUP_S3_ENDPOINT_URL = os.environ.get("BACKUP_S3_ENDPOINT_URL")
+    BACKUP_S3_REGION = os.environ.get("BACKUP_S3_REGION")
+    BACKUP_S3_ACCESS_KEY_ID = os.environ.get("BACKUP_S3_ACCESS_KEY_ID")
+    BACKUP_S3_SECRET_ACCESS_KEY = os.environ.get("BACKUP_S3_SECRET_ACCESS_KEY")
+    BACKUP_S3_PREFIX = os.environ.get("BACKUP_S3_PREFIX", "")
+    BACKUP_DIR = os.environ.get("BACKUP_DIR")
+    BACKUP_KEEP_DAILY = int(os.environ.get("BACKUP_KEEP_DAILY", "14"))
+    BACKUP_KEEP_MONTHLY = int(os.environ.get("BACKUP_KEEP_MONTHLY", "12"))
+
+    # Large downloads prepared at the same time per server process, and how long to wait for a turn (seconds)
+    HEAVY_DOWNLOADS = int(os.environ.get("HEAVY_DOWNLOADS", "1"))
+    HEAVY_DOWNLOAD_WAIT = int(os.environ.get("HEAVY_DOWNLOAD_WAIT", "20"))
 
 
 class DevelopmentConfig(BaseConfig):

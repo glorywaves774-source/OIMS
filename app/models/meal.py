@@ -14,6 +14,14 @@ AGE_BANDS = (("0-5", 0, 5), ("6-14", 6, 14), ("15-17", 15, 17), ("18-35", 18, 35
 SEXES = {"female": "Female", "male": "Male", "other": "Other", "not_stated": "Not stated"}
 
 
+def age_from(date_of_birth, birth_year, today=None):
+    today = today or date.today()
+    if date_of_birth:
+        d = date_of_birth
+        return today.year - d.year - ((today.month, today.day) < (d.month, d.day))
+    return today.year - birth_year if birth_year else None
+
+
 def age_band(age):
     if age is None:
         return "Unknown"
@@ -97,11 +105,7 @@ class Beneficiary(TenantMixin, TimestampMixin, db.Model):
 
     @property
     def age(self):
-        today = date.today()
-        if self.date_of_birth:
-            d = self.date_of_birth
-            return today.year - d.year - ((today.month, today.day) < (d.month, d.day))
-        return today.year - self.birth_year if self.birth_year else None
+        return age_from(self.date_of_birth, self.birth_year)
 
     @property
     def age_band(self):

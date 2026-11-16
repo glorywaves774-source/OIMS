@@ -15,12 +15,14 @@ from app.extensions import db
 from app.forms import ActionForm
 from app.forms_meal import DataFormForm, FieldForm
 from app.forms_programmes import ReviewNoteForm
-from app.meal_logic import can_see_beneficiary, reach, visible_beneficiaries_stmt, visible_feedback_stmt
+from app.meal_logic import (can_see_beneficiary, consent_given_ids, profile_rows, reach, visible_beneficiaries_stmt,
+                             visible_beneficiaries_where, visible_feedback_stmt)
 from app.models import (Beneficiary, DataForm, Enrollment, Feedback, FormField, FormSubmission, Indicator,
                         IndicatorResult, Location, utcnow)
 from app.models.meal import AGE_BANDS, SEXES
 from app.programme_logic import can_do, can_see, visible_owner_stmt
 from app.rbac import can
+from app.security import heavy_download
 from app.tenancy import tenant_get_or_404
 
 bp = workspace_blueprint("meal", __name__, "/meal")
@@ -41,7 +43,9 @@ def dashboard():
     data = {}
     today = date.today()
     if can("beneficiaries.view"):
-        rows = db.session.execute(visible_beneficiaries_stmt().where(Beneficiary.status == "active")).scalars().all()
+        where = visible_beneficiaries_where() + [Beneficiary.status == "active"]
+        rows = profile_rows(where=where)
+        given = consent_given_ids(where)
         sex = {k: 0 for k in SEXES}
         ages = {b[0]: 0 for b in AGE_BANDS} | {"Unknown": 0}
         dis = no_consent = 0
@@ -49,7 +53,7 @@ def dashboard():
             sex[b.sex] = sex.get(b.sex, 0) + 1
             ages[b.age_band] = ages.get(b.age_band, 0) + 1
             dis += 1 if b.disability else 0
-            no_consent += 0 if b.consent_state == "given" else 1
+            no_consent += 0 if b.id in given else 1
         month_start = today.replace(day=1)
         data["ben"] = {"total": len(rows), "sex": sex, "ages": ages, "disability": dis, "no_consent": no_consent,
                        "new_month": sum(1 for b in rows if b.registered_on >= month_start)}
@@ -432,6 +436,7 @@ def review(fid, sid, action):
 
 
 @bp.route("/forms/<int:fid>/answers.xlsx")
+@heavy_download
 def submissions_export(fid):
     import openpyxl
     from openpyxl.styles import Font

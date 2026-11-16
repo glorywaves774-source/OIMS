@@ -1,4 +1,4 @@
-/* OIMS client behaviour. Loaded as an external file (strict CSP, no inline scripts). */
+/* ZENTAVA client behaviour. Loaded as an external file (strict CSP, no inline scripts). */
 (function () {
   "use strict";
   var html = document.documentElement;

@@ -1,20 +1,51 @@
-# OIMS — Office Information Management System
+# ZENTAVA OIMS
 
-A multi-tenant SaaS platform owned and operated by **HOLIDO — Holistic Development Organization**.
+**Organized. Transparent. Accountable.**
+*Zonal Enterprise Network for Transparent Administration, Visibility and Accountability*
 
-**Current release:** `0.8.0-phase8` (Phase 8 — SaaS billing). See [CHANGELOG.md](CHANGELOG.md) and
+
+A multi-tenant SaaS platform provided and operated by **Kayron Global Tech Services**.
+
+**Current release:** `0.9.0-phase9` (Phase 9 — hardening and launch: security review, load testing, backups, go-live). See [CHANGELOG.md](CHANGELOG.md) and
 [docs/STATUS.md](docs/STATUS.md) for what is complete and what comes next.
+
+> **Name.** The product is **ZENTAVA OIMS**: ZENTAVA is the brand and OIMS (Office Information Management
+> System) the product. It is shown as a two-tone wordmark, ZENTAVA in bold and OIMS in teal. Internal names are kept on purpose so existing set-ups keep working:
+> the Python package `app`, the `flask oims …` commands, the `OIMS_*` environment variables, the Render
+> service names and the database.
+
+## Brand
+
+| | |
+|---|---|
+| Deep Navy `#14213D` | Main buttons, active menu item, PDF and Excel headings |
+| Teal `#0F9D8A` | Logo diamond, highlights, focus rings, charts; a darker teal `#0B7A6C` for links so they stay readable |
+| Gold `#F2B134` | Logo bar, acronym letters; a darker gold `#A87308` for small icons on white |
+| Light Grey `#F4F6F8` | Page background, logo tile |
+| Dark mode | Teal `#2EC4AE` becomes the main colour on navy surfaces; gold stays as is |
+
+The logo (`app/static/img/logo.svg`, also the browser icon) is redrawn as a vector from the brand profile.
+To use the exact original artwork, replace that file with an SVG of the same name.
+
+## What Phase 9 adds
+
+| Area | Delivered |
+|---|---|
+| Security review | Automated probe of every page and action (signed out, another organization's admin, low-permission staff); fixes for the Paystack checkout policy, a sign-in return-address trick, mail-server certificate checking and the health check; unsafe production settings refused; all packages pinned and audited |
+| Speed | Load-tested with 16,000 beneficiaries and 60 organizations; the slow pages are 10–25× faster; large downloads take turns |
+| Backups | `flask oims backup` / `restore`: encrypted nightly off-site copies of the database and documents (14 daily, 12 monthly), restore with checks, nightly Render job |
+| Go-live | `flask oims check-deploy`, going-live checklist, capacity guide, web server settings for the 512 MB plan |
 
 ## What Phase 8 adds
 
 | Area | Delivered |
 |---|---|
-| Invoices | Issued automatically before each period or trial ends, numbered OIMS-YYYY-NNNNN, with tax if set, as PDF; names and prices are frozen on the invoice |
-| Paying | Online with Paystack (card and mobile money, confirmed directly with Paystack, signed webhooks, never recorded twice) when configured; bank transfer and mobile money recorded by HOLIDO staff |
+| Invoices | Issued automatically before each period or trial ends, numbered ZTV-YYYY-NNNNN, with tax if set, as PDF; names and prices are frozen on the invoice |
+| Paying | Online with Paystack (card and mobile money, confirmed directly with Paystack, signed webhooks, never recorded twice) when configured; bank transfer and mobile money recorded by Kayron staff |
 | Renewal | Paying extends the subscription; plan changes take effect from the next period (straight away during a trial); downgrades are refused when current use does not fit; cancel at the end of the period |
 | Unpaid subscriptions | Past due with a warning banner, then — after the grace period — the workspace becomes read-only (everything can still be read and exported, billing stays open) until paid |
 | Usage limits | People and file storage against the plan, shown as meters; inviting beyond the limit is refused |
-| HOLIDO console | All invoices, outstanding and received totals, subscriptions needing attention, record payments, cancel invoices, issue an invoice early, billing settings, run billing now |
+| Kayron console | All invoices, outstanding and received totals, subscriptions needing attention, record payments, cancel invoices, issue an invoice early, billing settings, run billing now |
 
 ## What Phase 7 adds
 
@@ -87,7 +118,7 @@ A multi-tenant SaaS platform owned and operated by **HOLIDO — Holistic Develop
 | Area | Delivered |
 |---|---|
 | Departments | Create, close/reopen, head of department, responsibilities, staff and activity per department |
-| Staff & HR | Staff register (with or without an OIMS sign-in), directory, employment details, emergency contacts, HR notes, training, performance reviews, transfers (automatic when the department changes), exit with clearance and sign-in suspension, staff documents |
+| Staff & HR | Staff register (with or without a ZENTAVA sign-in), directory, employment details, emergency contacts, HR notes, training, performance reviews, transfers (automatic when the department changes), exit with clearance and sign-in suspension, staff documents |
 | Leave & attendance | Configurable leave types and entitlements, requests counted in working days, overlap and balance checks, approval by department head or HR, who's-away list; daily attendance register |
 | Documents | Folders, categories, versions, approval workflow, sharing (everyone / department / chosen people), expiry dates, archive, download history, storage quotas; files checked by content and kept on a persistent disk or S3-compatible storage |
 | Correspondence | Incoming, outgoing and memos with automatic reference numbers (IN/2026/0001), assignment, forwarding with instructions, approval, reply deadlines, confidentiality, attachments, routing history, archive |
@@ -96,19 +127,19 @@ A multi-tenant SaaS platform owned and operated by **HOLIDO — Holistic Develop
 | Communication | In-app notifications (plus email when configured), announcements to everyone or a department, private internal messages |
 | Calendar | Personal, departmental and organizational month view and agenda: meetings, deadlines, leave, expiring documents |
 | Reminders | Hourly job for due/overdue tasks, upcoming meetings, expiring documents and reply deadlines — each sent once |
-| Security | Two-step sign-in with authenticator apps and recovery codes (required for HOLIDO staff), admin reset; department-level and own-record permission scopes now enforced |
+| Security | Two-step sign-in with authenticator apps and recovery codes (required for Kayron staff), admin reset; department-level and own-record permission scopes now enforced |
 
 ## What Phase 1 provides
 
 | Area | Delivered |
 |---|---|
 | Platform structure | Flask application factory, blueprints per area, environment-based configuration, PostgreSQL via SQLAlchemy 2 + Alembic migrations |
-| HOLIDO Super Admin | Secure first-run setup (token-protected web page **or** CLI from environment variables); platform console with live statistics; platform staff management (Super Admin, Platform Administrator, Support Officer) |
-| Organizations (tenants) | Public registration with HOLIDO approval; direct creation by HOLIDO; approve / reject / suspend / activate / deactivate with reasons; profile, logo, currency, fiscal year, time zone |
+| Kayron Super Admin | Secure first-run setup (token-protected web page **or** CLI from environment variables); platform console with live statistics; platform staff management (Super Admin, Platform Administrator, Support Officer) |
+| Organizations (tenants) | Public registration with Kayron approval; direct creation by Kayron; approve / reject / suspend / activate / deactivate with reasons; profile, logo, currency, fiscal year, time zone |
 | Tenant isolation | Automatic per-request data scoping on every tenant table, write guards that refuse cross-tenant writes, explicit tenant checks in routes, 404 (not 403) for other organizations' records |
 | Users & access | Global accounts with per-organization memberships; invitations; suspend / reactivate / remove; last-administrator protection; one person can belong to several organizations |
 | Roles & permissions | 15 standard roles from the specification, custom roles, permissions by **module · action · scope** (organization / department / own records), least privilege by default |
-| Support access | HOLIDO staff request time-limited (≤ 2 h), **read-only** access with a reason; organization approves, denies or revokes; every page viewed is logged in the organization's audit log |
+| Support access | Kayron staff request time-limited (≤ 2 h), **read-only** access with a reason; organization approves, denies or revokes; every page viewed is logged in the organization's audit log |
 | Subscriptions (foundation) | Plans with prices, trial days, user and storage limits; assignment per organization; user limit enforced. Online billing is Phase 8. |
 | Security | scrypt password hashing, password policy, account lockout, rate limiting, CSRF, strict Content-Security-Policy (no inline scripts), secure cookies, session invalidation on password change, signed single-use reset links, open-redirect protection, logo uploads validated by content |
 | Audit | Append-only audit log of sign-ins, failures, lockouts, administrative and support actions — platform-wide and per organization |
@@ -123,7 +154,7 @@ cp .env.example .env            # then edit SECRET_KEY and DATABASE_URL
 flask --app wsgi db upgrade     # create tables
 ```
 
-Create the first HOLIDO Super Admin — **choose one** method:
+Create the first Kayron Super Admin — **choose one** method:
 
 ```bash
 # a) CLI (reads OIMS_SUPERADMIN_EMAIL / OIMS_SUPERADMIN_PASSWORD; password must be changed at first sign-in)
@@ -164,7 +195,7 @@ app/
   security.py        password policy, tokens, headers, email
   services.py        business operations (registration, approval, invitations…)
   navigation.py      sidebar and phone tab bar per person
-  blueprints/        public, auth, setup, account, platform (HOLIDO), workspace (/o/<org>),
+  blueprints/        public, auth, setup, account, platform (Kayron), workspace (/o/<org>),
                      people (departments, staff, leave, attendance), documents, correspondence,
                      meetings, tasks, comms (notifications, announcements, messages, calendar),
                      programmes and projects (+ programme_finance, programme_reports,

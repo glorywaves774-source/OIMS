@@ -12,6 +12,7 @@ from app.extensions import db
 from app.models import Department, Programme, Project
 from app.programme_logic import can_see, visible_owner_stmt
 from app.rbac import ORG, can, scope_of
+from app.security import heavy_download
 
 bp = workspace_blueprint("analytics", __name__, "/reports")
 
@@ -105,6 +106,7 @@ def view(key):
 
 
 @bp.route("/<key>.<any(csv, xlsx, pdf):fmt>")
+@heavy_download
 def export(key, fmt):
     r = _get(key)
     f = _filters()

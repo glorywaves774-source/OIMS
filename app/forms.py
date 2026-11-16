@@ -121,7 +121,7 @@ class OrganizationSettingsForm(OrganizationFieldsMixin, FlaskForm):
     currency = SelectField("Currency", choices=CURRENCIES)
     fiscal_year_start_month = SelectField("Fiscal year starts in", coerce=int, choices=MONTHS)
     timezone = StringField("Time zone", validators=[DataRequired(), Length(max=64)], filters=[_strip])
-    require_support_approval = BooleanField("HOLIDO support needs our approval before accessing this workspace")
+    require_support_approval = BooleanField("Kayron support needs our approval before accessing this workspace")
     remove_logo = BooleanField("Remove current logo")
 
 

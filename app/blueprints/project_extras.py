@@ -9,6 +9,7 @@ from datetime import date
 from flask import abort, flash, g, redirect, render_template, request, url_for
 from flask_login import current_user
 from sqlalchemy import func, select
+from sqlalchemy.orm import selectinload
 
 from app import audit
 from app.blueprints.programmes import child, ctx, independent_approver, load, need, owner_ep, route
@@ -64,24 +65,37 @@ def wbs(pid):
                                                                Activity.planned_start, Activity.id).all()
     tasks = Task.query.filter(Task.project_id == prog.id, Task.parent_id.is_(None),
                               Task.issue_id.is_(None), Task.risk_id.is_(None)).order_by(Task.due_date.is_(None),
-                                                                                      Task.due_date, Task.id).all()
+                                                                                      Task.due_date, Task.id) \
+        .options(*_task_tree_loads()).all()   # not one query per task
     dels = Deliverable.query.filter_by(project_id=prog.id).order_by(Deliverable.due_date.is_(None),
                                                                     Deliverable.due_date).all()
+    tasks_by_act = {}
+    for t in tasks:
+        tasks_by_act.setdefault(t.activity_id, []).append(t)
     tree = []
     for c in comps + [None]:
         cid = c.id if c else None
         node = {"c": c, "acts": [], "dels": [d for d in dels if d.component_id == cid and not d.activity_id]}
         for a in [a for a in acts if a.component_id == cid]:
-            node["acts"].append({"a": a, "tasks": [t for t in tasks if t.activity_id == a.id],
+            node["acts"].append({"a": a, "tasks": tasks_by_act.get(a.id, []),
                                  "dels": [d for d in dels if d.activity_id == a.id]})
         if c or node["acts"] or node["dels"]:
             tree.append(node)
-    loose = [t for t in tasks if not t.activity_id]
+    loose = tasks_by_act.get(None, [])
     comp_form, task_form = ComponentForm(), WbsTaskForm()
     comp_form.responsible_id.choices = member_choices("— Not assigned —")
     _setup_task(task_form, prog)
     return render_template("programmes/wbs.html", tree=tree, loose=loose, comp_form=comp_form, task_form=task_form,
                            today=date.today(), **ctx(prog, "wbs"))
+
+
+def _task_tree_loads(depth=4):
+    """Load sub-tasks (several levels) and who they are assigned to together with the tasks."""
+    opts, path = [selectinload(Task.assigned_to)], selectinload(Task.subtasks)
+    for _ in range(depth):
+        opts += [path, path.selectinload(Task.assigned_to)]
+        path = path.selectinload(Task.subtasks)
+    return opts
 
 
 def _setup_task(form, prog):

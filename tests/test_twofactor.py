@@ -78,7 +78,7 @@ def test_platform_staff_must_enroll(app, client):
     assert client.get("/platform/").status_code == 200
     # cannot switch it off while required
     r = client.post("/account/two-step/disable", data={"password": PASSWORD, "code": "000000"}, follow_redirects=True)
-    assert b"required for HOLIDO platform staff" in r.data
+    assert b"required for Kayron platform staff" in r.data
 
 
 def test_optional_for_organization_users_and_disable(client, db):

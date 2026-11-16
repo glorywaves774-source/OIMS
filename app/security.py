@@ -2,11 +2,13 @@
 import logging
 import re
 import smtplib
+import ssl
+import threading
 from email.message import EmailMessage
 from functools import wraps
 from urllib.parse import urljoin, urlparse
 
-from flask import abort, current_app, request, url_for
+from flask import abort, current_app, make_response, render_template, request, url_for
 from flask_login import current_user
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
@@ -14,7 +16,7 @@ log = logging.getLogger("oims")
 
 COMMON_PASSWORDS = {
     "password1234", "123456789012", "qwertyuiop12", "letmein12345", "administrator",
-    "password123!", "welcome12345", "changeme1234", "holido123456", "oims12345678",
+    "password123!", "welcome12345", "changeme1234", "holido123456", "kayron123456", "oims12345678",
 }
 
 
@@ -77,6 +79,10 @@ def external_url(endpoint, **values):
 def is_safe_next(target):
     if not target:
         return False
+    # Browsers read "\\" as "/", so "/\\evil.example" would leave the site; control characters are dropped
+    # by browsers too ("/\t/evil.example"). Only plain same-site paths are accepted.
+    if "\\" in target or any(ord(ch) < 32 or ord(ch) == 127 for ch in target):
+        return False
     parsed = urlparse(target)
     return not parsed.netloc and not parsed.scheme and target.startswith("/") and not target.startswith("//")
 
@@ -84,7 +90,7 @@ def is_safe_next(target):
 # --- Access decorators -------------------------------------------------------
 
 def platform_required(*roles):
-    """Restrict a view to HOLIDO platform staff (optionally specific platform roles)."""
+    """Restrict a view to Kayron platform staff (optionally specific platform roles)."""
 
     def decorator(view):
         @wraps(view)
@@ -126,7 +132,9 @@ def send_email(to, subject, body):
     try:
         with smtplib.SMTP(cfg["SMTP_HOST"], cfg["SMTP_PORT"], timeout=15) as smtp:
             if cfg["SMTP_USE_TLS"]:
-                smtp.starttls()
+                # Check the mail server's certificate (Python's default here does not), so the password and
+                # messages cannot be read by someone in between.
+                smtp.starttls(context=ssl.create_default_context())
             if cfg.get("SMTP_USERNAME"):
                 smtp.login(cfg["SMTP_USERNAME"], cfg["SMTP_PASSWORD"] or "")
             smtp.send_message(msg)
@@ -145,6 +153,14 @@ CSP = (
 )
 
 
+def csp_allowing_form_target(origin):
+    """The standard policy, plus one outside address that forms on this page may lead to.
+
+    Browsers apply form-action to the redirect after a form is sent, so a page whose button sends the
+    person on to a payment provider must name that provider."""
+    return CSP.replace("form-action 'self'", f"form-action 'self' {origin}")
+
+
 def apply_security_headers(response):
     response.headers.setdefault("Content-Security-Policy", CSP)
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
@@ -156,3 +172,34 @@ def apply_security_headers(response):
     if request.endpoint and not request.endpoint.startswith("static"):
         response.headers.setdefault("Cache-Control", "no-store")
     return response
+
+
+# --- Large downloads ------------------------------------------------------------------------
+
+def _download_slots():
+    app = current_app._get_current_object()
+    if "heavy_downloads" not in app.extensions:
+        app.extensions["heavy_downloads"] = threading.BoundedSemaphore(app.config.get("HEAVY_DOWNLOADS", 1))
+    return app.extensions["heavy_downloads"]
+
+
+def heavy_download(view):
+    """Large exports (spreadsheets, PDFs of whole registers) take one turn at a time per server process.
+
+    Building them is CPU work; several at once would slow every other page for everyone. Someone who asks
+    while another is being prepared waits a few seconds, then gets a clear "try again" page."""
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        slots = _download_slots()
+        if not slots.acquire(timeout=current_app.config.get("HEAVY_DOWNLOAD_WAIT", 20)):
+            resp = make_response(render_template(
+                "errors/error.html", code=503, title="Another download is being prepared",
+                message="Large downloads are prepared one at a time so the system stays quick for everyone. "
+                        "Please try again in a minute."), 503)
+            resp.headers["Retry-After"] = "60"
+            return resp
+        try:
+            return view(*args, **kwargs)
+        finally:
+            slots.release()
+    return wrapped

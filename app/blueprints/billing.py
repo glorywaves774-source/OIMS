@@ -6,7 +6,8 @@ browser before returning.
 import secrets
 from datetime import date
 
-from flask import Blueprint, Response, abort, current_app, flash, g, redirect, render_template, request, url_for
+from flask import (Blueprint, Response, abort, current_app, flash, g, make_response, redirect, render_template,
+                   request, url_for)
 from flask_login import current_user
 
 from app import audit, paystack
@@ -21,6 +22,7 @@ from app.models import Membership, Subscription, SubscriptionPlan
 from app.models.billing import BillingSettings, Invoice, Payment
 from app.notify import notify
 from app.rbac import can, require_permission
+from app.security import csp_allowing_form_target
 from app.tenancy import clear_tenant, set_tenant, tenant_get_or_404
 
 bp = workspace_blueprint("billing", __name__, "/billing")
@@ -61,10 +63,14 @@ def index():
     if sub:
         form.plan_id.data = sub.pending_plan_id or sub.plan_id
         form.billing_cycle.data = sub.pending_cycle or sub.billing_cycle
-    return render_template("billing/index.html", sub=sub, st=billing_state(org), use=use, invoices=invoices,
+    online = paystack.configured()
+    resp = make_response(render_template("billing/index.html", sub=sub, st=billing_state(org), use=use, invoices=invoices,
                            plans=plans, form=form, fits={p.id: fits(p, use) for p in plans},
-                           can_manage=_manage(), online=paystack.configured(), settings=BillingSettings.get(),
-                           period_end=period_end(sub) if sub else None, action_form=ActionForm(), today=date.today())
+                           can_manage=_manage(), online=online, settings=BillingSettings.get(),
+                           period_end=period_end(sub) if sub else None, action_form=ActionForm(), today=date.today()))
+    if online:   # the Pay online button leads on to Paystack's checkout page
+        resp.headers["Content-Security-Policy"] = csp_allowing_form_target(paystack.CHECKOUT_ORIGIN)
+    return resp
 
 
 @bp.route("/plan", methods=["POST"])
@@ -73,7 +79,7 @@ def change_plan():
         abort(403)
     org, sub = g.tenant, g.tenant.subscription
     if sub is None:
-        flash("This workspace has no subscription yet. Contact HOLIDO.", "danger")
+        flash("This workspace has no subscription yet. Contact Kayron.", "danger")
         return redirect(url_for("billing.index"))
     form = ChangePlanForm()
     form.plan_id.choices = [(p.id, p.name) for p in SubscriptionPlan.query.filter_by(is_active=True)]

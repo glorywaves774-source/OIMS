@@ -13,6 +13,10 @@ envVarGroups:
         generateValue: true
       - key: SESSION_COOKIE_SECURE
         value: "true"
+      - key: MALLOC_ARENA_MAX          # keeps memory use of the threaded web server low (measured: -15%)
+        value: "2"
+      - key: WEB_CONCURRENCY           # server processes; 1 suits the 512 MB starter plan (gunicorn.conf.py)
+        value: "1"
       - key: REQUIRE_PLATFORM_2FA
         value: "true"
       - key: STORAGE_BACKEND
@@ -39,7 +43,7 @@ services:
     plan: starter
     buildCommand: pip install -r requirements.txt
     preDeployCommand: flask --app wsgi db upgrade && flask --app wsgi oims sync-roles
-    startCommand: gunicorn wsgi:app --workers 3 --timeout 60 --access-logfile -
+    startCommand: gunicorn wsgi:app    # settings in gunicorn.conf.py
     healthCheckPath: /healthz
     disk:
       name: oims-files
@@ -67,6 +71,34 @@ services:
         fromDatabase:
           name: oims-db
           property: connectionString
+
+  # Nightly encrypted off-site backup (app/backup.py). Set BACKUP_ENCRYPTION_KEY and the BACKUP_S3_* values
+  # in the dashboard; keep a copy of the key (and SECRET_KEY) in a password manager. See docs/DEPLOYMENT.md.
+  - type: cron
+    name: oims-backup
+    runtime: python
+    plan: starter
+    schedule: "17 2 * * *"         # daily at 02:17 UTC
+    buildCommand: pip install -r requirements.txt
+    startCommand: flask --app wsgi oims backup
+    envVars:
+      - fromGroup: oims-settings
+      - key: DATABASE_URL
+        fromDatabase:
+          name: oims-db
+          property: connectionString
+      - key: BACKUP_ENCRYPTION_KEY
+        sync: false
+      - key: BACKUP_S3_BUCKET
+        sync: false
+      - key: BACKUP_S3_ENDPOINT_URL
+        sync: false
+      - key: BACKUP_S3_REGION
+        sync: false
+      - key: BACKUP_S3_ACCESS_KEY_ID
+        sync: false
+      - key: BACKUP_S3_SECRET_ACCESS_KEY
+        sync: false
 
 databases:
   - name: oims-db

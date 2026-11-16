@@ -1,11 +1,11 @@
-# OIMS development status
+# ZENTAVA development status
 
 _Last updated: 15 November 2026 — release 0.3.0-phase3_
 
 ## Phase 1 — Foundation ✅ complete
 
-Platform structure, PostgreSQL and migrations, authentication, HOLIDO Super Admin setup, organization
-registration and approval, tenant isolation, roles and permissions, HOLIDO support access, subscription
+Platform structure, PostgreSQL and migrations, authentication, Kayron Super Admin setup, organization
+registration and approval, tenant isolation, roles and permissions, Kayron support access, subscription
 plans, audit log, interface (dark mode, phone layout).
 
 ## Phase 2 — Office information management ✅ complete
@@ -24,7 +24,7 @@ plans, audit log, interface (dark mode, phone layout).
 | Notifications, announcements, internal messages | Done |
 | Calendar: personal, departmental, organizational | Done |
 | Scheduled reminders | Done |
-| Two-step sign-in (required for HOLIDO staff) | Done |
+| Two-step sign-in (required for Kayron staff) | Done |
 | Department / own-record permission scopes | Done |
 | Dashboard with office widgets | Done |
 
@@ -133,25 +133,42 @@ errors. Chart colours were checked with a palette validator for both light and d
 
 | Item | Status |
 | --- | --- |
-| Automatic invoices before each period or trial end; invoice PDF; tax and invoice details set by HOLIDO | Done |
+| Automatic invoices before each period or trial end; invoice PDF; tax and invoice details set by Kayron | Done |
 | Online payments through Paystack (card, mobile money) with server-side confirmation and signed webhooks | Done |
-| Bank transfer / mobile money / cheque payments recorded by HOLIDO staff; part payments; invoice cancellation | Done |
+| Bank transfer / mobile money / cheque payments recorded by Kayron staff; part payments; invoice cancellation | Done |
 | Renewal, plan changes (next period, or immediately in a trial), downgrade checks, cancel at period end | Done |
 | Past due → grace period → read-only workspace (billing stays open) → restored on payment | Done |
 | Usage meters for people and storage; user and storage limits enforced | Done |
-| HOLIDO billing console and settings; hourly billing run with the reminders job | Done |
+| Kayron billing console and settings; hourly billing run with the reminders job | Done |
 
 189 automated tests pass on SQLite and on PostgreSQL 16 (Paystack calls are simulated in tests). Migration
 `0007` was tested by upgrading a Phase 7 database with an existing subscription, checking it matches the code,
-downgrading and upgrading again. The billing pages (organization and HOLIDO side) were crawled in Chrome at
+downgrading and upgrading again. The billing pages (organization and Kayron side) were crawled in Chrome at
 320–440 px phone widths and 1440 px, in light and dark mode, with no sideways scrolling, contrast problems or
 console errors.
 
-## Outstanding phases
+## ZENTAVA rebrand ✅ complete (0.8.1-zentava)
 
-| Phase | Scope |
+- Name ZENTAVA OIMS (two-tone wordmark), tagline, logo and colours from the ZENTAVA brand profile, in both themes, emails, PDFs and spreadsheets.
+- Internal names kept (`flask oims`, `OIMS_*` variables) so deployment settings do not change.
+- The logo is a vector redraw; Kayron can drop in the original artwork as `app/static/img/logo.svg`.
+- Verified: 193 tests pass (SQLite; affected modules also on PostgreSQL); every menu page crawled at
+  320/360/390/402/440/1440px in light and dark mode with no issues.
+
+## Phase 9 — Hardening & launch ✅ complete (0.9.0-phase9)
+
+| Area | Result |
 |---|---|
-| 9 — Hardening & launch | Security review, load testing, production backups, go-live |
+| Security review | Every page and action tried signed out, as another organization's administrator and as a low-permission staff member: nothing leaked or changed that should not. Kayron console closed to organization staff (168 attempts refused). Fixed: Paystack checkout blocked by the page policy; a sign-in return-address trick; email not checking the mail server's certificate; health check showing the version. Production refuses unsafe settings. Dependencies pinned and audited (`pip-audit`, `bandit`); Pillow updated for known flaws |
+| Load test | Large organization (16,000 beneficiaries and more) plus 60 others. Slow pages fixed: MEAL dashboard 15 s → 0.6 s, finance 5 s → 0.4 s, procurement 3.6 s → 0.13 s, procurement report 10 s → 0.5 s, beneficiary export 38 s → 4 s, work breakdown 6,000 queries → 44. One core: about 30 people at once, no errors. Memory 315 MB peak on the 512 MB plan |
+| Backups | Encrypted nightly off-site backup of database and documents, 14 daily + 12 monthly, restore into an empty database with checks; rehearsed on the large test database (all 89 tables identical) |
+| Go-live | `flask oims check-deploy`, going-live checklist, capacity guide, web server settings (`gunicorn.conf.py`), restore runbook (docs/DEPLOYMENT.md) |
+
+## Not included (possible next steps)
+
+- **Help assistant** (chatbot) and **French / other languages**.
+- Offline data collection on phones; KoBo/ODK import.
+- Scheduled report emails; a custom report builder.
 
 ## Known limitations of this release
 
@@ -166,13 +183,13 @@ console errors.
 - **Paystack has not been tried against the live service from here** (the build environment cannot reach it);
   the integration follows Paystack's documented API and is covered by simulated tests. Do one test-mode
   payment after deployment (docs/DEPLOYMENT.md).
-- **No mid-period upgrades with pro-rated charges**: a plan change applies from the next period. HOLIDO can
+- **No mid-period upgrades with pro-rated charges**: a plan change applies from the next period. Kayron can
   still change a plan immediately from the organization's page.
 - **Invoices in the plan's currency only**; no automatic currency conversion or card-on-file auto-renewal.
 - **Reports are produced on request**: there are no scheduled report emails and no custom report builder yet.
-- **Large organizations**: reports are calculated when opened; with many thousands of records some may take a
-  few seconds. Caching can be added in Phase 9 if needed.
-- **Payments are recorded, not made**: OIMS does not connect to banks or mobile money.
+- **Large organizations**: reports are calculated when opened. Measured with 16,000 beneficiaries: most pages
+  well under a second; the beneficiaries report about 1 s and the full beneficiary export about 4 s.
+- **Payments are recorded, not made**: ZENTAVA does not connect to banks or mobile money.
 - **One currency per order**; the finance overview shows a total per currency without conversion.
 - **Asset tags** are numbers (AST/2026/0001); printing labels or QR codes is not included yet.
 - **Head-counts and named attendance are separate**: an activity report's head-count can include people
@@ -194,7 +211,11 @@ console errors.
 - **Persistent disk storage** limits the web service to one instance; switch to S3-compatible storage to scale.
 - **Rate limits** use per-process memory by default; set `RATELIMIT_STORAGE_URI` to Redis when running
   several instances.
-- **Subscriptions** do not yet block access when expired (Phase 8).
-- **Help assistant** (chatbot) and **French / other languages** are not included yet.
+- **Backups of documents on the Render disk** are Render's daily snapshots (7 days); off-site document copies
+  need `STORAGE_BACKEND=s3` (recommended for go-live).
+- **Very large lists on one page**: a project's work breakdown and an indicator's results list show
+  everything; with many thousands of tasks or results these pages get heavy (measured: 8,000 tasks, 1.8 s).
+- **Paystack and real email** have not been tried against the live services from here; do one test payment
+  and one test email after deploying (the go-live checklist includes both).
 - Phone layouts were checked with Chrome's phone emulation, which is not identical to Safari on a real
   iPhone; a quick check on real devices is recommended.
