@@ -13,7 +13,16 @@ html[data-theme="dark"] {
   --page-bg: #0b1120;
   --page-glow-1: rgba(46, 196, 174, .09);
   --page-glow-2: rgba(242, 177, 52, .06);
-  --surface: rgba(22, 33, 58, .72);
+  --surface: rgba(22, 33, 58, .64);
+  --glass-edge: rgba(255, 255, 255, .07);
+  --aurora-1: rgba(46, 196, 174, .42);
+  --aurora-2: rgba(92, 112, 240, .42);
+  --aurora-3: rgba(242, 177, 52, .18);
+  --aurora-4: rgba(160, 90, 220, .24);
+  --aurora-5: rgba(64, 214, 168, .32);
+  --neu-bg: #141e35;
+  --neu-dark: rgba(0, 0, 0, .55);
+  --neu-light: rgba(70, 92, 140, .22);
   --surface-solid: #16213a;
   --surface-2: rgba(34, 48, 80, .6);
   --border: rgba(200, 215, 240, .10);
@@ -38,8 +47,9 @@ html[data-theme="dark"] .brand-mark { color: #0b1427; background: linear-gradien
 html[data-theme="dark"] .brand-mark.logo { background: #f4f6f8; }
 html[data-theme="dark"] .form-control, html[data-theme="dark"] .form-select { background-color: #0f1830; color: var(--text); }
 html[data-theme="dark"] .form-control::placeholder { color: #8391a8; }
-html[data-theme="dark"] .auth-card { border-color: rgba(255, 255, 255, .06); box-shadow: 14px 14px 32px rgba(0, 0, 0, .45), -8px -8px 24px rgba(60, 76, 112, .2), inset 0 1px 0 rgba(255, 255, 255, .05); }
-html[data-theme="dark"] .neu-input .form-control { background: #0d1526; box-shadow: inset 4px 4px 10px rgba(0, 0, 0, .45), inset -4px -4px 10px rgba(60, 76, 112, .2); }
+html[data-theme="dark"] .auth-card { border-color: rgba(255, 255, 255, .05); }
+html[data-theme="dark"] .auth-card > .auth-brand { box-shadow: 0 22px 44px rgba(0, 0, 0, .5), 0 4px 10px rgba(0, 0, 0, .3), inset 0 1px 0 var(--glass-edge); }
+html[data-theme="dark"] .auth-card .btn-primary { box-shadow: 6px 6px 16px rgba(0, 0, 0, .5), -4px -4px 12px rgba(70, 92, 140, .18); }
 html[data-theme="dark"] .alert-success { --bs-alert-bg: rgba(95, 211, 148, .12); --bs-alert-color: #9be8bd; --bs-alert-border-color: rgba(95, 211, 148, .3); }
 html[data-theme="dark"] .alert-danger { --bs-alert-bg: rgba(255, 122, 107, .12); --bs-alert-color: #ffb3aa; --bs-alert-border-color: rgba(255, 122, 107, .3); }
 html[data-theme="dark"] .alert-warning { --bs-alert-bg: rgba(240, 181, 74, .12); --bs-alert-color: #f6d08c; --bs-alert-border-color: rgba(240, 181, 74, .3); }

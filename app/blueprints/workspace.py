@@ -23,6 +23,33 @@ _page = page_arg
 
 # --- Dashboard ----------------------------------------------------------------------
 
+def _dashboard_charts(org):
+    """Charts on the workspace dashboard: each only for people whose role shows that information."""
+    from app import dashboards
+    charts = []
+    if not g.get("support_request"):
+        c = dashboards.my_tasks_by_status(org.id, current_user.id)
+        if c["rows"]:
+            charts.append(c)
+    if can("finance.view"):
+        from app.programme_logic import can_see, visible_owner_stmt
+        owners = [o for k in ("programme", "project") for o in db.session.execute(visible_owner_stmt(k)).scalars()
+                  if o.status in ("approved", "active") and can_see("finance.view", o)]
+        c = dashboards.budget_use(owners)
+        if c["rows"]:
+            charts.append(c)
+    if can("beneficiaries.view"):
+        from app.meal_logic import visible_beneficiaries_where
+        c = dashboards.registrations_per_month(visible_beneficiaries_where())
+        if c["rows"]:
+            charts.append(c)
+    if can("staff.view"):
+        c = dashboards.staff_by_department(org.id)
+        if c["rows"]:
+            charts.append(c)
+    return charts
+
+
 @bp.route("/")
 @require_permission("dashboard.view")
 def dashboard():
@@ -103,7 +130,9 @@ def dashboard():
     if can("audit.view"):
         recent = (AuditLog.query.filter_by(organization_id=org.id)
                   .order_by(AuditLog.created_at.desc()).limit(6).all())
+    charts = _dashboard_charts(org)
     return render_template("workspace/dashboard.html", my_activities=my_activities, stats=stats, my_tasks=my_tasks, meetings=meetings,
+                           charts=charts,
                            correspondence=correspondence, documents=documents, deadlines=deadlines, notes=notes,
                            announcements=announcements, pending_support=pending_support,
                            pending_approvals={k: v for k, v in pending_approvals.items() if v}, recent=recent,

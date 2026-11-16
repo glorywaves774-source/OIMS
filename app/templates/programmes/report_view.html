@@ -57,7 +57,7 @@
   <div class="table-scroll"><table class="table"><thead><tr><th>Project</th><th>Status</th><th class="text-end">Budget</th><th class="text-end">Spent</th><th>Used</th><th class="text-end">Activities done</th></tr></thead><tbody>
     {% for r in data.projects %}<tr><td translate="no">{{ r.code }} {{ r.title }}</td><td>{{ status(r.status) }}</td><td class="money">{{ money(r.budget, r.currency if r.currency != cur else '') }}</td><td class="money">{{ money(r.spent) }}</td><td>{{ meter(r.utilization, r.code ~ ' budget used') }}</td><td class="num">{{ r.completed }} / {{ r.activities }}</td></tr>{% endfor %}
     <tr><th>Programme and projects combined</th><td></td><td class="money"><strong>{{ money(data.consolidated.budget, cur) }}</strong></td><td class="money"><strong>{{ money(data.consolidated.spent) }}</strong></td><td colspan="2"></td></tr>
-  </tbody></table></div><p class="small text-muted px-3 pb-3 mb-0">{{ data.consolidated.note }}{% if data.consolidated.other_currency %} Projects in another currency are listed but not added to the combined total.{% endif %}</p></section>{% endif %}
+  </tbody></table></div><p class="small text-muted px-3 pb-3 mb-0">{{ data.consolidated.note }}{% if data.consolidated.other_currency and 'no exchange rate' not in data.consolidated.note %} Projects in another currency are listed but not added to the combined total.{% endif %}</p></section>{% endif %}
 {% if data.field_challenges %}<section class="panel"><div class="panel-header"><h2>Challenges reported from the field</h2></div>
   <ul class="mb-0">{% for c in data.field_challenges %}<li class="prewrap" translate="no">{{ c }}</li>{% endfor %}</ul></section>{% endif %}
 {% endblock %}

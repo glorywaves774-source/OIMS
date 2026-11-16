@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="light" data-bs-theme="light">
+<html lang="{{ lang }}" data-theme="light" data-bs-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -32,5 +32,6 @@
   </div>
   <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block extra_scripts %}{% endblock %}
 </body>
 </html>

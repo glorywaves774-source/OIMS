@@ -8,7 +8,7 @@ never shows more than the pages it summarizes.
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import date, timedelta
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from statistics import median
 from typing import Callable
 
@@ -150,8 +150,8 @@ def run(r, f):
 
 def _currency_note(currencies):
     if len(currencies) > 1:
-        return (f"Amounts are in {', '.join(sorted(currencies))}; totals are shown per currency and never "
-                "converted.")
+        return (f"Amounts are in {', '.join(sorted(currencies))}; totals here are per currency (the Budget and "
+                "spending report also combines them using the organization's exchange rates).")
     return None
 
 
@@ -286,7 +286,48 @@ def budget(f):
         c["available"] = c["amount"] - c["spent"] - c["committed"]
         c["used"] = pct(c["spent"], c["amount"])
     main = g.tenant.currency if g.tenant.currency in currencies else (sorted(currencies)[0] if currencies else None)
+    # Combined in the organization's currency: positions at the rates of the report's end date, spending in the
+    # period at the rate of each payment's own day. Currencies without a rate are left out and named.
+    base, combined, fx_notes = g.tenant.currency, None, []
+    if currencies and currencies != {base}:
+        from app.fx import Rates
+        fx = Rates()
+        as_of = min(f.end, date.today())
+        combined = {"budget": ZERO, "period": ZERO, "available": ZERO}
+        missing, conv_monthly, early = set(), [], set()
+        for r in rows:
+            rate = fx.rate(r["currency"], base, as_of)
+            if rate is None:
+                missing.add(r["currency"])
+                continue
+            combined["budget"] += (r["budget"] * rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            combined["available"] += (r["available"] * rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        for cur, items in monthly.items():
+            if cur in missing:
+                continue
+            for d, v in items:
+                rate = fx.rate(cur, base, d)
+                if rate is None:   # paid before the first rate was entered: use the earliest rate (and say so)
+                    rate = fx.rate(cur, base, as_of)
+                    if rate is not None:
+                        early.add(cur)
+                if rate is None:
+                    missing.add(cur)
+                    continue
+                conv = (Decimal(v) * rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                combined["period"] += conv
+                conv_monthly.append((d, conv))
+        fx_notes.append(f"Combined totals are in {base}: budget and available at the exchange rates of "
+                        f"{as_of:%d %b %Y}, spending in the period at the rate of the day of each payment."
+                        + (f" Payments in {', '.join(sorted(early))} made before the first rate was entered use the "
+                           "rate in force on the end date." if early else "")
+                        + (f" Not included (no exchange rate yet): {', '.join(sorted(missing))}." if missing else ""))
     summary = []
+    if combined is not None:
+        summary += [{"label": f"Budget, all together ({base})", "value": combined["budget"], "fmt": "money"},
+                    {"label": f"Spent in the period, all together ({base})", "value": combined["period"],
+                     "fmt": "money"},
+                    {"label": f"Available, all together ({base})", "value": combined["available"], "fmt": "money"}]
     for cur in sorted(currencies):
         rs = [r for r in rows if r["currency"] == cur]
         summary += [{"label": f"Budget ({cur})", "value": sum((r["budget"] for r in rs), ZERO), "fmt": "money"},
@@ -294,7 +335,10 @@ def budget(f):
                      "fmt": "money"},
                     {"label": f"Available ({cur})", "value": sum((r["available"] for r in rs), ZERO), "fmt": "money"}]
     charts = []
-    if main:
+    if combined is not None and conv_monthly:
+        charts.append(columns(f"Approved spending per month, all together ({base})",
+                              _month_series(conv_monthly, f.start, f.end), "money"))
+    elif main:
         charts.append(columns(f"Approved spending per month ({main})", _month_series(monthly.get(main, []), f.start,
                                                                                      f.end), "money"))
         charts.append(bars(f"Spent to date by budget category ({main})",
@@ -315,8 +359,7 @@ def budget(f):
                              sorted(cats.values(), key=lambda c: (c["currency"], -c["amount"])))],
             "notes": ["Each programme's row covers only its own budget lines, so adding rows never counts money "
                       "twice. Spending counts approved expenditure only; commitments are money reserved for orders "
-                      "and contracts not yet paid."] + ([_currency_note(currencies)] if _currency_note(currencies)
-                                                        else [])}
+                      "and contracts not yet paid."] + fx_notes}
 
 
 @report("donors", "Donor funding", "Funding committed and received from each donor, and the work it supports.",

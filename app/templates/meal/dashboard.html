@@ -1,5 +1,6 @@
 {% extends "layout_app.html" %}
 {% from "macros.html" import meter %}
+{% from "analytics/_charts.html" import chart_grid with context %}
 {% block title %}MEAL overview{% endblock %}
 {% block page_title %}MEAL overview{% endblock %}
 {% block content %}
@@ -16,12 +17,7 @@
   <div class="kpi"><div class="v">{{ d.disability }}</div><div class="l">Living with a disability</div></div>
   <div class="kpi"><div class="v{% if d.no_consent %} overdue{% endif %}">{{ d.no_consent }}</div><div class="l">Without current consent</div></div>
 </div>
-<div class="grid-2">
-  <section class="panel"><div class="panel-header"><h2>By sex</h2></div>
-    {% for k, label in sexes.items() if d.sex.get(k) %}<div class="dist-row"><span>{{ label }}</span>{{ meter(100 * d.sex[k] / d.total, label ~ ': ' ~ d.sex[k]) }}</div>{% else %}<p class="text-muted mb-0">No one registered yet.</p>{% endfor %}</section>
-  <section class="panel"><div class="panel-header"><h2>By age group</h2></div>
-    {% for b in bands if d.ages.get(b) %}<div class="dist-row"><span>{{ b }}{{ ' years' if b != 'Unknown' }}</span>{{ meter(100 * d.ages[b] / d.total, b ~ ': ' ~ d.ages[b]) }}</div>{% else %}<p class="text-muted mb-0">No one registered yet.</p>{% endfor %}</section>
-</div>
+{{ chart_grid(charts, 'meal') }}
 {% if data.reach %}
 <section class="panel panel-flush"><div class="panel-header"><h2>People reached</h2></div>
   <div class="table-scroll"><table class="table"><thead><tr><th>Programme / project</th><th class="text-end">Reached</th><th class="text-end">Female</th><th class="text-end">Male</th><th class="text-end">With disability</th></tr></thead><tbody>
@@ -47,7 +43,6 @@
       <dt>Satisfied with the outcome</dt><dd>{{ f.satisfied_pct ~ '%' if f.satisfied_pct is not none else '—' }}</dd>
       <dt>Sensitive cases open</dt><dd>{{ f.sensitive_open }} <span class="small text-muted">(handled by safeguarding staff)</span></dd>
     </dl>
-    {% if f.total %}<h3 class="fs-6 mt-3">By type</h3>{% for k, label in categories.items() if f.by_category[k] %}<div class="dist-row"><span class="small">{{ label.split(' (')[0] }}</span>{{ meter(100 * f.by_category[k] / f.total, label ~ ': ' ~ f.by_category[k]) }}</div>{% endfor %}{% endif %}
   </section>
 {% endif %}
 </div>

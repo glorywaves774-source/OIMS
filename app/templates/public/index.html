@@ -1,18 +1,18 @@
 {% extends "base.html" %}
-{% from "macros.html" import theme_button, wordmark with context %}
+{% from "macros.html" import theme_button, lang_switch, wordmark with context %}
 {% block title %}Welcome{% endblock %}
 {% block body %}
 <main id="content" class="hero">
   <div class="hero-top">
     <div class="auth-brand mb-0"><div class="brand-mark logo"><img src="{{ url_for('static', filename='img/logo.svg') }}" alt=""></div><div><h1 class="fs-5 mb-0">{{ wordmark() }}</h1><p>{{ platform_owner }}</p></div></div>
-    <div class="toolbar">{{ theme_button() }}<a class="btn btn-light" href="{{ url_for('auth.login') }}">Sign in</a>
+    <div class="toolbar">{{ lang_switch() }}{{ theme_button() }}<a class="btn btn-light" href="{{ url_for('auth.login') }}">Sign in</a>
       {% if config.ALLOW_PUBLIC_REGISTRATION %}<a class="btn btn-primary" href="{{ url_for('public.register') }}">Register your organization</a>{% endif %}</div>
   </div>
   <h1>{{ app_full_name }}</h1>
   <p class="lead">ZENTAVA OIMS helps schools, churches, NGOs, businesses and public offices keep clear records, manage staff and finances, run programmes and projects, and report with confidence. Each organization gets its own secure workspace, provided by Kayron Global Tech Services.</p>
   <section class="acronym glass" aria-labelledby="acr-title">
     <h2 id="acr-title">What ZENTAVA stands for</h2>
-    <ol class="acr-tiles">
+    <ol class="acr-tiles" translate="no">
       <li><b>Z</b><span>Zonal</span></li><li><b>E</b><span>Enterprise</span></li><li><b>N</b><span>Network for</span></li><li><b>T</b><span>Transparent</span></li><li><b>A</b><span>Administration,</span></li><li><b>V</b><span>Visibility and</span></li><li><b>A</b><span>Accountability</span></li>
     </ol>
   </section>

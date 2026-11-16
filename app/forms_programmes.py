@@ -1,8 +1,11 @@
 """Forms for programmes, results, activities, finance, monitoring and reports."""
+from datetime import date
+from decimal import Decimal
+
 from flask_wtf import FlaskForm
 from wtforms import (DateField, DecimalField, IntegerField, SelectField, SelectMultipleField,
                      StringField, TextAreaField)
-from wtforms.validators import DataRequired, Email, Length, NumberRange, Optional
+from wtforms.validators import DataRequired, Email, Length, NumberRange, Optional, ValidationError
 
 from app.forms import CURRENCIES
 from app.forms_office import _DateOrder, _strip, opt_int
@@ -366,3 +369,18 @@ class ClosureForm(FlaskForm):
     evaluation_summary = _txt("Final evaluation")
     outstanding_issues = _txt("Outstanding issues and how they will be handled")
     asset_handover = _txt("Handover of assets and documents")
+
+
+class ExchangeRateForm(FlaskForm):
+    """1 <currency> = <rate> <organization's main currency>, from a date."""
+    currency = SelectField("Currency", validators=[DataRequired()])
+    rate = DecimalField("Rate", places=8, validators=[
+        DataRequired(message="Enter the rate."),
+        NumberRange(min=Decimal("0.00000001"), max=Decimal("100000000"), message="Enter a positive rate.")])
+    effective_on = DateField("Applies from", validators=[DataRequired()])
+    source = StringField("Source (optional)", filters=[_strip], validators=[Optional(), Length(max=200)],
+                         description="For example: Bank of Ghana interbank mid-rate")
+
+    def validate_effective_on(self, field):
+        if field.data and field.data > date.today():
+            raise ValidationError("A rate can start today at the latest; add future rates on the day.")

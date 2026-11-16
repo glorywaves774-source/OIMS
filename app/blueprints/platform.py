@@ -63,8 +63,11 @@ def dashboard():
     pending = Organization.query.filter_by(status=Organization.PENDING).order_by(Organization.created_at).limit(10).all()
     live_support = [r for r in SupportAccessRequest.query.filter_by(status=SupportAccessRequest.APPROVED).all() if r.is_live()]
     recent = AuditLog.query.order_by(AuditLog.created_at.desc()).limit(12).all()
+    from app import dashboards
+    charts = [c for c in (dashboards.organizations_by_status(), dashboards.new_organizations_per_month(),
+                          dashboards.sign_ins_per_day()) if c["rows"]]
     return render_template("platform/dashboard.html", stats=stats, pending=pending, expiring=expiring,
-                           live_support=live_support, recent=recent)
+                           live_support=live_support, recent=recent, charts=charts)
 
 
 # --- Organizations -----------------------------------------------------------------

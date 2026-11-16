@@ -1,5 +1,6 @@
 """MEAL hub: overview dashboard and data-collection forms (design, collect, verify, summarise, export)."""
 import io
+from collections import OrderedDict
 import re
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
@@ -89,7 +90,21 @@ def dashboard():
                 Feedback.organization_id == g.tenant.id, Feedback.sensitive.is_(True),
                 Feedback.status.in_(Feedback.OPEN))),
         }
-    return render_template("meal/dashboard.html", data=data, bands=[b[0] for b in AGE_BANDS] + ["Unknown"],
+    from app import dashboards
+    charts = []
+    if data.get("ben") and data["ben"]["total"]:
+        b = data["ben"]
+        charts.append(dashboards.distribution("Active beneficiaries by sex", b["sex"], SEXES))
+        bands = OrderedDict((k, f"{k} years") for k, *_ in AGE_BANDS)
+        bands["Unknown"] = "Age unknown"
+        charts.append(dashboards.distribution("Active beneficiaries by age group", b["ages"], bands))
+        reg = dashboards.registrations_per_month(visible_beneficiaries_where())
+        if reg["rows"]:
+            charts.append(reg)
+    if data.get("fb") and data["fb"]["total"]:
+        cats = {k: v.split(" (")[0] for k, v in Feedback.CATEGORIES.items()}
+        charts.append(dashboards.distribution("Feedback by type", data["fb"]["by_category"], cats))
+    return render_template("meal/dashboard.html", data=data, charts=charts, bands=[b[0] for b in AGE_BANDS] + ["Unknown"],
                            sexes=SEXES, categories=Feedback.CATEGORIES)
 
 

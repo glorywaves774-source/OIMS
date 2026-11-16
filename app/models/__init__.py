@@ -20,3 +20,4 @@ from .meal import (ActivityAttendance, Beneficiary, ConsentRecord, DataForm, Enr
 from .procurement import (Asset, AssetEvent, GoodsReceipt, PurchaseOrder, PurchaseOrderItem,  # noqa: F401
                           PurchaseRequest, PurchaseRequestItem, Quotation, Supplier)
 from .billing import BillingSettings, Invoice, Payment  # noqa: F401
+from .rates import ExchangeRate  # noqa: F401

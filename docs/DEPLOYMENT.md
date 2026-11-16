@@ -32,6 +32,9 @@
 | `BACKUP_KEEP_DAILY`, `BACKUP_KEEP_MONTHLY` | — | Backups kept: last 14 days plus one per month for 12 months (defaults) |
 | `WEB_CONCURRENCY`, `GUNICORN_THREADS` | — | Web server processes and threads (defaults 1 and 4, for the 512 MB plan); see *Capacity* |
 | `MALLOC_ARENA_MAX` | — | `2` (set in `render.yaml`) keeps memory use of the threaded server low |
+| `HELP_AI_API_KEY` (or `ANTHROPIC_API_KEY`) | — | Lets the help assistant phrase its answers with an AI service (Anthropic). Without it, the assistant answers straight from the help guide. |
+| `HELP_AI_MODEL` | — | AI model for the assistant, default `claude-haiku-5-5` |
+| `HELP_ASSISTANT` | — | `false` hides the help assistant |
 | `HEAVY_DOWNLOADS`, `HEAVY_DOWNLOAD_WAIT` | — | Large exports prepared at the same time per process (default 1) and seconds to wait for a turn (default 20) |
 
 Without SMTP, invitation and set-password links are shown **once** to the administrator who created
@@ -179,6 +182,16 @@ restored in 25 seconds, with all 89 tables identical afterwards.
 - Render can email you when a deploy fails or the service restarts (Render → Notifications).
 - No outside error-tracking service is connected, so no personal data leaves the system; errors are in the
   log stream with the time and page.
+
+## Help assistant
+
+The round ✦ button on every signed-in page opens the ZENTAVA Assistant. It answers "how do I…" questions from
+the help guide in `app/help/guide.en.md` and `guide.fr.md` (edit these to change what it knows; keep the two in
+step — a test checks they have the same sections and links). Links in answers are built by the app and only for
+pages the person's role can open. With `HELP_AI_API_KEY` set, the matching guide sections and the question are
+sent to Anthropic's API to phrase a short answer: phone numbers, emails and ID numbers are removed from the
+question first, and no records, names or organization details are sent. Questions are not stored. Limits: 12 per
+minute and 200 per day per person.
 
 ## Capacity
 

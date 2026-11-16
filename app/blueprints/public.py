@@ -19,6 +19,26 @@ def index():
     return render_template("public/index.html")
 
 
+@bp.route("/language", methods=["POST"])
+@limiter.limit("30 per minute")
+def set_language():
+    """Switch between English and French; kept for the person, or in a cookie for visitors."""
+    from flask import request
+    from app.i18n import COOKIE, LANGUAGES
+    from app.security import is_safe_next
+    lang = request.form.get("lang")
+    if lang not in LANGUAGES:
+        abort(400)
+    if current_user.is_authenticated:
+        current_user.language = lang
+        db.session.commit()
+    nxt = request.form.get("next")
+    resp = redirect(nxt if is_safe_next(nxt) else url_for("public.index"))
+    resp.set_cookie(COOKIE, lang, max_age=365 * 24 * 3600, samesite="Lax", httponly=True,
+                    secure=current_app.config.get("SESSION_COOKIE_SECURE", True))
+    return resp
+
+
 @bp.route("/healthz")
 def health():
     try:

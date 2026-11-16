@@ -1,5 +1,6 @@
 {% extends "layout_app.html" %}
 {% from "macros.html" import status, dt, audit_rows %}
+{% from "analytics/_charts.html" import chart_grid with context %}
 {% block title %}Platform dashboard{% endblock %}
 {% block page_title %}Kayron platform{% endblock %}
 {% block content %}
@@ -14,6 +15,8 @@
   <div class="stat glass"><div class="stat-icon"><i class="bi bi-box-arrow-in-right"></i></div><div><div class="stat-value">{{ stats.logins_24h }}</div><div class="stat-label">Sign-ins, last 24 h</div></div></div>
   <div class="stat glass"><div class="stat-icon red"><i class="bi bi-exclamation-triangle"></i></div><div><div class="stat-value">{{ stats.failed_24h }}</div><div class="stat-label">Failed sign-ins, last 24 h</div></div></div>
 </div>
+
+{{ chart_grid(charts, 'plat') }}
 
 <div class="grid-2 mb-4">
   <section class="panel panel-flush">

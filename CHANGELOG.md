@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.9.4-assistant — 16 November 2026
+
+ZENTAVA Assistant.
+
+- A help assistant on every signed-in page (round ✦ button): ask "how do I…" in English or French. Answers come
+  from the help guide, with links only to pages your role can open; when something is another role's job it says so.
+- Optional AI phrasing (set `HELP_AI_API_KEY`): personal details are removed from questions first and no records
+  are ever sent. Without a key it answers straight from the guide.
+- Phone layout: half-screen window above the button, swipeable suggested questions, keyboard-aware.
+- French fixes: role names, the plan label on the dashboard, placeholders of text boxes, text between "·".
+
+## 0.9.3-charts — 16 November 2026
+
+Charts on the dashboards.
+
+- **Workspace dashboard**: my open tasks by status, budget used per programme and project, people registered per
+  month, staff by department — each shown only to people whose role allows that information.
+- **MEAL dashboard**: beneficiaries by sex and age group, registrations per month and feedback by type, as charts.
+- **Finance overview**: budget used, and approved spending per month in the organization's currency.
+- **Kayron platform dashboard**: organizations by status, new organizations per month, sign-ins per day.
+- Month labels shortened ("Dec 25", "Jan 26", "Feb") and every other label shown when there are many columns
+  (reports too).
+
+## 0.9.2-fr — 16 November 2026
+
+French.
+
+- **EN / FR switch** on every page, including sign-in and the public page. The choice is kept on the person's
+  account (or in a cookie for visitors).
+- Every screen is available in French, with dates in French. What people type in (names, notes, records, the
+  organization's name) is never translated.
+- Also on this release line: the aurora background and the neumorphic sign-in page.
+
+## 0.9.1-rates — 16 November 2026
+
+Exchange rates.
+
+- **Finance → Exchange rates**: the finance team records dated rates ("1 USD = 15.40 GHS from 1 November") with
+  their source. Only roles allowed to *set exchange rates* can add or remove them; every change is in the audit log.
+- **Combined totals in the organization's currency** on the finance overview, in programme roll-ups and reports
+  (projects in other currencies are now included), and in the Budget and spending report.
+- Spending in a period uses the rate of the day of each payment, so past reports keep their figures; a currency
+  without a rate is left out and named, never guessed.
+
 ## 0.9.0-phase9 — 16 November 2026
 
 Hardening and launch.

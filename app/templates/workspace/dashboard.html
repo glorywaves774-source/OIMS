@@ -1,11 +1,12 @@
 {% extends "layout_app.html" %}
 {% from "macros.html" import audit_rows, dt, ldt, status, priority %}
+{% from "analytics/_charts.html" import chart_grid with context %}
 {% block title %}Dashboard{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
 {% block content %}
 <div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ tenant.name }}</h2>
   <p>{% if g.membership %}Hello, <span translate="no">{{ current_user.full_name.split()[0] }}</span> · {{ g.membership.role.name if g.membership.role else 'member' }}{% else %}Kayron support view{% endif %}
-  {% if tenant.subscription %} · {{ tenant.subscription.plan.name }} plan ({{ tenant.subscription.status|replace('_', ' ') }}){% endif %}</p></div>
+  {% if tenant.subscription %} · <span class="plan-label">{{ tenant.subscription.plan.name }} plan ({{ tenant.subscription.status|replace('_', ' ') }})</span>{% endif %}</p></div>
   {% if not support_request %}<div class="toolbar">
     {% if can('tasks.create') %}<a class="btn btn-primary" href="{{ url_for('tasks.new') }}"><i class="bi bi-plus-lg me-1"></i>Task</a>{% endif %}
     {% if can('meetings.create') %}<a class="btn btn-soft" href="{{ url_for('meetings.edit') }}"><i class="bi bi-calendar-plus me-1"></i>Meeting</a>{% endif %}
@@ -32,6 +33,8 @@
   <a class="stat glass text-reset text-decoration-none" href="{{ url_for('tasks.index') }}"><div class="stat-icon amber"><i class="bi bi-check2-square"></i></div><div><div class="stat-value">{{ stats.my_open_tasks }}</div><div class="stat-label">My open tasks{% if stats.my_overdue %} · <span class="overdue">{{ stats.my_overdue }} overdue</span>{% endif %}</div></div></a>
   {% if can('meetings.view') %}<a class="stat glass text-reset text-decoration-none" href="{{ url_for('meetings.index') }}"><div class="stat-icon"><i class="bi bi-calendar-event"></i></div><div><div class="stat-value">{{ stats.meetings }}</div><div class="stat-label">Meetings in the next 14 days</div></div></a>{% endif %}
 </div>
+
+{{ chart_grid(charts, 'dash') }}
 
 {% if announcements %}
 <section class="panel"><div class="panel-header"><h2>Announcements</h2><a class="small" href="{{ url_for('comms.announcements') }}">All</a></div>
