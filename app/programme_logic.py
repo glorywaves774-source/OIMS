@@ -6,7 +6,7 @@ Permission codes may be written as ``programmes.<action>``; for a project they a
 translated to ``projects.<action>`` automatically.
 """
 from datetime import date
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from flask import g
 from flask_login import current_user
@@ -267,17 +267,27 @@ def consolidated(prog):
     """A programme with its linked projects. Each expenditure belongs to one owner only, so sums never overlap."""
     if prog.kind != "programme":
         return None
+    from app.fx import Rates
     own_fin = finance_summary(prog)
-    rows, budget, spent, other = [], own_fin["budget"], own_fin["spent"], False
+    rows, budget, spent = [], own_fin["budget"], own_fin["spent"]
+    rates, converted, missing = None, {}, set()
     for p in Project.query.filter_by(programme_id=prog.id).order_by(Project.code).all():
         f = finance_summary(p)
         if p.currency == prog.currency:
             budget += f["budget"]
             spent += f["spent"]
-        else:
-            other = True
+        else:   # another currency: converted at the latest rate, or left out (and said so) if there is none
+            rates = rates or Rates(prog.organization_id)
+            r = rates.rate(p.currency, prog.currency)
+            if r is None:
+                missing.add(p.currency)
+            else:
+                budget += (f["budget"] * r).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                spent += (f["spent"] * r).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                converted[p.currency] = r
         rows.append({"p": p, "fin": f, "acts": activity_counts(p), "visible": can_see("programmes.view", p)})
-    return {"projects": rows, "budget": budget, "spent": spent, "other_currency": other}
+    return {"projects": rows, "budget": budget, "spent": spent, "other_currency": bool(missing),
+            "missing": sorted(missing), "converted": converted, "rates_on": date.today()}
 
 
 # --- Activities & timeline ----------------------------------------------------------------------

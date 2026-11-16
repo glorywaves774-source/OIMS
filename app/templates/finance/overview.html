@@ -4,7 +4,8 @@
 {% block page_title %}Finance overview{% endblock %}
 {% block content %}
 <div class="page-head"><div><h2 class="h4 mb-0">Finance overview</h2><p>Budgets and spending of the programmes and projects you can see.</p></div>
-  {% if can('procurement.view') or can('procurement.request') %}<a class="btn btn-light" href="{{ url_for('procurement.index') }}"><i class="bi bi-cart3 me-1"></i>Procurement</a>{% endif %}</div>
+  <div class="toolbar"><a class="btn btn-light" href="{{ url_for('finance.rates') }}"><i class="bi bi-currency-exchange me-1"></i>Exchange rates</a>
+  {% if can('procurement.view') or can('procurement.request') %}<a class="btn btn-light" href="{{ url_for('procurement.index') }}"><i class="bi bi-cart3 me-1"></i>Procurement</a>{% endif %}</div></div>
 {% for cur, t in totals.items() %}
 <div class="kpi-row mb-3">
   <div class="kpi"><div class="v">{{ money(t.budget, cur) }}</div><div class="l">Budget</div></div>
@@ -12,6 +13,17 @@
   <div class="kpi"><div class="v">{{ money(t.committed, cur) }}</div><div class="l">Committed (orders, contracts)</div></div>
   <div class="kpi"><div class="v">{{ money(t.available, cur) }}</div><div class="l">Still available</div></div>
 </div>{% endfor %}
+{% if combined %}
+<section class="panel" id="combined"><h2 class="h6 mb-2">All together in {{ base }}</h2>
+  <div class="kpi-row mb-2">
+    <div class="kpi"><div class="v">{{ money(combined.budget, base) }}</div><div class="l">Budget</div></div>
+    <div class="kpi"><div class="v">{{ money(combined.spent, base) }}</div><div class="l">Spent (approved)</div></div>
+    <div class="kpi"><div class="v">{{ money(combined.committed, base) }}</div><div class="l">Committed</div></div>
+    <div class="kpi"><div class="v">{{ money(combined.available, base) }}</div><div class="l">Still available</div></div>
+  </div>
+  <p class="small text-muted mb-0">Converted at the latest exchange rates on {{ dt(rates_on, '%d %b %Y') }} (<a href="{{ url_for('finance.rates') }}">see rates</a>).
+  {% if missing %}<strong>{{ missing|join(', ') }} {{ 'is' if missing|length == 1 else 'are' }} not included: no exchange rate yet.</strong>{% endif %}</p>
+</section>{% endif %}
 {% if approvals or orders %}
 <section class="panel panel-flush"><div class="panel-header"><h2>Waiting for your approval</h2>{% if counts.approvals + counts.orders > limit %}<span class="text-muted small">{{ counts.approvals + counts.orders }} in all</span>{% endif %}</div>
   <div class="table-scroll"><table class="table"><thead><tr><th>What</th><th>For</th><th class="text-end">Amount</th><th></th></tr></thead><tbody>

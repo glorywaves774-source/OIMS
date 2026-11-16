@@ -89,6 +89,7 @@ CATALOG = {
         ("record", "Prepare budgets and record expenditure, commitments and funding received"),
         ("approve", "Approve expenditure and budget revisions"),
         ("manage", "Manage donors and budget categories"),
+        ("rates", "Set exchange rates used to combine currencies"),
     ]),
     "meal": ("Monitoring, evaluation, accountability & learning", [
         ("view", "View indicators, results, visits and evaluations"),

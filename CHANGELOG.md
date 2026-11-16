@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.1-rates — 16 November 2026
+
+Exchange rates.
+
+- **Finance → Exchange rates**: the finance team records dated rates ("1 USD = 15.40 GHS from 1 November") with
+  their source. Only roles allowed to *set exchange rates* can add or remove them; every change is in the audit log.
+- **Combined totals in the organization's currency** on the finance overview, in programme roll-ups and reports
+  (projects in other currencies are now included), and in the Budget and spending report.
+- Spending in a period uses the rate of the day of each payment, so past reports keep their figures; a currency
+  without a rate is left out and named, never guessed.
+
 ## 0.9.0-phase9 — 16 November 2026
 
 Hardening and launch.

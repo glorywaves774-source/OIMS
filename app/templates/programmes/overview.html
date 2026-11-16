@@ -17,7 +17,7 @@
       {% if fin %}<td class="money">{{ money(r.fin.budget, r.p.currency) }}</td><td class="money">{{ money(r.fin.spent) }}</td>{% endif %}
       <td class="nowrap">{{ r.acts.by_status.get('completed', 0) }} / {{ r.acts.total }} done</td></tr>{% endfor %}
   </tbody></table></div>
-  {% if fin %}<p class="small text-muted px-3 pb-3 mb-0">Combined programme and projects: budget <strong>{{ money(consolidated.budget, prog.currency) }}</strong>, spent <strong>{{ money(consolidated.spent) }}</strong>{% if consolidated.other_currency %} (projects in another currency are not added){% endif %}. Each payment is recorded once — on the programme or on one project — so nothing is counted twice.</p>{% endif %}
+  {% if fin %}<p class="small text-muted px-3 pb-3 mb-0">Combined programme and projects: budget <strong>{{ money(consolidated.budget, prog.currency) }}</strong>, spent <strong>{{ money(consolidated.spent) }}</strong>{% if consolidated.converted %} (projects in {{ consolidated.converted|join(', ') }} converted at <a href="{{ url_for('finance.rates') }}">today's exchange rates</a>){% endif %}{% if consolidated.missing %} (projects in {{ consolidated.missing|join(', ') }} are not added: no exchange rate yet){% endif %}. Each payment is recorded once — on the programme or on one project — so nothing is counted twice.</p>{% endif %}
   {% else %}<p class="text-muted px-3 pb-3 mb-0">No projects linked yet.</p>{% endif %}
 </section>
 {% endif %}

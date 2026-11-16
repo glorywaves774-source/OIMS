@@ -1,0 +1,45 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, dt %}
+{% block title %}Exchange rates{% endblock %}
+{% block page_title %}Exchange rates{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0">Exchange rates</h2>
+  <p>How much one unit of each currency is worth in {{ base }}, the organization's main currency. They are used to show combined totals in {{ base }}; original amounts never change.</p></div>
+  <a class="btn btn-light" href="{{ url_for('finance.overview') }}"><i class="bi bi-arrow-left me-1"></i>Finance overview</a></div>
+
+{% set missing = [] %}{% for c in current %}{% if c.currency in used and not c.row %}{% set _ = missing.append(c.currency) %}{% endif %}{% endfor %}
+{% if missing %}<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-1"></i>Programmes or projects use {{ missing|join(', ') }}, which {{ 'has' if missing|length == 1 else 'have' }} no rate yet, so {{ 'it is' if missing|length == 1 else 'they are' }} left out of combined totals.{% if can_set %} Add a rate below.{% else %} Ask the finance team to add one.{% endif %}</div>{% endif %}
+
+<section class="panel panel-flush"><div class="panel-header"><h2>Rates in use today</h2></div>
+  <div class="table-scroll"><table class="table"><thead><tr><th>Currency</th><th class="text-end">Rate</th><th>Since</th><th>Source</th></tr></thead><tbody>
+  {% for c in current if c.row or c.currency in used %}<tr>
+    <td><span class="code">{{ c.currency }}</span><span class="cell-sub">{{ c.label.split(' — ')[1] }}</span></td>
+    {% if c.row %}<td class="money">1 {{ c.currency }} = {{ fmt_rate(c.row.rate) }} {{ base }}</td><td class="date">{{ dt(c.row.effective_on, '%d %b %Y') }}</td><td translate="no">{{ c.row.source or '—' }}</td>
+    {% else %}<td class="text-end text-muted">No rate</td><td>—</td><td>—</td>{% endif %}</tr>
+  {% else %}<tr><td colspan="4" class="text-muted">No rates yet. Everything is in {{ base }}, so none are needed{% if can_set %}; add one when a programme or project uses another currency{% endif %}.</td></tr>{% endfor %}
+  </tbody></table></div></section>
+
+{% if can_set %}
+<section class="panel"><h2 class="h6">Add a rate</h2>
+  <form method="post" novalidate>{{ form.hidden_tag() }}
+    <div class="row g-2">
+      <div class="col-md-3">{{ field(form.currency, required=True) }}</div>
+      <div class="col-md-3">{{ field(form.rate, label='Rate (1 unit = ? ' ~ base ~ ')', required=True, help='e.g. 15.40 if 1 USD = 15.40 ' ~ base) }}</div>
+      <div class="col-md-3">{{ field(form.effective_on, required=True, help='Used for this day and after, until a newer rate.') }}</div>
+      <div class="col-md-3">{{ field(form.source) }}</div>
+    </div>
+    <div class="toolbar"><button class="btn btn-primary" type="submit"><i class="bi bi-plus-lg me-1"></i>Save rate</button></div>
+  </form>
+  <p class="small text-muted mb-0">Totals of budgets, spending so far and commitments use the latest rate. Spending within a report period uses the rate of the day each payment was made, so past reports keep their figures when rates change.</p>
+</section>
+{% endif %}
+
+<section class="panel panel-flush"><div class="panel-header"><h2>History</h2></div>
+  {% if history %}<div class="table-scroll"><table class="table"><thead><tr><th>From</th><th>Currency</th><th class="text-end">Rate</th><th>Source</th><th>Entered by</th>{% if can_set %}<th></th>{% endif %}</tr></thead><tbody>
+  {% for r in history %}<tr><td class="date">{{ dt(r.effective_on, '%d %b %Y') }}</td><td class="code">{{ r.currency }}</td>
+    <td class="money">1 {{ r.currency }} = {{ fmt_rate(r.rate) }} {{ r.base_currency }}</td><td translate="no">{{ r.source or '—' }}</td>
+    <td translate="no">{{ r.created_by.full_name if r.created_by else '—' }}</td>
+    {% if can_set %}<td><form method="post" action="{{ url_for('finance.rate_delete', rid=r.id) }}" data-confirm="Remove the rate of {{ dt(r.effective_on, '%d %b %Y') }} for {{ r.currency }}? Totals will use the rate before it." data-confirm-variant="btn-danger" data-confirm-label="Remove"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form></td>{% endif %}</tr>
+  {% endfor %}</tbody></table></div>
+  {% else %}<div class="empty"><i class="bi bi-currency-exchange"></i>No rates entered yet.</div>{% endif %}</section>
+{% endblock %}

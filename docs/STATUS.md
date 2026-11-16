@@ -164,6 +164,14 @@ console errors.
 | Backups | Encrypted nightly off-site backup of database and documents, 14 daily + 12 monthly, restore into an empty database with checks; rehearsed on the large test database (all 89 tables identical) |
 | Go-live | `flask oims check-deploy`, going-live checklist, capacity guide, web server settings (`gunicorn.conf.py`), restore runbook (docs/DEPLOYMENT.md) |
 
+## Exchange rates ✅ complete (0.9.1-rates)
+
+| Area | Result |
+|---|---|
+| Rates | Finance → Exchange rates: dated rates per currency against the organization's currency, with source; added and removed only by roles with *Set exchange rates* (Finance Officer, administrators); recorded in the audit log |
+| Conversion | Positions (budget, spent so far, committed, available) at the latest rate; spending within a report period at the rate of each payment's day; via a third currency when needed; missing rates never guessed |
+| Where | Finance overview (combined total), programme roll-up and programme report (other-currency projects now included), Budget and spending report (combined totals and monthly chart) |
+
 ## Not included (possible next steps)
 
 - **Help assistant** (chatbot) and **French / other languages**.
@@ -174,8 +182,8 @@ console errors.
 
 - **Email** is real SMTP but optional; without it, notifications are in-app only and invitation links
   are shown once to the administrator.
-- **Programme roll-up of money** adds projects in the programme's currency; projects in another
-  currency are listed but not added (no exchange rates yet).
+- **Exchange rates are entered by the finance team** (Finance → Exchange rates); they are not fetched
+  automatically. A currency without a rate is left out of combined totals, and the page says so.
 - **Indicator roll-up** applies to indicators that add up (counts). Rates and percentages are not
   combined across projects, because averaging them would be misleading.
 - **Organization running costs** (rent, salaries outside programmes) are not budgeted yet: purchases must be
@@ -190,7 +198,8 @@ console errors.
 - **Large organizations**: reports are calculated when opened. Measured with 16,000 beneficiaries: most pages
   well under a second; the beneficiaries report about 1 s and the full beneficiary export about 4 s.
 - **Payments are recorded, not made**: ZENTAVA does not connect to banks or mobile money.
-- **One currency per order**; the finance overview shows a total per currency without conversion.
+- **One currency per order**; the finance overview shows a total per currency plus one combined total in the
+  organization's currency.
 - **Asset tags** are numbers (AST/2026/0001); printing labels or QR codes is not included yet.
 - **Head-counts and named attendance are separate**: an activity report's head-count can include people
   who are not registered; "people reached" counts only registered beneficiaries, each once.
@@ -201,7 +210,6 @@ console errors.
 - **Public feedback page** has a hidden bot trap and a rate limit but no CAPTCHA.
 - **Encryption key** is derived from `SECRET_KEY`; changing it makes encrypted phone and ID numbers
   unreadable (see DEPLOYMENT.md).
-- **Exchange rates**: each programme has one currency; multi-currency conversion is not supported yet.
 - **Charts in Excel**: Excel exports contain the tables (ready for your own charts); PDFs include the charts.
 - **Meeting minutes and letters print to PDF from the browser** (no generated PDF yet).
 - **Messages and notifications refresh when the page loads** (no live push yet).

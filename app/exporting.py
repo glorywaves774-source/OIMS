@@ -89,11 +89,18 @@ def report_data(prog, start=None, end=None, report=None):
                              "currency": r["p"].currency, "budget": _f(r["fin"]["budget"]), "spent": _f(r["fin"]["spent"]),
                              "utilization": r["fin"]["utilization"], "activities": r["acts"]["total"],
                              "completed": r["acts"]["by_status"].get("completed", 0)} for r in cons["projects"]]
+        fx_note = ""
+        if cons["converted"]:
+            fx_note += " Projects in other currencies are converted at the exchange rates of " + \
+                f"{cons['rates_on']:%d %b %Y} (" + ", ".join(
+                    f"1 {c} = {r.normalize():f} {prog.currency}" for c, r in sorted(cons["converted"].items())) + ")."
+        if cons["missing"]:
+            fx_note += f" Projects in {', '.join(cons['missing'])} are listed but not added: no exchange rate yet."
         data["consolidated"] = {"budget": _f(cons["budget"]), "spent": _f(cons["spent"]),
                                 "other_currency": cons["other_currency"],
                                 "note": "Programme and linked projects together. Each payment is recorded once, so "
                                         "nothing is counted twice. Indicator figures include verified results "
-                                        "reported on linked project indicators."}
+                                        "reported on linked project indicators." + fx_note}
     return data
 
 
