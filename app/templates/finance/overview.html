@@ -1,5 +1,6 @@
 {% extends "layout_app.html" %}
 {% from "macros.html" import status, dt, money, meter %}
+{% from "analytics/_charts.html" import chart_grid with context %}
 {% block title %}Finance overview{% endblock %}
 {% block page_title %}Finance overview{% endblock %}
 {% block content %}
@@ -24,6 +25,7 @@
   <p class="small text-muted mb-0">Converted at the latest exchange rates on {{ dt(rates_on, '%d %b %Y') }} (<a href="{{ url_for('finance.rates') }}">see rates</a>).
   {% if missing %}<strong>{{ missing|join(', ') }} {{ 'is' if missing|length == 1 else 'are' }} not included: no exchange rate yet.</strong>{% endif %}</p>
 </section>{% endif %}
+{{ chart_grid(charts, 'fin') }}
 {% if approvals or orders %}
 <section class="panel panel-flush"><div class="panel-header"><h2>Waiting for your approval</h2>{% if counts.approvals + counts.orders > limit %}<span class="text-muted small">{{ counts.approvals + counts.orders }} in all</span>{% endif %}</div>
   <div class="table-scroll"><table class="table"><thead><tr><th>What</th><th>For</th><th class="text-end">Amount</th><th></th></tr></thead><tbody>

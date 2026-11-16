@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.9.3-charts — 16 November 2026
+
+Charts on the dashboards.
+
+- **Workspace dashboard**: my open tasks by status, budget used per programme and project, people registered per
+  month, staff by department — each shown only to people whose role allows that information.
+- **MEAL dashboard**: beneficiaries by sex and age group, registrations per month and feedback by type, as charts.
+- **Finance overview**: budget used, and approved spending per month in the organization's currency.
+- **Kayron platform dashboard**: organizations by status, new organizations per month, sign-ins per day.
+- Month labels shortened ("Dec 25", "Jan 26", "Feb") and every other label shown when there are many columns
+  (reports too).
+
 ## 0.9.2-fr — 16 November 2026
 
 French.

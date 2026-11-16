@@ -471,7 +471,8 @@ html[data-theme="dark"] .tabs-scroll a[aria-current="page"] { color: #04201d; }
 .vcol-label { font-size: .7rem; color: var(--text-muted); margin-top: 4px; white-space: nowrap; }
 .row-total td { font-weight: 700; }
 .chart-tip { position: fixed; z-index: 3000; pointer-events: none; padding: 6px 10px; border-radius: 8px; background: var(--surface-solid); color: var(--text); border: 1px solid var(--border); box-shadow: 0 6px 18px rgba(0,0,0,.18); font-size: .82rem; max-width: 260px; }
-@media (max-width: 760px) { .vcol-label-skip { visibility: hidden; } .report-filters .form-control, .report-filters .form-select { max-width: none; } }
+.vcol-label-skip { visibility: hidden; }   /* every other label when there are many columns */
+@media (max-width: 760px) { .report-filters .form-control, .report-filters .form-select { max-width: none; } }
 .bw-0 { width: calc((100% - 5.5em) * 0.00); }
 .bw-1 { width: calc((100% - 5.5em) * 0.01); }
 .bw-2 { width: calc((100% - 5.5em) * 0.02); }

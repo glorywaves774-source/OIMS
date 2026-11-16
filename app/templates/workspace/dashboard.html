@@ -1,5 +1,6 @@
 {% extends "layout_app.html" %}
 {% from "macros.html" import audit_rows, dt, ldt, status, priority %}
+{% from "analytics/_charts.html" import chart_grid with context %}
 {% block title %}Dashboard{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
 {% block content %}
@@ -32,6 +33,8 @@
   <a class="stat glass text-reset text-decoration-none" href="{{ url_for('tasks.index') }}"><div class="stat-icon amber"><i class="bi bi-check2-square"></i></div><div><div class="stat-value">{{ stats.my_open_tasks }}</div><div class="stat-label">My open tasks{% if stats.my_overdue %} · <span class="overdue">{{ stats.my_overdue }} overdue</span>{% endif %}</div></div></a>
   {% if can('meetings.view') %}<a class="stat glass text-reset text-decoration-none" href="{{ url_for('meetings.index') }}"><div class="stat-icon"><i class="bi bi-calendar-event"></i></div><div><div class="stat-value">{{ stats.meetings }}</div><div class="stat-label">Meetings in the next 14 days</div></div></a>{% endif %}
 </div>
+
+{{ chart_grid(charts, 'dash') }}
 
 {% if announcements %}
 <section class="panel"><div class="panel-header"><h2>Announcements</h2><a class="small" href="{{ url_for('comms.announcements') }}">All</a></div>

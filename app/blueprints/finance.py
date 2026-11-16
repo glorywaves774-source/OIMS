@@ -75,7 +75,18 @@ def overview():
     if totals and (len(totals) > 1 or base not in totals):
         combined, missing = combine(totals, base, Rates(), rates_on,
                                     keys=["budget", "spent", "committed", "available"])
-    return render_template("finance/overview.html", rows=rows, totals=totals, approvals=approvals, orders=orders,
+    from app import dashboards
+    charts = []
+    if owners:
+        fx = Rates()
+        c = dashboards.budget_use([o for o in owners if o.status in ("approved", "active")])
+        if c["rows"]:
+            charts.append(c)
+        c = dashboards.spending_per_month(owners, base, fx)
+        if c["rows"]:
+            charts.append(c)
+    return render_template("finance/overview.html", charts=charts, rows=rows, totals=totals, approvals=approvals,
+                           orders=orders,
                            payable=payable, counts=counts, limit=QUEUE_LIMIT, base=base, combined=combined,
                            missing=missing, rates_on=rates_on)
 

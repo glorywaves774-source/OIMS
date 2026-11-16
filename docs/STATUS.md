@@ -181,6 +181,18 @@ console errors.
 | Typed-in data | Never translated: anything marked `translate="no"` (names, notes, records, the organization's name), records chosen from lists, form fields, scripts |
 | Checked | Every page crawled in French at 320–1440 px in both themes; English left on French pages checked by script |
 
+## Dashboard charts ✅ complete (0.9.3-charts)
+
+| Dashboard | Charts (each only for roles that may see that information) |
+|---|---|
+| Workspace | My open tasks by status; budget used per programme/project; people registered per month; staff by department |
+| MEAL | Active beneficiaries by sex and by age group; people registered per month; feedback by type |
+| Finance | Budget used per programme/project; approved spending per month in the organization's currency (exchange rates) |
+| Kayron platform | Organizations by status; new organizations per month; sign-ins per day |
+
+Same chart style as the reports (validated colours, values on bars, hover and keyboard tips, every other month label
+when there are many). Counting is done in the database. Record names in charts are never translated.
+
 ## Not included (possible next steps)
 
 - **Help assistant** (chatbot).
