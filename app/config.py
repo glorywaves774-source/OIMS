@@ -90,6 +90,18 @@ class BaseConfig:
 
     ALLOW_PUBLIC_REGISTRATION = _bool("ALLOW_PUBLIC_REGISTRATION", True)
 
+    # Off-site backups (see docs/DEPLOYMENT.md): a separate S3-compatible bucket, or a folder
+    BACKUP_ENCRYPTION_KEY = os.environ.get("BACKUP_ENCRYPTION_KEY")      # flask oims backup-key
+    BACKUP_S3_BUCKET = os.environ.get("BACKUP_S3_BUCKET")
+    BACKUP_S3_ENDPOINT_URL = os.environ.get("BACKUP_S3_ENDPOINT_URL")
+    BACKUP_S3_REGION = os.environ.get("BACKUP_S3_REGION")
+    BACKUP_S3_ACCESS_KEY_ID = os.environ.get("BACKUP_S3_ACCESS_KEY_ID")
+    BACKUP_S3_SECRET_ACCESS_KEY = os.environ.get("BACKUP_S3_SECRET_ACCESS_KEY")
+    BACKUP_S3_PREFIX = os.environ.get("BACKUP_S3_PREFIX", "")
+    BACKUP_DIR = os.environ.get("BACKUP_DIR")
+    BACKUP_KEEP_DAILY = int(os.environ.get("BACKUP_KEEP_DAILY", "14"))
+    BACKUP_KEEP_MONTHLY = int(os.environ.get("BACKUP_KEEP_MONTHLY", "12"))
+
     # Large downloads prepared at the same time per server process, and how long to wait for a turn (seconds)
     HEAVY_DOWNLOADS = int(os.environ.get("HEAVY_DOWNLOADS", "1"))
     HEAVY_DOWNLOAD_WAIT = int(os.environ.get("HEAVY_DOWNLOAD_WAIT", "20"))

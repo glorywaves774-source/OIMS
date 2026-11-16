@@ -2,6 +2,7 @@
 import os
 
 import click
+from flask import current_app
 
 from app.extensions import db
 
@@ -84,3 +85,71 @@ def register_cli(app):
         with current_app.test_request_context("/", base_url=base):
             totals = run_reminders()
         click.echo(", ".join(f"{k}: {v}" for k, v in totals.items()))
+
+    # --- backups (app/backup.py, docs/DEPLOYMENT.md) -------------------------------------------
+
+    @oims.command("backup-key")
+    def backup_key():
+        """Print a new random backup encryption key (store it in a password manager AND in BACKUP_ENCRYPTION_KEY)."""
+        from app.backup import new_key
+        click.echo(new_key())
+        click.echo("Keep this key safe and separate from the backups: without it no backup can be restored.",
+                   err=True)
+
+    @oims.command("backup")
+    @click.option("--no-files", is_flag=True, help="Database only (skip uploaded documents)")
+    def backup(no_files):
+        """Back up the database (and new uploaded documents), encrypted, to the backup destination."""
+        from app.backup import BackupError, create_backup
+        from app.storage import get_storage
+        include = not no_files
+        if include and current_app.config.get("STORAGE_BACKEND") == "local":
+            root = current_app.config.get("UPLOAD_ROOT") or ""
+            if not os.path.isdir(root):
+                click.echo(f"Documents folder {root or '(not set)'} is not reachable from here: database only. "
+                           "Render's daily disk snapshots cover documents on the disk; see docs/DEPLOYMENT.md.",
+                           err=True)
+                include = False
+        try:
+            if include:
+                get_storage()
+            name = create_backup(include_files=include, log=click.echo)
+        except BackupError as exc:
+            raise click.ClickException(str(exc))
+        click.echo(f"Backup complete: {name}")
+
+    @oims.command("backup-list")
+    def backup_list():
+        """List the database backups that are kept."""
+        from app.backup import BackupError, list_backups
+        try:
+            for n in list_backups():
+                click.echo(n)
+        except BackupError as exc:
+            raise click.ClickException(str(exc))
+
+    @oims.command("backup-verify")
+    @click.argument("name")
+    def backup_verify(name):
+        """Decrypt a backup and check every table against its checksum (does not change anything)."""
+        from app.backup import BackupError, verify_backup
+        try:
+            verify_backup(name, log=click.echo)
+        except BackupError as exc:
+            raise click.ClickException(str(exc))
+
+    @oims.command("restore")
+    @click.argument("name")
+    @click.option("--no-files", is_flag=True, help="Database only")
+    @click.option("--yes", is_flag=True, help="Confirm: load the backup into this (empty) database")
+    def restore(name, no_files, yes):
+        """Restore a backup into a NEW, EMPTY database (refuses a database that has data)."""
+        from app.backup import BackupError, restore_backup
+        if not yes:
+            raise click.ClickException("Add --yes to confirm. Point DATABASE_URL at a new, empty database first.")
+        try:
+            restore_backup(name, with_files=not no_files, log=click.echo)
+        except BackupError as exc:
+            raise click.ClickException(str(exc))
+        click.echo("Restore complete. Sign in and check before switching people over.")
+
