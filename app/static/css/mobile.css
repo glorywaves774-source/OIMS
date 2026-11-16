@@ -57,7 +57,8 @@ input, select, textarea, .form-control, .form-select { font-size: 16px; }
 
   .toast-container, .floating { bottom: calc(84px + env(safe-area-inset-bottom)) !important; }
 
-  .auth-card { padding: 26px 20px; border-radius: 22px; }
+  .auth-card { padding: 60px 18px 24px; border-radius: 24px; margin-top: 40px; }
+  .auth-card > .auth-brand { left: 12px; right: 12px; padding: 12px; }
   .hero { padding: 20px 14px 40px; }
   .hero-top { margin-bottom: 24px; }
 }
