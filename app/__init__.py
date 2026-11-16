@@ -9,7 +9,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from app.config import CONFIGS
 from app.extensions import csrf, db, limiter, login_manager, migrate
 
-__version__ = "0.8.1-zentava"
+__version__ = "0.9.0-phase9"
 
 
 def create_app(config_name=None, overrides=None):
@@ -19,6 +19,7 @@ def create_app(config_name=None, overrides=None):
     if overrides:
         app.config.update(overrides)
     app.config["OIMS_VERSION"] = __version__
+    app.config["OIMS_CONFIG_NAME"] = config_name
 
     _check_production_config(app, config_name)
     _tune_database(app)

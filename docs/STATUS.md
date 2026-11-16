@@ -155,11 +155,20 @@ console errors.
 - Verified: 193 tests pass (SQLite; affected modules also on PostgreSQL); every menu page crawled at
   320/360/390/402/440/1440px in light and dark mode with no issues.
 
-## Outstanding phases
+## Phase 9 — Hardening & launch ✅ complete (0.9.0-phase9)
 
-| Phase | Scope |
+| Area | Result |
 |---|---|
-| 9 — Hardening & launch | Security review, load testing, production backups, go-live |
+| Security review | Every page and action tried signed out, as another organization's administrator and as a low-permission staff member: nothing leaked or changed that should not. Kayron console closed to organization staff (168 attempts refused). Fixed: Paystack checkout blocked by the page policy; a sign-in return-address trick; email not checking the mail server's certificate; health check showing the version. Production refuses unsafe settings. Dependencies pinned and audited (`pip-audit`, `bandit`); Pillow updated for known flaws |
+| Load test | Large organization (16,000 beneficiaries and more) plus 60 others. Slow pages fixed: MEAL dashboard 15 s → 0.6 s, finance 5 s → 0.4 s, procurement 3.6 s → 0.13 s, procurement report 10 s → 0.5 s, beneficiary export 38 s → 4 s, work breakdown 6,000 queries → 44. One core: about 30 people at once, no errors. Memory 315 MB peak on the 512 MB plan |
+| Backups | Encrypted nightly off-site backup of database and documents, 14 daily + 12 monthly, restore into an empty database with checks; rehearsed on the large test database (all 89 tables identical) |
+| Go-live | `flask oims check-deploy`, going-live checklist, capacity guide, web server settings (`gunicorn.conf.py`), restore runbook (docs/DEPLOYMENT.md) |
+
+## Not included (possible next steps)
+
+- **Help assistant** (chatbot) and **French / other languages**.
+- Offline data collection on phones; KoBo/ODK import.
+- Scheduled report emails; a custom report builder.
 
 ## Known limitations of this release
 
@@ -178,8 +187,8 @@ console errors.
   still change a plan immediately from the organization's page.
 - **Invoices in the plan's currency only**; no automatic currency conversion or card-on-file auto-renewal.
 - **Reports are produced on request**: there are no scheduled report emails and no custom report builder yet.
-- **Large organizations**: reports are calculated when opened; with many thousands of records some may take a
-  few seconds. Caching can be added in Phase 9 if needed.
+- **Large organizations**: reports are calculated when opened. Measured with 16,000 beneficiaries: most pages
+  well under a second; the beneficiaries report about 1 s and the full beneficiary export about 4 s.
 - **Payments are recorded, not made**: ZENTAVA does not connect to banks or mobile money.
 - **One currency per order**; the finance overview shows a total per currency without conversion.
 - **Asset tags** are numbers (AST/2026/0001); printing labels or QR codes is not included yet.
@@ -202,7 +211,11 @@ console errors.
 - **Persistent disk storage** limits the web service to one instance; switch to S3-compatible storage to scale.
 - **Rate limits** use per-process memory by default; set `RATELIMIT_STORAGE_URI` to Redis when running
   several instances.
-- **Subscriptions** do not yet block access when expired (Phase 8).
-- **Help assistant** (chatbot) and **French / other languages** are not included yet.
+- **Backups of documents on the Render disk** are Render's daily snapshots (7 days); off-site document copies
+  need `STORAGE_BACKEND=s3` (recommended for go-live).
+- **Very large lists on one page**: a project's work breakdown and an indicator's results list show
+  everything; with many thousands of tasks or results these pages get heavy (measured: 8,000 tasks, 1.8 s).
+- **Paystack and real email** have not been tried against the live services from here; do one test payment
+  and one test email after deploying (the go-live checklist includes both).
 - Phone layouts were checked with Chrome's phone emulation, which is not identical to Safari on a real
   iPhone; a quick check on real devices is recommended.

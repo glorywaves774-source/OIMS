@@ -118,3 +118,70 @@ def test_large_downloads_take_turns(app, client, db):
         slots.release()
     assert client.get(url).status_code == 200
     app.config["HEAVY_DOWNLOAD_WAIT"] = 20
+
+
+def test_email_checks_the_mail_server_certificate(app, monkeypatch):
+    import smtplib
+    import ssl
+    from app.security import send_email
+    seen = {}
+
+    class FakeSMTP:
+        def __init__(self, host, port, timeout):
+            seen["host"] = host
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def starttls(self, context=None):
+            seen["context"] = context
+
+        def login(self, u, p):
+            pass
+
+        def send_message(self, msg):
+            seen["to"] = msg["To"]
+
+    monkeypatch.setattr(smtplib, "SMTP", FakeSMTP)
+    app.config.update(SMTP_HOST="smtp.example.org", SMTP_USE_TLS=True, SMTP_USERNAME="u", SMTP_PASSWORD="p")
+    with app.app_context():
+        assert send_email("someone@example.org", "Hello", "Body") is True
+    ctx = seen["context"]
+    assert ctx is not None and ctx.verify_mode == ssl.CERT_REQUIRED and ctx.check_hostname
+    app.config.update(SMTP_HOST=None)
+
+
+def test_health_check_does_not_reveal_the_version(client):
+    r = client.get("/healthz")
+    assert r.status_code == 200 and r.get_json() == {"status": "ok", "database": "ok"}
+
+
+def test_go_live_check_reports_plainly(app, db, tmp_path, monkeypatch):
+    """The check finds what is missing and passes once it is set."""
+    from app import backup as bk
+    from app.golive import FAIL, OK, WARN, report, run_checks
+    from app.models import PlatformRole
+    from tests.conftest import make_staff
+    app.config.update(PUBLIC_BASE_URL=None, BACKUP_ENCRYPTION_KEY=None, BACKUP_DIR=None, SETUP_TOKEN="t0k3n")
+    res = {w: s for s, w, _ in run_checks()}
+    assert res["Production settings"] == FAIL            # the test settings, not production
+    assert res["Public web address"] == FAIL
+    assert res["Kayron Super Admin exists"] == FAIL
+    assert res["Backups"] == FAIL
+    assert res["Document storage works"] == OK
+    make_staff(role=PlatformRole.SUPER_ADMIN)
+    app.config.update(PUBLIC_BASE_URL="https://app.zentava.example", REQUIRE_PLATFORM_2FA=True,
+                      BACKUP_ENCRYPTION_KEY=bk.new_key(), BACKUP_DIR=str(tmp_path / "b"))
+    res = {w: s for s, w, _ in run_checks()}
+    assert res["Public web address"] == OK and res["Kayron Super Admin exists"] == OK
+    assert res["First-run setup token removed"] == FAIL   # a Super Admin exists, so the token must go
+    assert res["Backups"] == WARN                         # set up, none made yet
+    assert res["Kayron staff have set up two-step sign-in"] == WARN
+    lines = []
+    assert report(run_checks(), lines.append) >= 1
+    assert any("must be fixed" in line for line in lines)
+    app.config.update(SETUP_TOKEN=None, REQUIRE_PLATFORM_2FA=False, BACKUP_ENCRYPTION_KEY=None, BACKUP_DIR=None,
+                      PUBLIC_BASE_URL=None)

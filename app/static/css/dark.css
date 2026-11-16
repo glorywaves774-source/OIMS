@@ -59,3 +59,4 @@ html[data-theme="dark"] .rm-critical { color: #ff9c8f; }
 /* Phase 7: chart series colour for dark surfaces (validated) */
 html[data-theme="dark"] { --chart-1: #26a395; }
 html[data-theme="dark"] .acr-tiles li { background: #0b1427; box-shadow: inset 0 0 0 1px rgba(200, 215, 240, .10); }
+html[data-theme="dark"] .pagination { --bs-pagination-active-color: #0b1427; }   /* dark text on the teal current page */

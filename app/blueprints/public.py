@@ -23,7 +23,7 @@ def index():
 def health():
     try:
         db.session.execute(text("SELECT 1"))
-        return jsonify(status="ok", database="ok", version=current_app.config["OIMS_VERSION"])
+        return jsonify(status="ok", database="ok")   # no version number: nothing useful for attackers
     except Exception:  # pragma: no cover - exercised only when the DB is down
         db.session.rollback()
         return jsonify(status="error", database="unreachable"), 503

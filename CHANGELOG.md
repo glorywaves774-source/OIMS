@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.9.0-phase9 — 16 November 2026
+
+Hardening and launch.
+
+- **Security review.** Every page and action was tried signed out, as another organization's administrator and
+  as a low-permission staff member; nothing leaked or changed that should not. Fixed:
+  - the *Pay online* button would have been blocked by the browser (page security policy); the billing page now
+    allows Paystack's checkout only;
+  - a crafted sign-in link could send people to another website afterwards;
+  - outgoing email did not check the mail server's certificate;
+  - the health check showed the version number.
+  The server now refuses to start with unsafe production settings. All packages are pinned to the tested
+  versions and checked for known flaws (Pillow updated).
+- **Speed with large organizations** (tested with 16,000 beneficiaries and 60 organizations): MEAL dashboard
+  15 s → 0.6 s, finance overview 5 s → 0.4 s, procurement 3.6 s → 0.13 s, procurement report 10 s → 0.5 s,
+  beneficiary export 38 s → 4 s with flat memory. Long finance lists show the oldest 50 with totals; open
+  orders are paged. Large downloads take turns so everyone else stays quick.
+- **Backups**: encrypted nightly off-site backups of the database and documents with a tested restore
+  (`flask oims backup`, `backup-list`, `backup-verify`, `restore`, `backup-key`); new nightly Render job.
+- **Go-live**: `flask oims check-deploy`, a going-live checklist and capacity guide in docs/DEPLOYMENT.md, web
+  server settings for Render's 512 MB plan.
+
 ## 0.8.1-zentava — 15 November 2026
 
 New name and brand: **ZENTAVA OIMS — Organized. Transparent. Accountable.**

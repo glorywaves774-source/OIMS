@@ -153,3 +153,10 @@ def register_cli(app):
             raise click.ClickException(str(exc))
         click.echo("Restore complete. Sign in and check before switching people over.")
 
+
+    @oims.command("check-deploy")
+    def check_deploy():
+        """Go-live check: settings, database, accounts, storage, email, backups and billing."""
+        from app.golive import report, run_checks
+        if report(run_checks(), click.echo):
+            raise SystemExit(1)

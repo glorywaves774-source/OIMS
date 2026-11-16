@@ -2,6 +2,7 @@
 import logging
 import re
 import smtplib
+import ssl
 import threading
 from email.message import EmailMessage
 from functools import wraps
@@ -131,7 +132,9 @@ def send_email(to, subject, body):
     try:
         with smtplib.SMTP(cfg["SMTP_HOST"], cfg["SMTP_PORT"], timeout=15) as smtp:
             if cfg["SMTP_USE_TLS"]:
-                smtp.starttls()
+                # Check the mail server's certificate (Python's default here does not), so the password and
+                # messages cannot be read by someone in between.
+                smtp.starttls(context=ssl.create_default_context())
             if cfg.get("SMTP_USERNAME"):
                 smtp.login(cfg["SMTP_USERNAME"], cfg["SMTP_PASSWORD"] or "")
             smtp.send_message(msg)

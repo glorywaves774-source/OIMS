@@ -6,7 +6,7 @@
 
 A multi-tenant SaaS platform provided and operated by **Kayron Global Tech Services**.
 
-**Current release:** `0.8.1-zentava` (ZENTAVA brand, on top of Phase 8 — SaaS billing). See [CHANGELOG.md](CHANGELOG.md) and
+**Current release:** `0.9.0-phase9` (Phase 9 — hardening and launch: security review, load testing, backups, go-live). See [CHANGELOG.md](CHANGELOG.md) and
 [docs/STATUS.md](docs/STATUS.md) for what is complete and what comes next.
 
 > **Name.** The product is **ZENTAVA OIMS**: ZENTAVA is the brand and OIMS (Office Information Management
@@ -26,6 +26,15 @@ A multi-tenant SaaS platform provided and operated by **Kayron Global Tech Servi
 
 The logo (`app/static/img/logo.svg`, also the browser icon) is redrawn as a vector from the brand profile.
 To use the exact original artwork, replace that file with an SVG of the same name.
+
+## What Phase 9 adds
+
+| Area | Delivered |
+|---|---|
+| Security review | Automated probe of every page and action (signed out, another organization's admin, low-permission staff); fixes for the Paystack checkout policy, a sign-in return-address trick, mail-server certificate checking and the health check; unsafe production settings refused; all packages pinned and audited |
+| Speed | Load-tested with 16,000 beneficiaries and 60 organizations; the slow pages are 10–25× faster; large downloads take turns |
+| Backups | `flask oims backup` / `restore`: encrypted nightly off-site copies of the database and documents (14 daily, 12 monthly), restore with checks, nightly Render job |
+| Go-live | `flask oims check-deploy`, going-live checklist, capacity guide, web server settings for the 512 MB plan |
 
 ## What Phase 8 adds
 
