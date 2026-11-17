@@ -12,7 +12,10 @@
       <div class="col-md-6">{{ field(form.starts_at, required=True, help='Time zone: ' ~ tenant.timezone) }}</div>
       <div class="col-md-6">{{ field(form.ends_at) }}</div>
       <div class="col-md-6">{{ field(form.location) }}</div>
-      <div class="col-md-6">{{ field(form.online_link, attrs={'inputmode': 'url', 'placeholder': 'https://'}) }}</div>
+      <div class="col-12"><div class="video-choice">
+        {% if video_on %}{{ field(form.video_call, label='Video call in ZENTAVA OIMS: everyone invited sees a "Join video call" button') }}{% endif %}
+        {{ field(form.online_link, attrs={'inputmode': 'url', 'placeholder': 'https://meet.google.com/… or https://zoom.us/j/…'}, help='Optional, if you prefer to meet on Google Meet, Zoom or Teams.') }}
+      </div></div>
       <div class="col-md-6">{{ field(form.department_id) }}</div>
       <div class="col-12">{{ field(form.agenda, attrs={'rows': 5}, help='One item per line.') }}</div>
     </div>

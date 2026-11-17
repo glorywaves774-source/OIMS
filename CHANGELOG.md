@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.11-video-fix — 17 November 2026
+
+- **Fix: video calls could not be switched on.** The "Video call in ZENTAVA OIMS" option was missing from the meeting
+  form, so no meeting got a video call. It is now on the form, ticked by default.
+- **Start video call:** meetings that have no video call yet show a "Start video call" button for the organizer.
+
 ## 0.9.10-fresh — 17 November 2026
 
 - **Photo when registering staff:** the Add staff and Edit staff forms now have a Passport photo section with
