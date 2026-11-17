@@ -33,7 +33,7 @@
   {% if tl %}
   <div class="gantt-box">
     <svg class="gantt" viewBox="0 0 {{ tl.width }} {{ tl.height + 22 }}" role="img" aria-label="Timeline of {{ acts|length }} activities and {{ milestones|length }} milestones. The table below lists the same information.">
-      {% for m in tl.months %}<line class="grid{% if m.major %} major{% endif %}" x1="{{ m.x }}" y1="18" x2="{{ m.x }}" y2="{{ tl.height + 22 }}"></line>{% if m.label %}<text class="mlabel" x="{{ m.x + 3 }}" y="12">{{ m.label }}</text>{% endif %}{% endfor %}
+      {% for m in tl.months %}<line class="grid{% if m.major %} major{% endif %}" x1="{{ m.x }}" y1="18" x2="{{ m.x }}" y2="{{ tl.height + 22 }}"></line>{% if m.label %}<text class="mlabel" x="{{ m.x + 3 }}" y="12">{{ m.label|tr }}</text>{% endif %}{% endfor %}
       {% for b in tl.bars %}
         <a href="{{ url_for(bpn ~ '.activity_detail', pid=prog.id, aid=b.a.id) }}">
           <title>{{ b.a.title }} — {{ dt(b.a.planned_start, '%d %b %Y') }} to {{ dt(b.a.planned_end, '%d %b %Y') }}, {{ b.a.progress }}% ({{ b.a.status|replace('_', ' ') }})</title>

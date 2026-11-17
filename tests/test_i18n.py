@@ -74,3 +74,50 @@ def test_dictionary_placeholders_match():
         assert sorted(re.findall(r"\{\d+\}", src)) == sorted(re.findall(r"\{\d+\}", dst)), src
     for src, dst in data["strings"].items():
         assert "{" not in src and dst.strip(), src
+
+
+def test_language_picked_on_sign_in_page_becomes_the_persons_setting(client, db):
+    from tests.conftest import add_member, login, make_org, make_user
+    org, _ = make_org("Agri She")
+    user = make_user("ama.lang@agri.example")
+    add_member(org, user.email)
+    user.language = "en"
+    db.session.commit()
+    client.post("/language", data={"lang": "fr", "next": "/auth/login"})
+    login(client, user.email)
+    db.session.refresh(user)
+    assert user.language == "fr"
+    assert 'lang="fr"' in client.get("/account/", follow_redirects=True).get_data(as_text=True)
+
+
+def test_saved_language_kept_when_nothing_picked_before_sign_in(client, db):
+    from tests.conftest import add_member, login, make_org, make_user
+    org, _ = make_org("Agri She")
+    user = make_user("kojo.lang@agri.example")
+    add_member(org, user.email)
+    user.language = "fr"
+    db.session.commit()
+    login(client, user.email)
+    db.session.refresh(user)
+    assert user.language == "fr"
+
+
+def test_svg_titles_translated_but_chart_text_kept(app):
+    from app.i18n import translate_html
+    with app.test_request_context("/"):
+        out = translate_html('<svg><title>Spent as a share of the budget</title><text>Today</text></svg>', "fr")
+    assert "Part du budget dépensée" in out and "<text>Today</text>" in out
+
+
+def test_error_pages_in_french(client):
+    client.post("/language", data={"lang": "fr", "next": "/"})
+    html = client.get("/no-such-page").get_data(as_text=True)
+    assert "Page introuvable" in html and "Erreur 404" in html
+    assert "Cette page n'existe pas" in html or "Cette page n&#39;existe pas" in html
+
+
+def test_month_choices_translated_but_record_choices_kept(app):
+    from app.i18n import translate_html
+    with app.test_request_context("/"):
+        out = translate_html('<select><option value="3">March</option><option value="7">Grace Open</option></select>', "fr")
+    assert ">Mars<" in out and ">Grace Open<" in out

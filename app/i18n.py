@@ -23,8 +23,9 @@ from flask_login import current_user
 LANGUAGES = {"en": "English", "fr": "Français"}
 DEFAULT = "en"
 COOKIE = "lang"
+PICK_COOKIE = "lang_pick"   # chosen on the sign-in page, adopted at sign-in
 
-SKIP_TAGS = {"script", "style", "textarea", "pre", "code", "svg"}
+SKIP_TAGS = {"script", "style", "textarea", "pre", "code"}
 VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
 ATTRS = ("placeholder", "title", "aria-label", "alt", "data-confirm", "data-confirm-label", "data-tip",
          "data-empty", "data-label-light", "data-label-dark")
@@ -187,9 +188,12 @@ def translate_html(html, lang):
                 out.append(tok)
                 continue
             keep = 'translate="no"' in attrs or name in SKIP_TAGS
+            # drawings: only their spoken/hover labels (<title>, <desc>) are read as text; chart text is data
+            if name != "svg" and name not in ("title", "desc") and any(t == "svg" for t, _ in stack):
+                keep = True
             # a drop-down choice that is a record (its value is a record number) shows typed-in data
             if name == "option" and re.search(r'value="[1-9]\d*"', attrs):
-                keep = True
+                keep = "record"   # ...except calendar month names, which are fixed words (see below)
             # attributes people read, unless this element (or a parent) is kept as typed. A "value" is data
             # sent with the form, so it is translated only on input buttons, where it is also the label.
             # scripts, styles and text boxes keep their content, but their labels (placeholder, title) are read
@@ -205,6 +209,10 @@ def translate_html(html, lang):
                 stack.append((name, keep))
             continue
         if frozen() or not tok.strip():
+            month = tok.strip()
+            if (stack and stack[-1] == ("option", "record") and month in MONTHS_LONG
+                    and not any(k is True for _, k in stack)):
+                tok = tok.replace(month, translate_text(month, lang))
             out.append(tok)
             continue
         plain = Markup(tok).unescape()
@@ -227,7 +235,32 @@ def current_language():
     return g.lang
 
 
+def _adopt_pick(sender, user, **extra):
+    """A language picked on the sign-in page just before signing in becomes the person's setting."""
+    pick = request.cookies.get(PICK_COOKIE)
+    if pick in LANGUAGES and getattr(user, "language", None) != pick:
+        user.language = pick
+        from app.extensions import db
+        db.session.commit()
+    g.pop("lang", None)
+    g.drop_pick = pick is not None
+
+
 def init_app(app):
+    from flask_login import user_logged_in
+
+    @app.template_filter("tr")
+    def tr(text):
+        """For fixed words drawn inside charts (which the page translator leaves alone), e.g. month labels."""
+        return translate_text(str(text), current_language())
+    user_logged_in.connect(_adopt_pick, app)
+
+    @app.after_request
+    def drop_pick(response):
+        if g.get("drop_pick"):
+            response.delete_cookie(PICK_COOKIE)
+        return response
+
     @app.context_processor
     def inject_language():
         return {"lang": current_language(), "languages": LANGUAGES}

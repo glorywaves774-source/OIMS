@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.9.7-steady — 17 November 2026
+
+Phones: English and French, Day and Night mode, no more twitching.
+
+- **No twitching:** the sign-in and registration pages no longer jump up and down when the phone's address bar
+  slides away while scrolling; on phones and tablets the panels no longer use a live blur over the background
+  (which made phone browsers flicker while scrolling). The aurora background stays still on every screen. In the
+  installed app the Back button is there from the first moment instead of popping in.
+- **Day and Night mode:** works on every page again (a script error since 0.9.2 stopped the button). Until you
+  choose, it follows the phone, including automatic night mode at sunset; your choice is remembered and applies
+  in other open tabs too.
+- **Language:** a language picked on the sign-in page now stays after signing in (it becomes your setting).
+  French added for error pages, page numbers, the pricing section, chart and progress labels, month names,
+  timelines, ratings and many smaller labels. "Open" filters now read "Open tasks", "Open requests", "Open
+  feedback" and "Open invoices" (in French "Tâches ouvertes" and so on, not "Ouvrir").
+- **Phone layout:** the language and Day/Night buttons on the sign-in pages no longer cover the ZENTAVA panel;
+  filter tabs wrap onto a second line instead of being cut off; status labels read "Past due" / "En retard de
+  paiement" instead of capitalising every word; the plan choice at registration shows the price in French too.
+
 ## 0.9.6-plans — 17 November 2026
 
 Starter pricing plans.

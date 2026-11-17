@@ -33,6 +33,21 @@
     });
   }
   setTheme(html.getAttribute("data-theme") || "light", false);
+  /* Until the person picks Day or Night, follow the device (e.g. automatic night mode at sunset). */
+  function chosen() {
+    try { if (localStorage.getItem("oims-theme")) return true; } catch (e) {}
+    return /(?:^|; )oims-theme=(light|dark)/.test(document.cookie);
+  }
+  if (window.matchMedia) {
+    var scheme = window.matchMedia("(prefers-color-scheme: dark)");
+    var follow = function (e) { if (!chosen()) setTheme(e.matches ? "dark" : "light", false); };
+    if (scheme.addEventListener) scheme.addEventListener("change", follow);
+    else if (scheme.addListener) scheme.addListener(follow);
+  }
+  /* A choice made in another tab applies here too. */
+  window.addEventListener("storage", function (e) {
+    if (e.key === "oims-theme" && (e.newValue === "light" || e.newValue === "dark")) setTheme(e.newValue, false);
+  });
   document.addEventListener("click", function (e) {
     var b = e.target.closest("[data-theme-toggle]");
     if (!b) return;

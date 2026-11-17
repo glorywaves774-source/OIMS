@@ -31,7 +31,9 @@ def storage(mb):
 
 @bp.app_template_global()
 def plan_choice_label(plan):
-    return f"{plan.name} · {plan.currency} {money(plan.monthly_price)} a month"
+    # Choices carry record ids, so the page translator leaves them alone: only "a month" is put in the language.
+    from app.i18n import current_language, translate_text
+    return f"{plan.name} · {plan.currency} {money(plan.monthly_price)} {translate_text('a month', current_language())}"
 
 
 @bp.route("/")
@@ -46,7 +48,7 @@ def index():
 def set_language():
     """Switch between English and French; kept for the person, or in a cookie for visitors."""
     from flask import request
-    from app.i18n import COOKIE, LANGUAGES
+    from app.i18n import COOKIE, LANGUAGES, PICK_COOKIE
     from app.security import is_safe_next
     lang = request.form.get("lang")
     if lang not in LANGUAGES:
@@ -56,8 +58,11 @@ def set_language():
         db.session.commit()
     nxt = request.form.get("next")
     resp = redirect(nxt if is_safe_next(nxt) else url_for("public.index"))
-    resp.set_cookie(COOKIE, lang, max_age=365 * 24 * 3600, samesite="Lax", httponly=True,
-                    secure=current_app.config.get("SESSION_COOKIE_SECURE", True))
+    secure = current_app.config.get("SESSION_COOKIE_SECURE", True)
+    resp.set_cookie(COOKIE, lang, max_age=365 * 24 * 3600, samesite="Lax", httponly=True, secure=secure)
+    if not current_user.is_authenticated:
+        # chosen on the sign-in page: becomes the person's own setting when they sign in (within the hour)
+        resp.set_cookie(PICK_COOKIE, lang, max_age=3600, samesite="Lax", httponly=True, secure=secure)
     return resp
 
 

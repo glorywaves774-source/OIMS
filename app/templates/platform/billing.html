@@ -18,7 +18,7 @@
     {% for s in attention %}<tr><td><a href="{{ url_for('platform.organization_detail', org_id=s.organization_id) }}" translate="no">{{ s.organization.name }}</a></td><td>{{ s.plan.name }}</td><td>{{ status(s.status) }}</td><td class="date">{{ dt(s.past_due_since, '%d %b %Y') if s.past_due_since else '—' }}</td></tr>{% endfor %}
   </tbody></table></div></section>
 {% endif %}
-<nav class="tabs-scroll" aria-label="Invoice status">{% for v, l in [('open', 'Open'), ('overdue', 'Overdue'), ('paid', 'Paid'), ('void', 'Cancelled'), ('any', 'All')] %}<a href="{{ url_for('platform_billing.index', status=v) }}"{% if status == v %} aria-current="page"{% endif %}>{{ l }}</a>{% endfor %}</nav>
+<nav class="tabs-scroll" aria-label="Invoice status">{% for v, l in [('open', 'Open invoices'), ('overdue', 'Overdue'), ('paid', 'Paid'), ('void', 'Cancelled'), ('any', 'All')] %}<a href="{{ url_for('platform_billing.index', status=v) }}"{% if status == v %} aria-current="page"{% endif %}>{{ l }}</a>{% endfor %}</nav>
 <section class="panel panel-flush">
   {% if invoices %}<div class="table-scroll"><table class="table"><thead><tr><th>Invoice</th><th>Organization</th><th>Period</th><th>Due</th><th class="text-end">Total</th><th class="text-end">Balance</th><th>Status</th></tr></thead><tbody>
     {% for inv in invoices %}<tr><td><a href="{{ url_for('platform_billing.invoice', iid=inv.id) }}" class="code">{{ inv.number }}</a></td><td translate="no">{{ inv.organization.name }}</td>

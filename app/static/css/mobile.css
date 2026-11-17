@@ -58,6 +58,9 @@ input, select, textarea, .form-control, .form-select { font-size: 16px; }
   .toast-container, .floating { bottom: calc(84px + env(safe-area-inset-bottom)) !important; }
 
   .auth-card { padding: 60px 18px 24px; border-radius: 24px; margin-top: 40px; }
+  /* tools sit above the card and scroll away with the page instead of floating over it */
+  .auth-body { padding-top: calc(64px + env(safe-area-inset-top)); }
+  .auth-tools { position: absolute; }
   .auth-card > .auth-brand { left: 12px; right: 12px; padding: 12px; }
   .hero { padding: 20px 14px 40px; }
   .hero-top { margin-bottom: 24px; }
@@ -86,7 +89,7 @@ input, select, textarea, .form-control, .form-select { font-size: 16px; }
 @media (max-width: 760px) {
   .assist-fab { right: 14px; bottom: calc(84px + env(safe-area-inset-bottom)); width: 52px; height: 52px; }
   .assist-panel { left: 8px; right: 8px; width: auto; border-radius: 20px;
-    bottom: calc(144px + env(safe-area-inset-bottom)); height: 52vh; height: 52dvh; }
+    bottom: calc(144px + env(safe-area-inset-bottom)); height: 52vh; height: 52svh; }
   .assist-head { padding: 6px 6px 6px 12px; }
   .assist-head strong { font-size: .92rem; }
   .assist-note { font-size: .68rem; padding-bottom: 8px; }
@@ -95,4 +98,21 @@ input, select, textarea, .form-control, .form-select { font-size: 16px; }
     height: calc(var(--assist-vh, 60vh) - 16px); }
   .assist.typing .assist-suggest, .assist.typing .assist-note { display: none; }
   .assist.typing .assist-fab { display: none; }
+}
+
+/* ---------- Steady scrolling on phones and tablets ----------
+   Many frosted panels over a full-screen light layer make phone browsers repaint on every scroll step, which
+   shows as flicker or "twitching". On touch screens the panels keep their floating look (rounded corners,
+   soft shadow, glass edge) but use a near-solid surface instead of a live blur; only the top bar and the tab
+   bar stay frosted. */
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  body::after { display: none; }
+  .glass, .panel, .auth-card > .auth-brand {
+    backdrop-filter: none; -webkit-backdrop-filter: none;
+    background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
+  }
+  .topbar.glass, .tabbar.glass {
+    backdrop-filter: blur(14px) saturate(150%); -webkit-backdrop-filter: blur(14px) saturate(150%);
+    background: color-mix(in srgb, var(--surface-solid) 80%, transparent);
+  }
 }
