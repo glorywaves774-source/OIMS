@@ -391,3 +391,38 @@ def test_photo_taken_while_registering_and_editing_staff(client, org, db):
                     content_type="multipart/form-data")
     assert r.status_code == 200 and b"not a photo the system can read" in r.data
     assert StaffProfile.query.filter_by(employee_number="HG-0100").count() == 0
+
+
+def test_meeting_form_shows_video_option_ticked_and_browser_post_creates_room(client, org):
+    import re
+    o = org["org"]
+    login(client, "head@hope.org")
+    html = client.get(url(o, "/meetings/new")).data.decode()
+    box = re.search(r'<input[^>]*name="video_call"[^>]*>', html)
+    assert box and "checked" in box.group(0)                     # on the form, ticked by default
+    # exactly what a browser sends with the box left ticked
+    r = client.post(url(o, "/meetings/new"), data={"title": "Weekly check-in", "starts_at": "2026-12-04T09:00",
+                                                    "participants": [org["ama"].id], "video_call": "y"})
+    assert r.status_code == 302
+    m = Meeting.query.filter_by(title="Weekly check-in").one()
+    assert m.video_room
+    assert "Join video call" in client.get(url(o, f"/meetings/{m.id}")).data.decode()
+
+
+def test_start_video_call_on_an_existing_meeting(client, org, db):
+    o = org["org"]
+    login(client, "head@hope.org")
+    m = _new_meeting(client, o, [org["ama"].id], video=False)
+    assert m.video_room is None
+    page = client.get(url(o, f"/meetings/{m.id}")).data.decode()
+    assert "Start video call" in page and "Join video call" not in page
+    r = client.post(url(o, f"/meetings/{m.id}/video"))
+    assert r.status_code == 302 and r.headers["Location"].endswith(f"/meetings/{m.id}/call")
+    db.session.expire_all()
+    assert db.session.get(Meeting, m.id).video_room
+    # participants who do not manage the meeting cannot add one
+    m2 = _new_meeting(client, o, [org["ama"].id], video=False)
+    logout(client)
+    login(client, "ama@hope.org")
+    assert "Start video call" not in client.get(url(o, f"/meetings/{m2.id}")).data.decode()
+    assert client.post(url(o, f"/meetings/{m2.id}/video")).status_code == 403

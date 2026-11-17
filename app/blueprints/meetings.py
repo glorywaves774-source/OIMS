@@ -128,7 +128,7 @@ def edit(meeting_id=None):
         db.session.commit()
         flash("Meeting saved and invitations sent." if creating else "Meeting updated.", "success")
         return redirect(url_for("meetings.detail", meeting_id=meeting.id))
-    return render_template("meetings/form.html", form=form, meeting=meeting)
+    return render_template("meetings/form.html", video_on=video.enabled(), form=form, meeting=meeting)
 
 
 @bp.route("/<int:meeting_id>")
@@ -167,6 +167,20 @@ def _call_headers(resp):
 def _present(m):
     people = [p for p in m.participants if p.attended] or [p for p in m.participants if p.response == "accepted"]
     return [p.user.full_name for p in people]
+
+
+@bp.route("/<int:meeting_id>/video", methods=["POST"])
+@require_permission("meetings.view")
+def start_video(meeting_id):
+    """Adds a video call to a meeting that has none yet, then opens it."""
+    m = tenant_get_or_404(Meeting, meeting_id)
+    if not _can_manage(m) or m.status == "cancelled" or not video.enabled() or not ActionForm().validate_on_submit():
+        abort(403)
+    if not m.video_room:
+        m.video_room = video.new_room()
+        audit.record("meeting.video_added", f"Video call added to '{m.title}'", entity=m)
+        db.session.commit()
+    return redirect(url_for("meetings.call", meeting_id=m.id))
 
 
 @bp.route("/<int:meeting_id>/call")
