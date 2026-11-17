@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="{{ lang }}" data-theme="light" data-bs-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>You are offline · {{ app_name }}</title>
+  <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dark.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body class="auth-body">
+<main id="content" class="auth-card">
+  <div class="auth-brand">
+    <div class="brand-mark logo"><img src="{{ url_for('static', filename='img/logo.svg') }}" alt=""></div>
+    <div><div class="auth-wordmark"><span class="wm-brand" translate="no">{{ brand_name }}</span> <span class="wm-product" translate="no">{{ product_name }}</span></div><p>{{ app_full_name }}</p></div>
+  </div>
+  <h1 class="auth-title">You are offline</h1>
+  <p>This device has no internet connection right now.</p>
+  <p>Your work is kept safely on the server. Check your Wi-Fi or mobile data, then try again.</p>
+  <div class="toolbar"><a class="btn btn-primary" href="/" data-retry><i class="bi bi-arrow-clockwise me-1"></i>Try again</a></div>
+</main>
+<script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 from flask import (Blueprint, Response, abort, current_app, flash, jsonify, redirect,
-                   render_template, url_for)
+                   render_template, request, url_for)
 from flask_login import current_user, login_required
 from sqlalchemy import text
 
@@ -12,11 +12,35 @@ from app.security import password_problems
 bp = Blueprint("public", __name__)
 
 
+def public_plans():
+    """Plans anyone can choose, cheapest first (edited by Kayron in the Kayron console)."""
+    return (SubscriptionPlan.query.filter_by(is_active=True, is_public=True)
+            .order_by(SubscriptionPlan.monthly_price, SubscriptionPlan.name).all())
+
+
+def money(amount):
+    """1,500 for whole amounts, 1,499.50 otherwise."""
+    return f"{amount:,.0f}" if amount == int(amount) else f"{amount:,.2f}"
+
+
+def storage(mb):
+    if mb is None:
+        return None
+    return f"{mb // 1024:,} GB" if mb >= 1024 and mb % 1024 == 0 else f"{mb:,} MB"
+
+
+@bp.app_template_global()
+def plan_choice_label(plan):
+    # Choices carry record ids, so the page translator leaves them alone: only "a month" is put in the language.
+    from app.i18n import current_language, translate_text
+    return f"{plan.name} · {plan.currency} {money(plan.monthly_price)} {translate_text('a month', current_language())}"
+
+
 @bp.route("/")
 def index():
     if current_user.is_authenticated:
         return redirect(url_for("account.home"))
-    return render_template("public/index.html")
+    return render_template("public/index.html", plans=public_plans(), money=money, storage=storage)
 
 
 @bp.route("/language", methods=["POST"])
@@ -24,7 +48,7 @@ def index():
 def set_language():
     """Switch between English and French; kept for the person, or in a cookie for visitors."""
     from flask import request
-    from app.i18n import COOKIE, LANGUAGES
+    from app.i18n import COOKIE, LANGUAGES, PICK_COOKIE
     from app.security import is_safe_next
     lang = request.form.get("lang")
     if lang not in LANGUAGES:
@@ -34,8 +58,11 @@ def set_language():
         db.session.commit()
     nxt = request.form.get("next")
     resp = redirect(nxt if is_safe_next(nxt) else url_for("public.index"))
-    resp.set_cookie(COOKIE, lang, max_age=365 * 24 * 3600, samesite="Lax", httponly=True,
-                    secure=current_app.config.get("SESSION_COOKIE_SECURE", True))
+    secure = current_app.config.get("SESSION_COOKIE_SECURE", True)
+    resp.set_cookie(COOKIE, lang, max_age=365 * 24 * 3600, samesite="Lax", httponly=True, secure=secure)
+    if not current_user.is_authenticated:
+        # chosen on the sign-in page: becomes the person's own setting when they sign in (within the hour)
+        resp.set_cookie(PICK_COOKIE, lang, max_age=3600, samesite="Lax", httponly=True, secure=secure)
     return resp
 
 
@@ -55,8 +82,11 @@ def register():
     if not current_app.config["ALLOW_PUBLIC_REGISTRATION"]:
         abort(404)
     form = OrganizationRegistrationForm()
-    plans = SubscriptionPlan.query.filter_by(is_active=True, is_public=True).order_by(SubscriptionPlan.monthly_price).all()
-    form.plan_id.choices = [(0, "Decide later with Kayron")] + [(p.id, p.name) for p in plans]
+    plans = public_plans()
+    form.plan_id.choices = [(0, "Decide later with Kayron")] + [(p.id, plan_choice_label(p)) for p in plans]
+    chosen = request.args.get("plan", type=int)
+    if request.method == "GET" and chosen in {p.id for p in plans}:
+        form.plan_id.data = chosen
     if form.validate_on_submit():
         problems = password_problems(form.password.data, email=form.admin_email.data)
         if problems:

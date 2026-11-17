@@ -12,7 +12,7 @@
   <form class="filters px-3 pt-3" method="get" role="search"><input type="hidden" name="view" value="{{ view }}">
     <input class="form-control" type="search" name="q" value="{{ q }}" placeholder="Search tasks" aria-label="Search tasks">
     <select class="form-select" name="status" data-autosubmit aria-label="Status">
-      {% for v, l in [('open', 'Open'), ('overdue', 'Overdue'), ('todo', 'To do'), ('in_progress', 'In progress'), ('blocked', 'Blocked'), ('done', 'Done'), ('cancelled', 'Cancelled'), ('any', 'Any status')] %}<option value="{{ v }}"{% if v == status %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+      {% for v, l in [('open', 'Open tasks'), ('overdue', 'Overdue'), ('todo', 'To do'), ('in_progress', 'In progress'), ('blocked', 'Blocked'), ('done', 'Done'), ('cancelled', 'Cancelled'), ('any', 'Any status')] %}<option value="{{ v }}"{% if v == status %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
     <button class="btn btn-soft" type="submit">Search</button></form>
   {% if page.items %}
   <div class="table-scroll"><table class="table">

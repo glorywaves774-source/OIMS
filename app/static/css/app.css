@@ -60,22 +60,21 @@ body {
 }
 
 /* ---------- Aurora background ----------
-   Two fixed layers of large, soft colour fields that drift slowly (transform only, so it stays smooth on
-   phones). Glass panels blur what is behind them, which turns the aurora into a gentle glow. */
+   Two fixed layers of large, soft colour fields. They stay still: moving light under frosted glass made
+   some screens flicker. Glass panels blur what is behind them, which turns the aurora into a gentle glow. */
 body::before, body::after {
   content: "";
   position: fixed;
   inset: -25vmax;
   z-index: -1;
   pointer-events: none;
-  will-change: transform;
 }
 body::before {
   background:
     radial-gradient(38vmax 26vmax at 18% 22%, var(--aurora-1), transparent 62%),
     radial-gradient(34vmax 24vmax at 78% 16%, var(--aurora-2), transparent 62%),
     radial-gradient(42vmax 28vmax at 62% 88%, var(--aurora-3), transparent 64%);
-  animation: aurora-a 46s ease-in-out infinite alternate;
+  transform: rotate(-4deg) scale(1.03);
 }
 body::after {
   background:
@@ -84,20 +83,7 @@ body::after {
     conic-gradient(from 210deg at 50% 40%, transparent 0deg, var(--aurora-5) 40deg, transparent 90deg,
                    var(--aurora-2) 160deg, transparent 220deg);
   opacity: .55;
-  animation: aurora-b 62s ease-in-out infinite alternate;
-}
-@keyframes aurora-a {
-  0%   { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
-  50%  { transform: translate3d(4vmax, -3vmax, 0) rotate(8deg) scale(1.06); }
-  100% { transform: translate3d(-3vmax, 3vmax, 0) rotate(-6deg) scale(1.02); }
-}
-@keyframes aurora-b {
-  0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
-  100% { transform: translate3d(-5vmax, 2vmax, 0) rotate(14deg); }
-}
-/* Still on phones (moving light under frosted glass costs battery) and for people who prefer less motion */
-@media (prefers-reduced-motion: reduce), (max-width: 760px) {
-  body::before, body::after { animation: none; }
+  transform: rotate(6deg);
 }
 a { color: var(--link); }
 a:hover { color: var(--brand); }
@@ -203,7 +189,7 @@ html.is-standalone .app-back { display: inline-flex; }
 .empty i { font-size: 2rem; display: block; margin-bottom: 8px; color: var(--brand); opacity: .7; }
 
 /* Tables scroll inside their own box */
-.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius-sm); }
+.table-scroll { position: relative; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius-sm); }
 .table { --bs-table-bg: transparent; margin-bottom: 0; }
 .table > :not(caption) > * > * { padding: 12px 14px; border-bottom-color: var(--border); vertical-align: middle; }
 .table thead th { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); font-weight: 650; white-space: nowrap; }
@@ -212,7 +198,8 @@ html.is-standalone .app-back { display: inline-flex; }
 td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .cell-sub { display: block; color: var(--text-muted); font-size: .82rem; }
 
-.badge-status { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: .75rem; font-weight: 650; text-transform: capitalize; white-space: nowrap; }
+.badge-status { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: .75rem; font-weight: 650; white-space: nowrap; }
+.badge-status::first-letter { text-transform: uppercase; }   /* "Past due", "En retard de paiement" */
 .st-active, .st-approved { background: rgba(31, 138, 76, .14); color: var(--success); }
 .st-pending, .st-invited, .st-trial { background: var(--accent-soft); color: var(--warning); }
 .st-suspended, .st-deactivated, .st-rejected, .st-denied, .st-revoked, .st-expired, .st-cancelled, .st-past_due { background: rgba(192, 57, 43, .12); color: var(--danger); }
@@ -248,7 +235,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 /* ---------- Auth pages: neumorphism + spatial ---------- */
 .auth-body { display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
 .auth-tools { position: fixed; top: max(14px, env(safe-area-inset-top)); right: max(14px, env(safe-area-inset-right)); z-index: 10; }
-.auth-body { min-height: 100vh; min-height: 100dvh; }
+.auth-body { min-height: 100vh; min-height: 100svh; }   /* svh: stays still while the phone address bar slides */
 /* Neumorphic base: a soft card moulded from the background (raised by a dark and a light shadow) */
 .auth-card {
   position: relative;
@@ -320,7 +307,7 @@ code { color: var(--brand-strong); }
 .st-blocked, .st-absent, .st-late, .st-exited { background: rgba(192, 57, 43, .12); color: var(--danger); }
 .st-on_leave, .st-probation, .st-draft { background: rgba(90, 104, 102, .14); color: var(--text-muted); }
 .overdue { color: var(--danger); font-weight: 650; }
-.tabs-scroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; -webkit-overflow-scrolling: touch; }
+.tabs-scroll { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 4px; margin-bottom: 14px; -webkit-overflow-scrolling: touch; }
 .tabs-scroll a { white-space: nowrap; padding: 7px 14px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); text-decoration: none; font-size: .9rem; font-weight: 550; }
 .tabs-scroll a[aria-current="page"] { background: var(--brand); color: #fff; border-color: var(--brand); }
 html[data-theme="dark"] .tabs-scroll a[aria-current="page"] { color: #04201d; }
@@ -374,7 +361,7 @@ html[data-theme="dark"] .tabs-scroll a[aria-current="page"] { color: #04201d; }
 .tree-d2 { padding-left: 36px; border-left: 3px solid var(--brand-soft); margin-left: 6px; }
 .tree-d3 { padding-left: 54px; border-left: 3px solid var(--brand-soft); margin-left: 6px; }
 .lvl { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--brand); }
-.gantt-box { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.gantt-box { position: relative; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .gantt { display: block; min-width: 760px; width: 100%; height: auto; font-family: inherit; }
 .gantt .grid { stroke: var(--border); stroke-width: 1; }
 .gantt .mlabel { fill: var(--text-muted); font-size: 11px; }
@@ -463,7 +450,7 @@ html[data-theme="dark"] .tabs-scroll a[aria-current="page"] { color: #04201d; }
 .hbar-value { font-variant-numeric: tabular-nums; color: var(--text-muted); font-size: .82rem; white-space: nowrap; }
 .vcols-wrap { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px; }
 .vcols-axis { display: flex; flex-direction: column; justify-content: space-between; font-size: .72rem; color: var(--text-muted); height: 140px; padding-top: 16px; box-sizing: content-box; line-height: 1; text-align: right; font-variant-numeric: tabular-nums; }
-.vcols { list-style: none; margin: 0; padding: 0; display: flex; align-items: stretch; gap: 2px; overflow-x: auto; }
+.vcols { position: relative; list-style: none; margin: 0; padding: 0; display: flex; align-items: stretch; gap: 2px; overflow-x: auto; }
 .vcol-slot { flex: 1 1 0; min-width: 18px; display: flex; flex-direction: column; align-items: center; }
 .vcol-area { height: 140px; padding-top: 16px; box-sizing: content-box; width: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; border-bottom: 1px solid var(--border); position: relative; }
 .vcol { display: block; width: min(24px, 80%); background: var(--chart-1); border-radius: 4px 4px 0 0; }
@@ -742,3 +729,28 @@ html[data-theme="dark"] .tabs-scroll a[aria-current="page"] { color: #04201d; }
 .assist-send { width: 42px; height: 42px; padding: 0; border-radius: 12px; }
 .assist-note { margin: 0; padding: 0 12px 10px; font-size: .72rem; color: var(--text-muted); }
 @media print { .assist { display: none !important; } }
+
+/* Installable app */
+[data-install][hidden] { display: none !important; }
+.install-steps { padding-left: 1.3rem; }
+.install-steps li { margin-bottom: .45rem; }
+.install-steps .bi { font-size: 1.1rem; color: var(--link); }
+
+/* Public pricing */
+.pricing { margin-top: 44px; }
+.pricing h2 { font-size: 1.35rem; font-weight: 700; margin-bottom: 4px; }
+.pricing-note { color: var(--text-muted); font-size: .92rem; margin: 0 0 16px; }
+.pricing-note:last-child { margin: 16px 0 0; }
+.plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+.plan-card { padding: 22px; display: flex; flex-direction: column; gap: 6px; }
+.plan-card h3 { font-size: 1.1rem; font-weight: 700; margin: 0; }
+.plan-desc { color: var(--text-muted); font-size: .9rem; margin: 0 0 6px; }
+.plan-price { margin: 4px 0 0; }
+.plan-amount { font-size: 1.6rem; font-weight: 750; white-space: nowrap; }
+.plan-per, .plan-annual { color: var(--text-muted); font-size: .9rem; }
+.plan-annual { margin: 0; }
+.plan-limits { list-style: none; padding: 0; margin: 10px 0 14px; font-size: .92rem; }
+.plan-limits li { display: flex; gap: 8px; align-items: center; padding: 3px 0; }
+.plan-limits .bi { color: var(--link); }
+.plan-card .btn { margin-top: auto; align-self: flex-start; }
+@media (min-width: 761px) { .plan-desc { min-height: 4.5em; } }

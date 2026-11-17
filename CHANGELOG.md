@@ -1,5 +1,53 @@
 # Changelog
 
+## 0.9.7-steady — 17 November 2026
+
+Phones: English and French, Day and Night mode, no more twitching.
+
+- **No twitching:** the sign-in and registration pages no longer jump up and down when the phone's address bar
+  slides away while scrolling; on phones and tablets the panels no longer use a live blur over the background
+  (which made phone browsers flicker while scrolling). The aurora background stays still on every screen. In the
+  installed app the Back button is there from the first moment instead of popping in.
+- **Day and Night mode:** works on every page again (a script error since 0.9.2 stopped the button). Until you
+  choose, it follows the phone, including automatic night mode at sunset; your choice is remembered and applies
+  in other open tabs too.
+- **Language:** a language picked on the sign-in page now stays after signing in (it becomes your setting).
+  French added for error pages, page numbers, the pricing section, chart and progress labels, month names,
+  timelines, ratings and many smaller labels. "Open" filters now read "Open tasks", "Open requests", "Open
+  feedback" and "Open invoices" (in French "Tâches ouvertes" and so on, not "Ouvrir").
+- **Phone layout:** the language and Day/Night buttons on the sign-in pages no longer cover the ZENTAVA panel;
+  filter tabs wrap onto a second line instead of being cut off; status labels read "Past due" / "En retard de
+  paiement" instead of capitalising every word; the plan choice at registration shows the price in French too.
+
+## 0.9.6-plans — 17 November 2026
+
+Starter pricing plans.
+
+- Four starter plans, added automatically on the next deploy only if no plan exists yet: Starter (GHS 350 a month,
+  10 users, 5 GB), Standard (GHS 900, 30 users, 25 GB), Professional (GHS 2,200, 100 users, 100 GB), each with a
+  14-day trial and a year for the price of 10 months, and Enterprise (private, unlimited, assigned by Kayron only).
+  All prices and limits are placeholders to edit in the Kayron console under Plans.
+- `flask --app wsgi oims starter-plans` adds any missing starter plan without changing existing ones.
+- "Plans and pricing" on the public home page, in English and French, always showing the current plans;
+  "Choose" opens registration with that plan selected. The registration list shows each plan's monthly price.
+- Restore: rows that database updates add by themselves are cleared before a backup is loaded.
+
+## 0.9.5-installable — 16 November 2026
+
+Installable app.
+
+- ZENTAVA OIMS can be installed on Android, iPhone, iPad, Windows, Mac and Chromebook. It opens in its own window
+  with the ZENTAVA icon, without the browser's address bar.
+- "Install app" button on the sign-in page (download icon) and in the account menu, shown only on devices that can
+  install. On iPhone and iPad it shows the three Safari steps.
+- Offline page: with no connection the app says so (English or French) instead of showing a browser error.
+- Privacy: only the app's public files (styles, scripts, icons, fonts, offline page) are kept on the device. Pages,
+  records, documents and downloads are never stored, so nothing private stays on a shared phone after signing out.
+- Each release replaces the stored files automatically.
+- **Fix:** since 0.9.2 (French), a script error on every page stopped the phone menu, the Back button in the
+  installed app, confirmation dialogs and "Copy" buttons from working. Fixed, and the page checks now report script
+  errors.
+
 ## 0.9.4-assistant — 16 November 2026
 
 ZENTAVA Assistant.

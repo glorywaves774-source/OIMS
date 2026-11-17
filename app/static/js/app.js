@@ -13,15 +13,15 @@
   }
 
   /* ---------- Theme ---------- */
-  function setTheme(t, persist) {
-    html.setAttribute("data-theme", t);
-    html.setAttribute("data-bs-theme", t);
+  function setTheme(mode, persist) {
+    html.setAttribute("data-theme", mode);
+    html.setAttribute("data-bs-theme", mode);
     if (persist) {
-      try { localStorage.setItem("oims-theme", t); } catch (e) {}
-      document.cookie = "oims-theme=" + t + "; path=/; max-age=31536000; SameSite=Lax";
+      try { localStorage.setItem("oims-theme", mode); } catch (e) {}
+      document.cookie = "oims-theme=" + mode + "; path=/; max-age=31536000; SameSite=Lax";
     }
     document.querySelectorAll("[data-theme-toggle]").forEach(function (b) {
-      var dark = t === "dark";
+      var dark = mode === "dark";
       b.setAttribute("aria-pressed", dark ? "true" : "false");
       var label = t(dark ? "Light mode" : "Dark mode");
       b.setAttribute("title", label);
@@ -33,6 +33,21 @@
     });
   }
   setTheme(html.getAttribute("data-theme") || "light", false);
+  /* Until the person picks Day or Night, follow the device (e.g. automatic night mode at sunset). */
+  function chosen() {
+    try { if (localStorage.getItem("oims-theme")) return true; } catch (e) {}
+    return /(?:^|; )oims-theme=(light|dark)/.test(document.cookie);
+  }
+  if (window.matchMedia) {
+    var scheme = window.matchMedia("(prefers-color-scheme: dark)");
+    var follow = function (e) { if (!chosen()) setTheme(e.matches ? "dark" : "light", false); };
+    if (scheme.addEventListener) scheme.addEventListener("change", follow);
+    else if (scheme.addListener) scheme.addListener(follow);
+  }
+  /* A choice made in another tab applies here too. */
+  window.addEventListener("storage", function (e) {
+    if (e.key === "oims-theme" && (e.newValue === "light" || e.newValue === "dark")) setTheme(e.newValue, false);
+  });
   document.addEventListener("click", function (e) {
     var b = e.target.closest("[data-theme-toggle]");
     if (!b) return;

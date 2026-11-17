@@ -7,6 +7,15 @@
   <title>{% block title %}{{ app_name }}{% endblock %} · {{ app_name }}</title>
   <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
   <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
+  <link rel="manifest" href="{{ url_for('pwa.manifest') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
+  <meta name="theme-color" content="#14213d" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b1120" media="(prefers-color-scheme: dark)">
+  <meta name="application-name" content="{{ app_name }}">
+  <meta name="apple-mobile-web-app-title" content="{{ brand_name }}">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
@@ -30,8 +39,25 @@
       </div>
     </div>
   </div>
+  <div class="modal fade" id="install-ios-modal" tabindex="-1" aria-labelledby="install-ios-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header"><h2 class="modal-title fs-5" id="install-ios-title">Install on iPhone or iPad</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+        <div class="modal-body">
+          <ol class="install-steps mb-0">
+            <li><span>Open this page in Safari.</span></li>
+            <li><span>Tap the Share button</span> <i class="bi bi-box-arrow-up" aria-hidden="true"></i></li>
+            <li><span>Choose “Add to Home Screen”, then tap Add.</span></li>
+          </ol>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button></div>
+      </div>
+    </div>
+  </div>
   <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
   {% block extra_scripts %}{% endblock %}
 </body>
 </html>

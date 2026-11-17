@@ -62,6 +62,15 @@ def register_cli(app):
         db.session.commit()
         click.echo(f"System roles synchronized for {count} organization(s).")
 
+    @oims.command("starter-plans")
+    def starter_plans():
+        """Add the starter plans (Starter, Standard, Professional, Enterprise) that are missing; edit them later."""
+        from app.plans import add_starter_plans
+
+        added = add_starter_plans()
+        db.session.commit()
+        click.echo(("Added: " + ", ".join(added)) if added else "All starter plans already exist; nothing changed.")
+
     @oims.command("billing-run")
     def billing_run():
         """Issue invoices, move unpaid subscriptions to past due / read-only, send payment reminders."""

@@ -15,4 +15,8 @@
   try {
     if (localStorage.getItem("oims-sidebar") === "compact") h.classList.add("sidebar-compact");
   } catch (e) {}
+  // Installed app: set before the page draws, so the Back button does not pop in after loading
+  if ((window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true) {
+    h.classList.add("is-standalone");
+  }
 })();

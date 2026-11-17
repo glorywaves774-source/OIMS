@@ -21,5 +21,28 @@
     <div class="feature glass"><i class="bi bi-person-gear"></i><h3>Role-based access</h3><p>Standard roles for NGOs and institutions, plus custom roles with permissions by module, action and scope.</p></div>
     <div class="feature glass"><i class="bi bi-journal-check"></i><h3>Accountability</h3><p>Sign-ins, administrative changes and Kayron support access are recorded in an audit log.</p></div>
   </div>
+  {% if plans %}
+  <section class="pricing" id="pricing" aria-labelledby="pricing-title">
+    <h2 id="pricing-title">Plans and pricing</h2>
+    <p class="pricing-note">Every plan includes all modules: office, programmes, projects, MEAL, finance, reports and the help assistant.</p>
+    <div class="plan-grid">
+      {% for p in plans %}
+      <article class="plan-card glass">
+        <h3 translate="no">{{ p.name }}</h3>
+        {% if p.description %}<p class="plan-desc">{{ p.description }}</p>{% endif %}
+        <p class="plan-price"><span class="plan-amount">{{ p.currency }} {{ money(p.monthly_price) }}</span> <span class="plan-per">a month</span></p>
+        {% if p.annual_price %}<p class="plan-annual">or {{ p.currency }} {{ money(p.annual_price) }} a year</p>{% endif %}
+        <ul class="plan-limits">
+          <li><i class="bi bi-people" aria-hidden="true"></i>{% if p.max_users %}Up to {{ p.max_users }} users{% else %}Unlimited users{% endif %}</li>
+          <li><i class="bi bi-hdd" aria-hidden="true"></i>{% if p.max_storage_mb %}{{ storage(p.max_storage_mb) }} of documents{% else %}Unlimited document storage{% endif %}</li>
+          {% if p.trial_days %}<li><i class="bi bi-gift" aria-hidden="true"></i>{{ p.trial_days }}-day free trial</li>{% endif %}
+        </ul>
+        {% if config.ALLOW_PUBLIC_REGISTRATION %}<a class="btn btn-primary" href="{{ url_for('public.register', plan=p.id) }}">Choose <span translate="no">{{ p.name }}</span></a>{% endif %}
+      </article>
+      {% endfor %}
+    </div>
+    <p class="pricing-note">Larger organization or network? Kayron Global Tech Services agrees an Enterprise plan with you. Prices may change; invoices always use the price shown on your Billing page.</p>
+  </section>
+  {% endif %}
 </main>
 {% endblock %}
