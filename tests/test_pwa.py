@@ -29,7 +29,7 @@ def test_every_manifest_icon_exists_at_its_stated_size(client):
         assert r.status_code == 200, icon["src"]
         if icon["type"] == "image/png":
             w, h = (int(x) for x in icon["sizes"].split("x"))
-            path = os.path.join(STATIC, icon["src"].split("/static/", 1)[1])
+            path = os.path.join(STATIC, icon["src"].split("/static/", 1)[1].split("?", 1)[0])
             assert Image.open(path).size == (w, h)
     apple = Image.open(os.path.join(STATIC, "img", "apple-touch-icon.png"))
     assert apple.size == (180, 180) and apple.mode == "RGB"   # iOS shows transparent corners as black
@@ -90,3 +90,11 @@ def test_install_text_in_french(client):
 def test_csp_still_strict(client):
     csp = client.get("/auth/login").headers["Content-Security-Policy"]
     assert "script-src 'self';" in csp and "unsafe-inline" not in csp
+
+
+def test_scripts_and_styles_carry_the_release_number(client, app):
+    v = app.config["OIMS_VERSION"]
+    html = client.get("/auth/login").get_data(as_text=True)
+    assert f"js/app.js?v={v}" in html and f"css/app.css?v={v}" in html
+    sw = client.get("/sw.js").get_data(as_text=True)
+    assert f"js/pwa.js?v={v}" in sw

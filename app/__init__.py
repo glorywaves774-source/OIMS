@@ -9,7 +9,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from app.config import CONFIGS
 from app.extensions import csrf, db, limiter, login_manager, migrate
 
-__version__ = "0.9.9-passport"
+__version__ = "0.9.10-fresh"
 
 
 def create_app(config_name=None, overrides=None):
@@ -89,6 +89,13 @@ def create_app(config_name=None, overrides=None):
                procurement_bp, assets_bp, finance_bp, analytics_bp,
                billing_bp, billing_hooks_bp, platform_billing_bp, assistant_bp, assistant_global_bp, pwa_bp):
         app.register_blueprint(bp)
+
+    @app.url_defaults
+    def _static_version(endpoint, values):
+        """Every release gets fresh styles and scripts: browsers and the installed app never mix a new page with an
+        old copy of a script (which made buttons such as the camera do nothing after an update)."""
+        if endpoint == "static" and "v" not in values:
+            values["v"] = app.config["OIMS_VERSION"]
 
     _register_template_globals(app)
     _register_hooks(app)

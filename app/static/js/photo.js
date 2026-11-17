@@ -21,6 +21,26 @@
     });
   }
 
+  /* On the Add / Edit staff form the picture is saved together with the record: show it straight away */
+  var preview = document.querySelector("[data-photo-preview]"), empty = document.querySelector("[data-photo-empty]");
+  var picks = document.querySelectorAll("[data-photo-pick]");
+  function showPreview(src) {
+    if (!preview) return;
+    preview.src = src;
+    preview.hidden = false;
+    if (empty) empty.hidden = true;
+  }
+  function keepOnly(input) { picks.forEach(function (o) { if (o !== input) o.value = ""; }); }
+  picks.forEach(function (input) {
+    input.addEventListener("change", function () {
+      if (!input.files.length) return;
+      keepOnly(input);
+      var reader = new FileReader();
+      reader.onload = function () { showPreview(reader.result); };
+      reader.readAsDataURL(input.files[0]);
+    });
+  });
+
   var modal = document.querySelector("[data-camera]");
   var openBtn = document.querySelector("[data-camera-open]");
   if (!modal || !openBtn) return;
@@ -98,6 +118,22 @@
   });
   retake.addEventListener("click", function () { mode(false); });
   use.addEventListener("click", function () {
+    var targetId = modal.getAttribute("data-target");
+    if (targetId) {
+      // form mode: hand the picture to the form's file input; it is saved with the record
+      var input = document.getElementById(targetId);
+      shot.toBlob(function (blob) {
+        try {
+          var dt = new DataTransfer();
+          dt.items.add(new File([blob], "passport-photo.jpg", { type: "image/jpeg" }));
+          input.files = dt.files;
+          keepOnly(input);
+          showPreview(shot.toDataURL("image/jpeg", 0.85));
+          if (dialog) dialog.hide();
+        } catch (e) { showError("failed"); }
+      }, "image/jpeg", 0.9);
+      return;
+    }
     use.disabled = true;
     hint.hidden = false; hint.textContent = msg("saving");
     shot.toBlob(function (blob) {

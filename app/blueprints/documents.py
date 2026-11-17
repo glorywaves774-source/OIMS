@@ -154,6 +154,9 @@ def store_version(doc, file_storage, note=None):
     try:
         get_storage().put(key, info["data"], info["mime"])
     except Exception as exc:  # storage outage must not leave a half-written record
+        from flask import current_app
+        current_app.logger.exception("File storage failed (STORAGE_BACKEND=%s, UPLOAD_ROOT=%s): %s",
+                                     current_app.config.get("STORAGE_BACKEND"), current_app.config.get("UPLOAD_ROOT"), exc)
         raise UploadRejected("The file could not be stored. Please try again later.") from exc
     number = (db.session.scalar(select(func.max(DocumentVersion.version_no))
                                 .where(DocumentVersion.document_id == doc.id)) or 0) + 1

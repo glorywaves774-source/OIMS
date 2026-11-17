@@ -364,3 +364,30 @@ def test_photo_from_phone_camera_input_and_passport_sheet(client, org, db):
     sheet = client.get(url(o, f"/staff/{ama.id}/photo/print?copies=4&name=1")).data.decode()
     assert sheet.count(f"/staff/{ama.id}/photo?v=") == 4 and "35 × 45 mm" in sheet
     assert "Print passport photos" in client.get(url(o, f"/staff/{ama.id}")).data.decode()
+
+
+def test_photo_taken_while_registering_and_editing_staff(client, org, db):
+    o = org["org"]
+    login(client, "hr@hope.org")
+    page = client.get(url(o, "/staff/new"))
+    html = page.data.decode()
+    assert 'enctype="multipart/form-data"' in html and "Take photo" in html and 'data-target="staff-photo-input"' in html
+    assert "camera=(self)" in page.headers["Permissions-Policy"]
+    data = {"full_name": "Yaw Mensah", "employee_number": "HG-0099", "status": "active",
+            "photo": [(io.BytesIO(b""), ""), (_image("JPEG", size=(1200, 1600)), "passport-photo.jpg")]}
+    r = client.post(url(o, "/staff/new"), data=data, content_type="multipart/form-data")
+    assert r.status_code == 302
+    s = StaffProfile.query.filter_by(employee_number="HG-0099").one()
+    assert Image.open(io.BytesIO(s.photo_data)).size == (700, 900)
+    # editing without choosing a new photo keeps the photo
+    r = client.post(url(o, f"/staff/{s.id}/edit"), data={"full_name": "Yaw Mensah", "employee_number": "HG-0099",
+                                                         "status": "active"}, content_type="multipart/form-data")
+    assert r.status_code == 302
+    db.session.expire_all()
+    assert db.session.get(StaffProfile, s.id).photo_updated_at is not None
+    # a file that is not a photo: nothing is saved and the reason is shown
+    r = client.post(url(o, "/staff/new"), data={"full_name": "Bad Photo", "employee_number": "HG-0100", "status": "active",
+                                                "photo": (io.BytesIO(b"not an image"), "x.jpg")},
+                    content_type="multipart/form-data")
+    assert r.status_code == 200 and b"not a photo the system can read" in r.data
+    assert StaffProfile.query.filter_by(employee_number="HG-0100").count() == 0

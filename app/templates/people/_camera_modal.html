@@ -1,0 +1,41 @@
+{# Camera window for passport photos. Either uploads straight away (camera_upload_url) or puts the picture
+   into a form's file input (camera_target) so it is saved with the form. #}
+<div class="modal fade" id="camera-modal" tabindex="-1" aria-labelledby="camera-title" aria-hidden="true"
+     data-camera{% if camera_upload_url %} data-upload-url="{{ camera_upload_url }}"{% endif %}{% if camera_target %} data-target="{{ camera_target }}"{% endif %} data-csrf="{{ csrf_token() }}">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h2 class="modal-title fs-5" id="camera-title">Take a passport photo</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <div class="camera-choice" role="group" aria-label="Which camera">
+          <button type="button" class="btn btn-sm is-on" data-camera-facing="user" aria-pressed="true"><i class="bi bi-person-video me-1"></i>Front camera</button>
+          <button type="button" class="btn btn-sm" data-camera-facing="environment" aria-pressed="false"><i class="bi bi-camera me-1"></i>Back camera</button>
+        </div>
+        <div class="camera-stage">
+          <video class="camera-video" data-camera-video playsinline autoplay muted></video>
+          <canvas class="camera-shot" data-camera-shot width="700" height="900" hidden></canvas>
+          <div class="camera-guide" aria-hidden="true"><span class="guide-head"></span></div>
+        </div>
+        <p class="small text-muted mt-2 mb-0" data-camera-hint>Put the face inside the oval, in good light against a plain wall, then tap Take photo.</p>
+        <div class="camera-fallback mt-2" data-camera-fallback hidden>
+          <p class="small text-danger mb-2" data-camera-error role="alert"></p>
+          <p class="small mb-2">Use the phone's own camera instead:</p>
+          <div class="toolbar"><label class="btn btn-soft btn-sm mb-0" for="{{ camera_front_id }}"><i class="bi bi-person-video me-1"></i>Front camera</label>
+            <label class="btn btn-soft btn-sm mb-0" for="{{ camera_back_id }}"><i class="bi bi-camera me-1"></i>Back camera</label></div>
+        </div>
+      </div>
+      <div class="modal-footer camera-actions">
+        <button type="button" class="btn btn-primary" data-camera-snap><i class="bi bi-camera-fill me-1"></i>Take photo</button>
+        <button type="button" class="btn btn-light" data-camera-retake hidden>Retake</button>
+        <button type="button" class="btn btn-primary" data-camera-use hidden><i class="bi bi-check-lg me-1"></i>Use photo</button>
+      </div>
+      <div hidden data-camera-msgs>
+        <span data-k="blocked">The camera is blocked. Allow it in the browser's site settings, or use Upload photo.</span>
+        <span data-k="none">No camera was found. Use Upload photo instead.</span>
+        <span data-k="insecure">The camera only works on a secure (https) address.</span>
+        <span data-k="failed">The photo could not be saved. Try again.</span>
+        <span data-k="saving">Saving…</span>
+      </div>
+    </div>
+  </div>
+</div>
