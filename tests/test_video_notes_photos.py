@@ -256,7 +256,7 @@ def test_hr_sets_a_staff_photo_and_it_is_cleaned(client, org, db):
     db.session.expire_all()
     s = db.session.get(StaffProfile, ama.id)
     img = Image.open(io.BytesIO(s.photo_data))
-    assert img.format == "JPEG" and img.size == (512, 512)
+    assert img.format == "JPEG" and img.size == (700, 900)
     assert b"SecretCameraMaker" not in s.photo_data
     r = client.get(url(o, f"/staff/{ama.id}/photo"))
     assert r.status_code == 200 and r.mimetype == "image/jpeg" and "private" in r.headers["Cache-Control"]
@@ -307,4 +307,60 @@ def test_photos_stay_inside_their_organization(client, org, db):
 def test_photo_formats(fmt):
     from app.photos import make_profile_photo
     out = make_profile_photo(_image(fmt, size=(300, 1200)).getvalue())
-    assert Image.open(io.BytesIO(out)).size == (512, 512)
+    assert Image.open(io.BytesIO(out)).size == (700, 900)
+
+
+# --- Attachments sent exactly as the real form sends them (no "who can see it" field) --------------
+
+def test_meeting_attachment_upload_from_the_real_form(client, org, db):
+    from app.models import Document
+    o = org["org"]
+    login(client, "head@hope.org")
+    m = _new_meeting(client, o, [org["ama"].id])
+    page = client.get(url(o, f"/documents/upload?related_type=meeting&related_id={m.id}")).data.decode()
+    assert 'name="visibility"' not in page and f"/meetings/{m.id}" in page          # Cancel goes back to the meeting
+    r = client.post(url(o, f"/documents/upload?related_type=meeting&related_id={m.id}"),
+                    data={"related_type": "meeting", "related_id": m.id, "title": "Agenda pack",
+                          "file": (io.BytesIO(b"%PDF-1.4\n%%EOF\n"), "agenda.pdf")},
+                    content_type="multipart/form-data")
+    assert r.status_code == 302 and f"/meetings/{m.id}" in r.headers["Location"]
+    doc = Document.query.filter_by(related_type="meeting", related_id=m.id).one()
+    assert doc.visibility == "restricted" and doc.status == "approved"
+    assert "Agenda pack" in client.get(url(o, f"/meetings/{m.id}")).data.decode()
+    # a participant can attach too
+    logout(client)
+    login(client, "ama@hope.org")
+    r = client.post(url(o, f"/documents/upload?related_type=meeting&related_id={m.id}"),
+                    data={"related_type": "meeting", "related_id": m.id, "title": "My notes",
+                          "file": (io.BytesIO(b"a,b\n1,2\n"), "notes.csv")},
+                    content_type="multipart/form-data")
+    assert r.status_code == 302
+
+
+def test_upload_errors_are_shown(client, org):
+    o = org["org"]
+    login(client, "head@hope.org")
+    m = _new_meeting(client, o, [org["ama"].id])
+    r = client.post(url(o, f"/documents/upload?related_type=meeting&related_id={m.id}"),
+                    data={"related_type": "meeting", "related_id": m.id, "title": ""},
+                    content_type="multipart/form-data")
+    assert r.status_code == 200 and b"invalid-feedback" in r.data
+
+
+def test_photo_from_phone_camera_input_and_passport_sheet(client, org, db):
+    o = org["org"]
+    ama = org["ama_staff"]
+    login(client, "hr@hope.org")
+    page = client.get(url(o, f"/staff/{ama.id}")).data.decode()
+    assert 'capture="user"' in page and 'capture="environment"' in page
+    assert "Front camera" in page and "Back camera" in page
+    # the form has three picture inputs (gallery, front, back); only the chosen one carries a file
+    r = client.post(url(o, f"/staff/{ama.id}/photo"),
+                    data={"photo": [(io.BytesIO(b""), ""), (_image("JPEG", size=(1080, 1920)), "IMG_0001.jpg")]},
+                    content_type="multipart/form-data")
+    assert r.status_code == 302
+    db.session.expire_all()
+    assert Image.open(io.BytesIO(db.session.get(StaffProfile, ama.id).photo_data)).size == (700, 900)
+    sheet = client.get(url(o, f"/staff/{ama.id}/photo/print?copies=4&name=1")).data.decode()
+    assert sheet.count(f"/staff/{ama.id}/photo?v=") == 4 and "35 × 45 mm" in sheet
+    assert "Print passport photos" in client.get(url(o, f"/staff/{ama.id}")).data.decode()

@@ -250,6 +250,18 @@ def photo(staff_id):
     return resp
 
 
+@staff_bp.route("/<int:staff_id>/photo/print")
+@require_permission("staff.view")
+def photo_print(staff_id):
+    """A sheet of passport photos (35 x 45 mm) to print, e.g. for ID cards and forms."""
+    staff = tenant_get_or_404(StaffProfile, staff_id)
+    if not staff.photo_updated_at:
+        abort(404)
+    copies = min(max(request.args.get("copies", 6, type=int), 1), 30)
+    with_name = request.args.get("name", "1") == "1"
+    return render_template("people/passport_print.html", staff=staff, copies=copies, with_name=with_name)
+
+
 @staff_bp.route("/<int:staff_id>/photo", methods=["POST"])
 @require_permission("staff.view")
 @limiter.limit("30 per hour")
@@ -259,7 +271,7 @@ def set_photo(staff_id):
     wants_json = request.accept_mimetypes.best == "application/json"
     if not can_change_photo(staff):
         abort(403)
-    upload = request.files.get("photo")
+    upload = next((f for f in request.files.getlist("photo") if f and f.filename), None)
     try:
         staff.photo_data = make_profile_photo(upload.read(8 * 1024 * 1024 + 1) if upload else b"")
     except PhotoError as exc:

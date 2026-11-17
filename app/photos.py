@@ -1,4 +1,5 @@
-"""Staff profile pictures: any phone or camera photo becomes a small, square JPEG made by the app.
+"""Staff passport photos: any phone or camera photo becomes a passport-format JPEG made by the app
+(35 x 45 mm proportions, 7:9, 700 x 900 pixels: sharp enough to print at passport size).
 
 The picture is decoded and drawn again, so nothing hidden in the original file is kept (location, camera
 details or anything else), and it is turned the right way up first."""
@@ -7,7 +8,7 @@ import io
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 MAX_UPLOAD = 8 * 1024 * 1024     # photos straight from a phone camera can be several MB
-SIZE = 512
+SIZE = (700, 900)          # 7:9 like a 35 x 45 mm passport photo
 Image.MAX_IMAGE_PIXELS = 60_000_000   # refuse "decompression bomb" files
 
 
@@ -35,7 +36,7 @@ def make_profile_photo(data):
         img = bg
     else:
         img = img.convert("RGB")
-    img = ImageOps.fit(img, (SIZE, SIZE), method=Image.Resampling.LANCZOS, centering=(0.5, 0.4))
+    img = ImageOps.fit(img, SIZE, method=Image.Resampling.LANCZOS, centering=(0.5, 0.35))
     out = io.BytesIO()
     img.save(out, "JPEG", quality=86, optimize=True, progressive=True)
     return out.getvalue()

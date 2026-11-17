@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.9-passport — 17 November 2026
+
+- **Fix: attachments.** Attaching a file to a meeting (and to tasks, staff files, programmes, projects,
+  correspondence and other records) was refused without any message, because the form left out a setting the
+  system required. Attachments now save and go back to the record; any other form error is shown on the page.
+- **Passport photos:** staff photos are now passport format (35 × 45 mm, 700 × 900 pixels) with an oval face guide.
+  "Print passport photos" prints 1–12 copies at true size, with or without the name.
+- **Front and back camera:** clear "Front camera" / "Back camera" buttons in the camera window. If the browser
+  cannot open the camera, the phone's own camera app can be used instead (front or back).
+- The help button no longer covers buttons in pop-up windows.
+
 ## 0.9.8-video — 17 November 2026
 
 Video calls, automatic meeting notes and staff photos.

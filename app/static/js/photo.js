@@ -6,15 +6,18 @@
 
   /* Choosing a picture uploads it straight away */
   var form = document.querySelector("[data-photo-upload]");
-  var file = document.querySelector("[data-photo-file]");
-  if (form && file) {
-    file.addEventListener("change", function () {
-      if (!file.files.length) return;
-      if (file.files[0].size > 8 * 1024 * 1024) {
-        if (errorBox) { errorBox.textContent = "8 MB max."; errorBox.hidden = false; }
-        return;
-      }
-      form.submit();
+  if (form) {
+    form.querySelectorAll("[data-photo-file]").forEach(function (file) {
+      file.addEventListener("change", function () {
+        if (!file.files.length) return;
+        if (file.files[0].size > 8 * 1024 * 1024) {
+          if (errorBox) { errorBox.textContent = "8 MB max."; errorBox.hidden = false; }
+          return;
+        }
+        // send only the picture that was just chosen (front, back or from the gallery)
+        form.querySelectorAll("[data-photo-file]").forEach(function (o) { o.disabled = o !== file; });
+        form.submit();
+      });
     });
   }
 
@@ -22,17 +25,18 @@
   var openBtn = document.querySelector("[data-camera-open]");
   if (!modal || !openBtn) return;
   var md = navigator.mediaDevices;
-  if (!md || !md.getUserMedia) return;     // no camera support: only "Upload photo" is shown
+  if (!md || !md.getUserMedia) return;     // no camera support here: "Upload photo" still opens the phone camera
   openBtn.hidden = false;
 
   var q = function (s) { return modal.querySelector(s); };
   var video = q("[data-camera-video]"), shot = q("[data-camera-shot]"), err = q("[data-camera-error]");
   var snap = q("[data-camera-snap]"), retake = q("[data-camera-retake]"), use = q("[data-camera-use]");
-  var switchBtn = q("[data-camera-switch]"), hint = q("[data-camera-hint]");
+  var hint = q("[data-camera-hint]"), fallback = q("[data-camera-fallback]");
+  var facingBtns = modal.querySelectorAll("[data-camera-facing]");
   var stream = null, facing = "user";
 
   function msg(k) { var el = modal.querySelector('[data-camera-msgs] [data-k="' + k + '"]'); return el ? el.textContent : k; }
-  function showError(k) { err.textContent = msg(k); err.hidden = false; }
+  function showError(k) { err.textContent = msg(k); fallback.hidden = false; }
   function stopCamera() {
     if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
     video.srcObject = null;
@@ -42,8 +46,16 @@
     snap.hidden = taken; retake.hidden = !taken; use.hidden = !taken;
     hint.hidden = taken;
   }
+  function markFacing() {
+    facingBtns.forEach(function (b) {
+      var on = b.getAttribute("data-camera-facing") === facing;
+      b.classList.toggle("is-on", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  }
   function startCamera() {
-    err.hidden = true;
+    fallback.hidden = true;
+    markFacing();
     stopCamera();
     if (!window.isSecureContext) { showError("insecure"); return; }
     md.getUserMedia({ video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 1280 } }, audio: false })
@@ -52,13 +64,9 @@
         video.srcObject = s;
         video.classList.toggle("is-mirrored", facing === "user");
         mode(false);
-        return md.enumerateDevices();
-      })
-      .then(function (devices) {
-        var cams = (devices || []).filter(function (d) { return d.kind === "videoinput"; });
-        switchBtn.hidden = cams.length < 2;
       })
       .catch(function (e) {
+        if (e && e.name === "OverconstrainedError" && facing === "environment") { facing = "user"; startCamera(); return; }
         showError(e && (e.name === "NotAllowedError" || e.name === "SecurityError") ? "blocked" : "none");
       });
   }
@@ -68,14 +76,24 @@
   openBtn.addEventListener("click", function () { if (dialog) dialog.show(); });
   modal.addEventListener("shown.bs.modal", startCamera);
   modal.addEventListener("hidden.bs.modal", function () { stopCamera(); mode(false); });
-  switchBtn.addEventListener("click", function () { facing = facing === "user" ? "environment" : "user"; startCamera(); });
+  facingBtns.forEach(function (b) {
+    b.addEventListener("click", function () {
+      var want = b.getAttribute("data-camera-facing");
+      if (want === facing && stream) return;
+      facing = want;
+      startCamera();
+    });
+  });
 
   snap.addEventListener("click", function () {
     var w = video.videoWidth, h = video.videoHeight;
     if (!w || !h) return;
-    var side = Math.min(w, h), sx = (w - side) / 2, sy = (h - side) / 2;
+    // passport proportions (7:9), centred like the oval on screen; the saved picture is not mirrored
+    var ratio = shot.width / shot.height, cw = w, ch = w / ratio;
+    if (ch > h) { ch = h; cw = h * ratio; }
+    var sx = (w - cw) / 2, sy = (h - ch) / 2;
     var ctx = shot.getContext("2d");
-    ctx.drawImage(video, sx, sy, side, side, 0, 0, shot.width, shot.height);   // the true picture (not mirrored)
+    ctx.drawImage(video, sx, sy, cw, ch, 0, 0, shot.width, shot.height);
     mode(true);
   });
   retake.addEventListener("click", function () { mode(false); });

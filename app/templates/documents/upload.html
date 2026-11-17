@@ -30,7 +30,12 @@
     {{ field(form.submit_for_approval, label='Submit for approval before others can see it') }}
     {% endif %}
   </section>
+  {% set shown = ['file', 'title', 'expiry_date'] if related_type else ['file', 'title', 'description', 'folder_id', 'category_id', 'visibility', 'department_id', 'expiry_date', 'shared_with', 'submit_for_approval'] %}
+  {% for name, errs in form.errors.items() if name not in shown and name != 'csrf_token' %}
+    <div class="alert alert-danger" role="alert">{{ form[name].label.text if form[name] and form[name].label else name }}: {{ errs|join(' ') }}</div>
+  {% endfor %}
+  {% if form.errors.get('csrf_token') %}<div class="alert alert-danger" role="alert">The form expired. Reload the page and try again.</div>{% endif %}
   <div class="toolbar mb-4"><button class="btn btn-primary" type="submit" data-loading>Upload</button>
-    <a class="btn btn-light" href="{{ url_for('documents.index') }}">Cancel</a></div>
+    <a class="btn btn-light" href="{{ back_url or url_for('documents.index') }}">Cancel</a></div>
 </form>
 {% endblock %}

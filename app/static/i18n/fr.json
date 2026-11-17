@@ -273,7 +273,8 @@
   "{1} used": "{1} utilisé",
   "Milestone: {1}": "Jalon : {1}",
   "Timeline of {1} activities and {2} milestones. The table below lists the same information.": "Chronologie de {1} activités et {2} jalons. Le tableau ci-dessous présente les mêmes informations.",
-  ": Sold ({1}) —": ": Vendu ({1}) —"
+  ": Sold ({1}) —": ": Vendu ({1}) —",
+  "Passport photo of {1}": "Photo d'identité de {1}"
  },
  "strings": {
   "(Organization Administrator)": "(Administrateur de l'organisation)",
@@ -2768,6 +2769,20 @@
   "Choose a photo first.": "Choisissez d'abord une photo.",
   "The photo must be 8 MB or smaller.": "La photo ne doit pas dépasser 8 Mo.",
   "Use a JPEG, PNG or WebP photo.": "Utilisez une photo JPEG, PNG ou WebP.",
-  "This file is not a photo the system can read. Use a JPEG, PNG or WebP photo.": "Ce fichier n'est pas une photo lisible par le système. Utilisez une photo JPEG, PNG ou WebP."
+  "This file is not a photo the system can read. Use a JPEG, PNG or WebP photo.": "Ce fichier n'est pas une photo lisible par le système. Utilisez une photo JPEG, PNG ou WebP.",
+  "Front camera": "Caméra avant",
+  "Back camera": "Caméra arrière",
+  "Which camera": "Quelle caméra",
+  "Take a passport photo": "Prendre une photo d'identité",
+  "Print passport photos": "Imprimer les photos d'identité",
+  "Passport photos": "Photos d'identité",
+  "Copies": "Exemplaires",
+  "With name": "Avec le nom",
+  "Without name": "Sans le nom",
+  "Name under each photo": "Nom sous chaque photo",
+  "Passport style: face the camera, plain light background, no hat or dark glasses. Shown only to colleagues in this organization.": "Style photo d'identité : de face, fond clair et uni, sans chapeau ni lunettes noires. Visible uniquement par les collègues de cette organisation.",
+  "Put the face inside the oval, in good light against a plain wall, then tap Take photo.": "Placez le visage dans l'ovale, dans une bonne lumière devant un mur uni, puis touchez Prendre une photo.",
+  "Use the phone's own camera instead:": "Utilisez plutôt l'appareil photo du téléphone :",
+  "Each photo prints at 35 × 45 mm. Print at 100% (“Actual size”), not “Fit to page”.": "Chaque photo s'imprime en 35 × 45 mm. Imprimez à 100 % (« Taille réelle »), pas « Ajuster à la page »."
  }
 }

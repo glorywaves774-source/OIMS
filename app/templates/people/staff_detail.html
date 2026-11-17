@@ -21,23 +21,30 @@
 <section class="panel" id="profile">
   <div class="panel-header"><h2>Profile</h2></div>
   <div class="profile-photo-row">
-    {{ staff_avatar(staff, 'avatar-xl') }}
-    {% if photo_edit %}
+    {% if staff.photo_updated_at %}
+    <img class="passport-photo" src="{{ url_for('staff.photo', staff_id=staff.id, v=staff.photo_updated_at.timestamp()|int) }}" alt="Passport photo of {{ staff.full_name }}" width="105" height="135">
+    {% else %}
+    <div class="passport-photo passport-empty" aria-hidden="true"><i class="bi bi-person-bounding-box"></i><span>35 × 45 mm</span></div>
+    {% endif %}
     <div class="profile-photo-tools">
       <div class="toolbar">
+        {% if photo_edit %}
         <button type="button" class="btn btn-primary btn-sm" data-camera-open hidden><i class="bi bi-camera me-1"></i>Take photo</button>
         <form method="post" enctype="multipart/form-data" action="{{ url_for('staff.set_photo', staff_id=staff.id) }}" class="photo-upload" data-photo-upload>
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <label class="btn btn-soft btn-sm mb-0"><i class="bi bi-image me-1"></i>{{ 'Change photo' if staff.photo_updated_at else 'Upload photo' }}
             <input type="file" name="photo" accept="image/*" class="visually-hidden" data-photo-file></label>
+          <input type="file" name="photo" accept="image/*" capture="user" class="visually-hidden" id="photo-front-app" data-photo-file>
+          <input type="file" name="photo" accept="image/*" capture="environment" class="visually-hidden" id="photo-back-app" data-photo-file>
           <noscript><button class="btn btn-light btn-sm" type="submit">Save photo</button></noscript>
         </form>
-        {% if staff.photo_updated_at %}<form method="post" action="{{ url_for('staff.delete_photo', staff_id=staff.id) }}" data-confirm="Remove this photo?" data-confirm-variant="btn-danger" data-confirm-label="Remove"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-light btn-sm" type="submit"><i class="bi bi-trash me-1"></i>Remove</button></form>{% endif %}
+        {% endif %}
+        {% if staff.photo_updated_at %}<a class="btn btn-light btn-sm" href="{{ url_for('staff.photo_print', staff_id=staff.id) }}"><i class="bi bi-printer me-1"></i>Print passport photos</a>{% endif %}
+        {% if photo_edit and staff.photo_updated_at %}<form method="post" action="{{ url_for('staff.delete_photo', staff_id=staff.id) }}" data-confirm="Remove this photo?" data-confirm-variant="btn-danger" data-confirm-label="Remove"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-light btn-sm" type="submit"><i class="bi bi-trash me-1"></i>Remove</button></form>{% endif %}
       </div>
-      <p class="small text-muted mb-0">A clear, front-facing photo. It is shown to colleagues in this organization only.</p>
-      <p class="small text-danger mb-0" data-photo-error role="alert" hidden></p>
+      {% if photo_edit %}<p class="small text-muted mb-0">Passport style: face the camera, plain light background, no hat or dark glasses. Shown only to colleagues in this organization.</p>
+      <p class="small text-danger mb-0" data-photo-error role="alert" hidden></p>{% endif %}
     </div>
-    {% endif %}
   </div>
   <dl class="kv">
     <dt>Staff ID</dt><dd translate="no">{{ staff.employee_number }}</dd>
@@ -139,19 +146,27 @@
      data-camera data-upload-url="{{ url_for('staff.set_photo', staff_id=staff.id) }}" data-csrf="{{ csrf_token() }}">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header"><h2 class="modal-title fs-5" id="camera-title">Take a profile photo</h2>
+      <div class="modal-header"><h2 class="modal-title fs-5" id="camera-title">Take a passport photo</h2>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
       <div class="modal-body">
+        <div class="camera-choice" role="group" aria-label="Which camera">
+          <button type="button" class="btn btn-sm is-on" data-camera-facing="user" aria-pressed="true"><i class="bi bi-person-video me-1"></i>Front camera</button>
+          <button type="button" class="btn btn-sm" data-camera-facing="environment" aria-pressed="false"><i class="bi bi-camera me-1"></i>Back camera</button>
+        </div>
         <div class="camera-stage">
           <video class="camera-video" data-camera-video playsinline autoplay muted></video>
-          <canvas class="camera-shot" data-camera-shot width="720" height="720" hidden></canvas>
-          <div class="camera-guide" aria-hidden="true"></div>
+          <canvas class="camera-shot" data-camera-shot width="700" height="900" hidden></canvas>
+          <div class="camera-guide" aria-hidden="true"><span class="guide-head"></span></div>
         </div>
-        <p class="small text-muted mt-2 mb-0" data-camera-hint>Face the camera in good light, then tap Take photo.</p>
-        <p class="small text-danger mt-2 mb-0" data-camera-error role="alert" hidden></p>
+        <p class="small text-muted mt-2 mb-0" data-camera-hint>Put the face inside the oval, in good light against a plain wall, then tap Take photo.</p>
+        <div class="camera-fallback mt-2" data-camera-fallback hidden>
+          <p class="small text-danger mb-2" data-camera-error role="alert"></p>
+          <p class="small mb-2">Use the phone's own camera instead:</p>
+          <div class="toolbar"><label class="btn btn-soft btn-sm mb-0" for="photo-front-app"><i class="bi bi-person-video me-1"></i>Front camera</label>
+            <label class="btn btn-soft btn-sm mb-0" for="photo-back-app"><i class="bi bi-camera me-1"></i>Back camera</label></div>
+        </div>
       </div>
       <div class="modal-footer camera-actions">
-        <button type="button" class="btn btn-light" data-camera-switch hidden><i class="bi bi-arrow-repeat me-1"></i>Switch camera</button>
         <button type="button" class="btn btn-primary" data-camera-snap><i class="bi bi-camera-fill me-1"></i>Take photo</button>
         <button type="button" class="btn btn-light" data-camera-retake hidden>Retake</button>
         <button type="button" class="btn btn-primary" data-camera-use hidden><i class="bi bi-check-lg me-1"></i>Use photo</button>
