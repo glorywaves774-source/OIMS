@@ -3,9 +3,29 @@
 {% block title %}{{ staff.full_name if staff else 'Register staff' }}{% endblock %}
 {% block page_title %}{{ 'Edit staff record' if staff else 'Register staff' }}{% endblock %}
 {% block content %}
-<form method="post" novalidate>
+<form method="post" enctype="multipart/form-data" novalidate>
   {{ form.hidden_tag() }}
   <section class="panel">
+    <div class="form-section"><h3>Passport photo</h3>
+      <div class="profile-photo-row">
+        {% if staff and staff.photo_updated_at %}
+        <img class="passport-photo" data-photo-preview src="{{ url_for('staff.photo', staff_id=staff.id, v=staff.photo_updated_at.timestamp()|int) }}" alt="Passport photo" width="105" height="135">
+        {% else %}
+        <img class="passport-photo" data-photo-preview alt="Passport photo" width="105" height="135" hidden>
+        <div class="passport-photo passport-empty" data-photo-empty aria-hidden="true"><i class="bi bi-person-bounding-box"></i><span>35 × 45 mm</span></div>
+        {% endif %}
+        <div class="profile-photo-tools">
+          <div class="toolbar">
+            <button type="button" class="btn btn-primary btn-sm" data-camera-open hidden><i class="bi bi-camera me-1"></i>Take photo</button>
+            <label class="btn btn-soft btn-sm mb-0"><i class="bi bi-image me-1"></i>Upload photo
+              <input type="file" name="photo" id="staff-photo-input" accept="image/*" class="visually-hidden" data-photo-pick></label>
+            <input type="file" name="photo" accept="image/*" capture="user" class="visually-hidden" id="staff-photo-front" data-photo-pick>
+            <input type="file" name="photo" accept="image/*" capture="environment" class="visually-hidden" id="staff-photo-back" data-photo-pick>
+          </div>
+          <p class="small text-muted mb-0" data-photo-note>Optional. Passport style: face the camera, plain light background. Saved when you save the record.</p>
+          {% if photo_error %}<p class="small text-danger mb-0" role="alert">{{ photo_error }}</p>{% endif %}
+        </div>
+      </div></div>
     <div class="form-section"><h3>Identity and contact</h3>
       <div class="row g-3">
         <div class="col-md-6">{{ field(form.full_name, required=True) }}</div>
@@ -35,4 +55,6 @@
   <div class="toolbar mb-4"><button class="btn btn-primary" type="submit" data-loading>Save staff record</button>
     <a class="btn btn-light" href="{{ url_for('staff.detail', staff_id=staff.id) if staff else url_for('staff.index') }}">Cancel</a></div>
 </form>
+{% with camera_upload_url=None, camera_target='staff-photo-input', camera_front_id='staff-photo-front', camera_back_id='staff-photo-back' %}{% include "people/_camera_modal.html" %}{% endwith %}
 {% endblock %}
+{% block extra_scripts %}{{ super() }}<script src="{{ url_for('static', filename='js/photo.js') }}"></script>{% endblock %}

@@ -165,7 +165,16 @@ def edit(staff_id=None):
     form = StaffForm(obj=staff)
     form.department_id.choices = department_choices()
     form.user_id.choices = _linkable_users(staff.user_id if staff else None)
-    if form.validate_on_submit():
+    photo_bytes, photo_error = None, None
+    if request.method == "POST":
+        from app.photos import PhotoError, make_profile_photo
+        upload = next((f for f in request.files.getlist("photo") if f and f.filename), None)
+        if upload:
+            try:
+                photo_bytes = make_profile_photo(upload.read(8 * 1024 * 1024 + 1))
+            except PhotoError as exc:
+                photo_error = str(exc)
+    if form.validate_on_submit() and not photo_error:
         clash = StaffProfile.query.filter(StaffProfile.organization_id == g.tenant.id,
                                           StaffProfile.employee_number == form.employee_number.data,
                                           StaffProfile.id != (staff.id if staff else 0)).first()
@@ -185,6 +194,8 @@ def edit(staff_id=None):
                 val = getattr(form, f).data
                 setattr(staff, f, val if val not in ("",) else None)
             staff.status = form.status.data
+            if photo_bytes:
+                staff.photo_data, staff.photo_updated_at = photo_bytes, utcnow()
             db.session.flush()
             if not creating and old_dept != staff.department_id:
                 db.session.add(StaffTransfer(organization_id=g.tenant.id, staff_id=staff.id, from_department_id=old_dept,
@@ -195,7 +206,9 @@ def edit(staff_id=None):
             db.session.commit()
             flash("Staff record saved.", "success")
             return redirect(url_for("staff.detail", staff_id=staff.id))
-    return render_template("people/staff_form.html", form=form, staff=staff)
+    resp = make_response(render_template("people/staff_form.html", form=form, staff=staff, photo_error=photo_error))
+    resp.headers["Permissions-Policy"] = "camera=(self), microphone=(), geolocation=()"   # passport photo camera
+    return resp
 
 
 @staff_bp.route("/<int:staff_id>")

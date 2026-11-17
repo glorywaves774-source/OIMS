@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.10-fresh — 17 November 2026
+
+- **Photo when registering staff:** the Add staff and Edit staff forms now have a Passport photo section with
+  "Take photo" (camera, front or back) and "Upload photo". The picture shows straight away and is saved with the
+  record. Before, the photo could only be added from the staff profile after saving, which was easy to miss.
+- **Always the newest scripts after an update:** every release stamps its number on the app's scripts and styles,
+  so browsers and the installed app never mix a new page with an old copy of a script.
+- Storage problems during uploads are now written to the server log with the reason.
+
 ## 0.9.9-passport — 17 November 2026
 
 - **Fix: attachments.** Attaching a file to a meeting (and to tasks, staff files, programmes, projects,
