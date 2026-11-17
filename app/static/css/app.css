@@ -748,3 +748,22 @@ html[data-theme="dark"] .tabs-scroll a[aria-current="page"] { color: #04201d; }
 .install-steps { padding-left: 1.3rem; }
 .install-steps li { margin-bottom: .45rem; }
 .install-steps .bi { font-size: 1.1rem; color: var(--link); }
+
+/* Public pricing */
+.pricing { margin-top: 44px; }
+.pricing h2 { font-size: 1.35rem; font-weight: 700; margin-bottom: 4px; }
+.pricing-note { color: var(--text-muted); font-size: .92rem; margin: 0 0 16px; }
+.pricing-note:last-child { margin: 16px 0 0; }
+.plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+.plan-card { padding: 22px; display: flex; flex-direction: column; gap: 6px; }
+.plan-card h3 { font-size: 1.1rem; font-weight: 700; margin: 0; }
+.plan-desc { color: var(--text-muted); font-size: .9rem; margin: 0 0 6px; }
+.plan-price { margin: 4px 0 0; }
+.plan-amount { font-size: 1.6rem; font-weight: 750; white-space: nowrap; }
+.plan-per, .plan-annual { color: var(--text-muted); font-size: .9rem; }
+.plan-annual { margin: 0; }
+.plan-limits { list-style: none; padding: 0; margin: 10px 0 14px; font-size: .92rem; }
+.plan-limits li { display: flex; gap: 8px; align-items: center; padding: 3px 0; }
+.plan-limits .bi { color: var(--link); }
+.plan-card .btn { margin-top: auto; align-self: flex-start; }
+@media (min-width: 761px) { .plan-desc { min-height: 4.5em; } }

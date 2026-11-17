@@ -16,7 +16,12 @@
   "{1} by": "{1} par",
   "{1} of {2}": "{1} sur {2}",
   "{1} of {2} MB": "{1} sur {2} Mo",
-  "{1} years": "{1} ans"
+  "{1} years": "{1} ans",
+  "Up to {1} users": "Jusqu'à {1} utilisateurs",
+  "{1}-day free trial": "Essai gratuit de {1} jours",
+  "{1} GB of documents": "{1} Go de documents",
+  "{1} MB of documents": "{1} Mo de documents",
+  "or {1} a year": "ou {1} par an"
  },
  "patterns": {
   "'{1}' cannot go below what is already spent or committed ({2}).": "« {1} » ne peut pas descendre sous ce qui est déjà dépensé ou engagé ({2}).",
@@ -2606,6 +2611,17 @@
   "This device has no internet connection right now.": "Cet appareil n'a pas de connexion Internet pour le moment.",
   "Your work is kept safely on the server. Check your Wi-Fi or mobile data, then try again.": "Votre travail est conservé en sécurité sur le serveur. Vérifiez votre Wi-Fi ou vos données mobiles, puis réessayez.",
   "Try again": "Réessayer",
-  "OK": "OK"
+  "OK": "OK",
+  "Plans and pricing": "Formules et tarifs",
+  "Every plan includes all modules: office, programmes, projects, MEAL, finance, reports and the help assistant.": "Chaque formule comprend tous les modules : bureau, programmes, projets, MEAL, finances, rapports et l'assistant d'aide.",
+  "Larger organization or network? Kayron Global Tech Services agrees an Enterprise plan with you. Prices may change; invoices always use the price shown on your Billing page.": "Grande organisation ou réseau ? Kayron Global Tech Services convient avec vous d'une formule Entreprise. Les prix peuvent changer ; les factures utilisent toujours le prix affiché sur votre page Facturation.",
+  "a month": "par mois",
+  "Choose": "Choisir",
+  "Unlimited users": "Utilisateurs illimités",
+  "Unlimited document storage": "Stockage de documents illimité",
+  "For small offices, schools and community groups getting started.": "Pour les petits bureaux, écoles et groupes communautaires qui démarrent.",
+  "For growing NGOs, churches and businesses with several departments and projects.": "Pour les ONG, églises et entreprises en croissance, avec plusieurs services et projets.",
+  "For larger organizations running many programmes, projects and donors.": "Pour les grandes organisations qui gèrent de nombreux programmes, projets et bailleurs.",
+  "For networks and large institutions. Price agreed with Kayron; assigned by Kayron only.": "Pour les réseaux et grandes institutions. Prix convenu avec Kayron ; attribuée par Kayron uniquement."
  }
 }

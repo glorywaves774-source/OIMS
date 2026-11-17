@@ -463,6 +463,10 @@ def restore_backup(name, target=None, with_files=True, log=print):
             try:
                 with dbapi.cursor() as cur:
                     cur.execute("BEGIN")
+                    # The database held no organizations or users; rows that schema updates add on their own
+                    # (such as the starter plans) are cleared so the backup's own rows go in unchanged.
+                    for t in reversed([x["name"] for x in _tables() if x["name"] in manifest["tables"]]):
+                        cur.execute(f"DELETE FROM {_q(t)}")
                     later = []
                     for t in [x for x in _tables() if x["name"] in manifest["tables"]]:
                         meta = manifest["tables"][t["name"]]

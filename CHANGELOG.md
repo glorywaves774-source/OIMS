@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.9.6-plans — 17 November 2026
+
+Starter pricing plans.
+
+- Four starter plans, added automatically on the next deploy only if no plan exists yet: Starter (GHS 350 a month,
+  10 users, 5 GB), Standard (GHS 900, 30 users, 25 GB), Professional (GHS 2,200, 100 users, 100 GB), each with a
+  14-day trial and a year for the price of 10 months, and Enterprise (private, unlimited, assigned by Kayron only).
+  All prices and limits are placeholders to edit in the Kayron console under Plans.
+- `flask --app wsgi oims starter-plans` adds any missing starter plan without changing existing ones.
+- "Plans and pricing" on the public home page, in English and French, always showing the current plans;
+  "Choose" opens registration with that plan selected. The registration list shows each plan's monthly price.
+- Restore: rows that database updates add by themselves are cleared before a backup is loaded.
+
 ## 0.9.5-installable — 16 November 2026
 
 Installable app.
