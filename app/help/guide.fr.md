@@ -24,6 +24,18 @@ links: Réunions = meetings.index [meetings.view]; Calendrier = comms.calendar [
 who: les personnes autorisées à planifier des réunions ; le compte rendu par l'organisateur ou les gestionnaires des réunions
 Ouvrez Réunions et choisissez « Planifier une réunion ». Les participants reçoivent une invitation. Après la réunion, rédigez le compte rendu, les décisions et les points d'action ; les points d'action deviennent des tâches pour la personne responsable. Les réunions apparaissent aussi dans le calendrier.
 
+
+## Appels vidéo
+keywords: vidéo, appel, appel vidéo, réunion en ligne, visioconférence, jitsi, zoom, google meet, teams, caméra, micro, rejoindre, video, call
+links: Réunions = meetings.index [meetings.view]
+who: toute personne invitée peut rejoindre ; l'organisateur choisit la vidéo en planifiant
+En planifiant une réunion, laissez cochée « Appel vidéo dans ZENTAVA OIMS ». Chaque invité voit alors « Rejoindre l'appel vidéo » sur la page de la réunion. Autorisez la caméra et le micro quand le navigateur le demande. Avec la configuration gratuite, l'appel s'ouvre dans un onglet séparé (Jitsi Meet) ; gardez la page de la réunion ouverte pour prendre les notes. Vous pouvez aussi coller un lien Google Meet, Zoom ou Teams : la page affiche « Rejoindre sur Zoom » (ou le nom du service). Sur un téléphone, les appels fonctionnent dans le navigateur ; l'application Jitsi Meet fonctionne aussi.
+
+## Notes automatiques et brouillon de compte rendu
+keywords: notes, notes automatiques, transcription, transcrire, dictée, brouillon, compte rendu, écoute, notes maker, transcript
+links: Réunions = meetings.index [meetings.view]
+who: l'organisateur ou les gestionnaires des réunions
+Ouvrez la réunion (ou la page de l'appel vidéo) et trouvez « Notes en direct ». Prévenez tout le monde que la réunion est transcrite et cochez la case, choisissez la langue parlée, puis appuyez sur « Commencer l'écoute ». Les paroles s'affichent en texte ; vous pouvez taper et corriger. Appuyez sur « Rédiger le compte rendu » : le système rédige un résumé, les décisions, les actions à mener et les questions en suspens. Vérifiez, appuyez sur « Mettre dans le compte rendu », corrigez, puis enregistrez. L'écoute fonctionne dans Chrome, Edge et Safari et n'entend que le micro de cet appareil ; pendant un appel en ligne, utilisez le haut-parleur, pas des écouteurs. Ajoutez ensuite les décisions et points d'action officiels pour qu'ils deviennent des tâches.
 ## Congés
 keywords: congé, vacances, maladie, congé annuel, jours, absence, approuver un congé, solde, leave, holiday, sick
 links: Congés = leave.index [leave.request]; Demander un congé = leave.request_leave [leave.request]; Types de congé = leave.types [leave.manage]
@@ -54,6 +66,12 @@ links: Annuaire du personnel = staff.index [staff.view]
 who: les responsables RH enregistrent et tiennent les fiches
 Les RH enregistrent le personnel avec les détails d'emploi, contrats et documents, formations, évaluations et mutations. Les fiches ne sont visibles que par les personnes autorisées à voir les dossiers RH. Au départ d'une personne, les RH enregistrent la sortie et la fiche passe en lecture seule.
 
+
+## Photos du personnel
+keywords: photo, image, photo de profil, caméra, selfie, avatar, prendre une photo, picture
+links: Annuaire du personnel = staff.index [staff.view]
+who: les RH peuvent mettre la photo de chacun ; chaque personne peut mettre la sienne
+Ouvrez la fiche du personnel et appuyez sur « Prendre une photo » : autorisez la caméra, placez-vous face à elle dans une bonne lumière, appuyez sur « Prendre une photo », puis « Utiliser la photo ». Sur un téléphone, vous pouvez passer à la caméra arrière pour photographier un collègue. « Importer une photo » permet de choisir une image. La photo est recadrée en carré et affichée dans l'annuaire, uniquement pour les collègues de votre organisation.
 ## Présence
 keywords: présence, présent, absent, registre, présence du jour, attendance
 links: Présence = attendance.register [attendance.record]

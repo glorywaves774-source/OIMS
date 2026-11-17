@@ -1,0 +1,44 @@
+{# Live notes: the browser turns speech into text (free in Chrome, Edge and Safari); people can also type.
+   "Draft the minutes" turns the notes into draft minutes for the person to check, then save. #}
+<section class="panel notes-panel" id="live-notes" data-notes
+  data-save-url="{{ url_for('meetings.save_notes', meeting_id=m.id) }}"
+  data-draft-url="{{ url_for('meetings.draft_notes', meeting_id=m.id) }}"
+  data-csrf="{{ csrf_token() }}">
+  <div class="panel-header"><h2><i class="bi bi-mic me-1"></i>Live notes</h2>
+    <span class="notes-status" data-notes-status aria-live="polite"></span></div>
+  <p class="small text-muted mb-2">Speech is written down as people talk; the notes then become draft minutes. It hears this device's microphone: in an online call, use the speaker (not earphones) so other people's voices are picked up too.</p>
+  <label class="form-check mb-2"><input class="form-check-input" type="checkbox" data-notes-consent>
+    <span class="form-check-label">I have told everyone that the meeting is being written down.</span></label>
+  <div class="toolbar mb-2">
+    <select class="form-select notes-lang" data-notes-lang aria-label="Language spoken in the meeting">
+      {% set sl = 'fr-FR' if lang == 'fr' else 'en-GH' %}
+      {% for code, label in [('en-GH', 'English (Ghana)'), ('en-NG', 'English (Nigeria)'), ('en-KE', 'English (Kenya)'), ('en-GB', 'English (UK)'), ('en-US', 'English (US)'), ('fr-FR', 'French (France)'), ('fr-CA', 'French (Canada)')] %}
+      <option value="{{ code }}"{% if code == sl %} selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <button type="button" class="btn btn-primary" data-notes-start disabled><i class="bi bi-mic-fill me-1"></i>Start listening</button>
+    <button type="button" class="btn btn-light" data-notes-stop hidden><i class="bi bi-pause-fill me-1"></i>Pause</button>
+  </div>
+  <p class="alert alert-warning small py-2" data-notes-unsupported hidden>This browser cannot listen. Use Chrome, Edge or Safari for live notes, or type the notes below.</p>
+  <p class="notes-interim" data-notes-interim translate="no" aria-hidden="true"></p>
+  <textarea class="form-control notes-text" rows="9" data-notes-text translate="no" aria-label="Notes" placeholder="Notes appear here as people speak. You can also type or correct them.">{{ m.transcript or '' }}</textarea>
+  <div class="toolbar mt-2">
+    <button type="button" class="btn btn-soft" data-notes-draft><i class="bi bi-magic me-1"></i>Draft the minutes</button>
+    <span class="small text-muted" data-notes-saved></span>
+  </div>
+  <div class="notes-draft mt-3" data-notes-draft-box hidden>
+    <h3 class="fs-6">Draft minutes</h3>
+    <pre class="notes-draft-text" data-notes-draft-text translate="no"></pre>
+    <div class="toolbar"><button type="button" class="btn btn-primary" data-notes-use><i class="bi bi-arrow-down-circle me-1"></i>Put in the minutes</button>
+      <span class="small text-muted">Check names, figures and dates, then save the minutes.</span></div>
+  </div>
+  <p class="small text-muted mt-3 mb-0"><i class="bi bi-shield-lock me-1"></i>Chrome and Edge send the sound to Google, Safari to Apple, to turn it into text; nothing is recorded by ZENTAVA OIMS. The notes are kept with this meeting and only people who manage it can see them.</p>
+  <div hidden data-notes-msgs>
+    <span data-k="listening">Listening…</span><span data-k="paused">Paused</span><span data-k="saved">Notes saved</span>
+    <span data-k="saving">Saving…</span><span data-k="drafting">Drafting the minutes…</span>
+    <span data-k="ready">Draft ready: check it, then put it in the minutes.</span>
+    <span data-k="ai">Written with the AI service.</span><span data-k="rules">Drafted by ZENTAVA OIMS.</span>
+    <span data-k="empty">There are no notes yet.</span><span data-k="failed">The draft could not be made. Try again.</span>
+    <span data-k="blocked">The microphone is blocked. Allow it in the browser's site settings, then try again.</span>
+    <span data-k="nomic">No microphone was found.</span><span data-k="offline">No connection: notes are kept on this page until it returns.</span>
+  </div>
+</section>

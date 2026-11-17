@@ -285,6 +285,13 @@ def upload():
     if request.method == "GET":
         form.folder_id.data = request.args.get("folder", type=int)
         form.department_id.data = my_department_id()
+    if rel_type:
+        # Attachments take the visibility of the record they belong to; the form does not ask for it, so the
+        # choice must not be required (before this, every attachment was refused without a visible message).
+        form.visibility.choices = list(Document.VISIBILITY.items())
+        form.visibility.validate_choice = False
+        if not form.visibility.data:
+            form.visibility.data = Document.VIS_RESTRICTED
     if form.validate_on_submit():
         doc = Document(organization_id=g.tenant.id, owner_id=current_user.id, related_type=rel_type, related_id=rel_id)
         try:
@@ -314,7 +321,8 @@ def upload():
             if rel_type:
                 return redirect(_parent_url(rel_type, rel_id))
             return redirect(url_for("documents.detail", doc_id=doc.id))
-    return render_template("documents/upload.html", form=form, related_type=rel_type, related_id=rel_id)
+    return render_template("documents/upload.html", form=form, related_type=rel_type, related_id=rel_id,
+                           back_url=_parent_url(rel_type, rel_id) if rel_type else None)
 
 
 def _parent_url(rel_type, rel_id):

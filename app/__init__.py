@@ -9,7 +9,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from app.config import CONFIGS
 from app.extensions import csrf, db, limiter, login_manager, migrate
 
-__version__ = "0.9.7-steady"
+__version__ = "0.9.9-passport"
 
 
 def create_app(config_name=None, overrides=None):

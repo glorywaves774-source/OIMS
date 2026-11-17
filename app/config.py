@@ -107,6 +107,15 @@ class BaseConfig:
     HELP_AI_MODEL = os.environ.get("HELP_AI_MODEL", "claude-haiku-5-5")
     HELP_ASSISTANT = _bool("HELP_ASSISTANT", True)
 
+    # Video calls in meetings (Jitsi). Without settings, calls use the free public meet.jit.si server and open in a
+    # new tab (meet.jit.si only allows short calls when shown inside another site). With a JaaS account (8x8,
+    # free for a small number of monthly users) or your own Jitsi server, calls open inside the meeting page.
+    VIDEO_CALLS = _bool("VIDEO_CALLS", True)
+    VIDEO_JITSI_DOMAIN = (os.environ.get("VIDEO_JITSI_DOMAIN") or "meet.jit.si").strip().lower()
+    JAAS_APP_ID = os.environ.get("JAAS_APP_ID")              # vpaas-magic-cookie-...
+    JAAS_API_KEY_ID = os.environ.get("JAAS_API_KEY_ID")      # vpaas-magic-cookie-.../abc123
+    JAAS_PRIVATE_KEY = os.environ.get("JAAS_PRIVATE_KEY")    # the PEM text (environment only, never stored)
+
     # Large downloads prepared at the same time per server process, and how long to wait for a turn (seconds)
     HEAVY_DOWNLOADS = int(os.environ.get("HEAVY_DOWNLOADS", "1"))
     HEAVY_DOWNLOAD_WAIT = int(os.environ.get("HEAVY_DOWNLOAD_WAIT", "20"))

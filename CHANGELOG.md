@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.9.9-passport — 17 November 2026
+
+- **Fix: attachments.** Attaching a file to a meeting (and to tasks, staff files, programmes, projects,
+  correspondence and other records) was refused without any message, because the form left out a setting the
+  system required. Attachments now save and go back to the record; any other form error is shown on the page.
+- **Passport photos:** staff photos are now passport format (35 × 45 mm, 700 × 900 pixels) with an oval face guide.
+  "Print passport photos" prints 1–12 copies at true size, with or without the name.
+- **Front and back camera:** clear "Front camera" / "Back camera" buttons in the camera window. If the browser
+  cannot open the camera, the phone's own camera app can be used instead (front or back).
+- The help button no longer covers buttons in pop-up windows.
+
+## 0.9.8-video — 17 November 2026
+
+Video calls, automatic meeting notes and staff photos.
+
+- **Video calls:** a meeting can have a video call in ZENTAVA OIMS ("Join video call"). By default it uses the free
+  Jitsi Meet service and opens in its own tab; with a JaaS account or your own Jitsi server it opens inside the
+  meeting page. Only the person's name is sent to the video service, never their email. A Google Meet, Zoom or
+  Teams link can be added instead ("Join on Zoom"); links must be https.
+- **Automatic notes:** "Live notes" on the meeting and call pages write down what is said (free, in Chrome, Edge
+  and Safari; English or French), keep the notes with the meeting, and "Draft the minutes" turns them into a
+  summary, decisions, action points and open questions. Better wording with the AI key (personal details removed
+  first). Drafts are only saved after a person checks them.
+- **Staff photos:** "Take photo" on a staff profile uses the camera (front or back on phones); "Upload photo" picks
+  a picture. Photos are cropped to a square, cleaned of hidden details, and shown in the staff directory inside
+  the organization only. HR sets anyone's photo; each person can set their own.
+- Help assistant and French updated for all three.
+
 ## 0.9.7-steady — 17 November 2026
 
 Phones: English and French, Day and Night mode, no more twitching.

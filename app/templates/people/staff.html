@@ -1,5 +1,5 @@
 {% extends "layout_app.html" %}
-{% from "macros.html" import status, pager %}
+{% from "macros.html" import status, pager, staff_avatar %}
 {% block title %}Staff directory{% endblock %}
 {% block page_title %}Staff directory{% endblock %}
 {% block content %}
@@ -21,7 +21,7 @@
   <div class="table-scroll"><table class="table">
     <thead><tr><th>Name</th><th>Staff ID</th><th>Position</th><th>Department</th><th>Status</th><th>Contact</th></tr></thead>
     <tbody>{% for s in page.items %}<tr>
-      <td><a href="{{ url_for('staff.detail', staff_id=s.id) }}" translate="no">{{ s.full_name }}</a></td>
+      <td><span class="name-with-avatar">{{ staff_avatar(s) }}<a href="{{ url_for('staff.detail', staff_id=s.id) }}" translate="no">{{ s.full_name }}</a></span></td>
       <td class="code" translate="no">{{ s.employee_number }}</td>
       <td translate="no">{{ s.position or '—' }}</td>
       <td translate="no">{{ s.department.name if s.department else '—' }}</td>

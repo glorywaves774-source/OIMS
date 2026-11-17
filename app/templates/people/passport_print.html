@@ -1,0 +1,24 @@
+{% extends "layout_app.html" %}
+{% block title %}Passport photos · {{ staff.full_name }}{% endblock %}
+{% block page_title %}Passport photos{% endblock %}
+{% block content %}
+<div class="passport-page">
+  <div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ staff.full_name }}</h2>
+    <p>Each photo prints at 35 × 45 mm. Print at 100% (“Actual size”), not “Fit to page”.</p></div>
+    <div class="toolbar"><a class="btn btn-light" href="{{ url_for('staff.detail', staff_id=staff.id) }}"><i class="bi bi-arrow-left me-1"></i>Profile</a>
+      <button type="button" class="btn btn-primary" data-print><i class="bi bi-printer me-1"></i>Print</button></div></div>
+  <form method="get" class="toolbar no-print mb-3">
+    <label class="form-label mb-0" for="copies">Copies</label>
+    <select class="form-select w-auto" id="copies" name="copies">{% for n in [1, 2, 4, 6, 8, 12] %}<option value="{{ n }}"{% if n == copies %} selected{% endif %}>{{ n }}</option>{% endfor %}</select>
+    <select class="form-select w-auto" name="name" aria-label="Name under each photo">
+      <option value="1"{% if with_name %} selected{% endif %}>With name</option><option value="0"{% if not with_name %} selected{% endif %}>Without name</option></select>
+    <button class="btn btn-soft" type="submit">Update</button>
+  </form>
+  <div class="passport-sheet">
+    {% for _ in range(copies) %}
+    <figure><img src="{{ url_for('staff.photo', staff_id=staff.id, v=staff.photo_updated_at.timestamp()|int) }}" alt="Passport photo of {{ staff.full_name }}">
+      {% if with_name %}<figcaption translate="no">{{ staff.full_name }}</figcaption>{% endif %}</figure>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
