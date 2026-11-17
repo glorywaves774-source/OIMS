@@ -1,0 +1,42 @@
+{% extends "layout_app.html" %}
+{% from "macros.html" import field, ldt %}
+{% block title %}Video call · {{ m.title }}{% endblock %}
+{% block page_title %}Video call{% endblock %}
+{% block content %}
+<div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ m.title }}</h2>
+  <p>{{ ldt(m.starts_at, '%A %d %B %Y, %H:%M') }}</p></div>
+  <div class="toolbar"><a class="btn btn-light" href="{{ url_for('meetings.detail', meeting_id=m.id) }}"><i class="bi bi-arrow-left me-1"></i>Meeting</a>
+    <a class="btn btn-soft" href="{{ join_url }}" target="_blank" rel="noopener noreferrer"><i class="bi bi-box-arrow-up-right me-1"></i>Open in a new tab</a></div></div>
+
+<div class="call-layout{% if embedded %} has-frame{% endif %}">
+  <section class="panel call-stage">
+    {% if embedded %}
+    <iframe class="call-frame" src="{{ join_url }}" title="Video call" allow="camera; microphone; display-capture; fullscreen; autoplay; clipboard-write" allowfullscreen referrerpolicy="no-referrer"></iframe>
+    {% else %}
+    <div class="call-open">
+      <i class="bi bi-camera-video call-icon" aria-hidden="true"></i>
+      <h2>Join the video call</h2>
+      <p>The call opens in its own tab, on the free Jitsi Meet service. Keep this page open to take the notes.</p>
+      <a class="btn btn-primary btn-lg" href="{{ join_url }}" target="_blank" rel="noopener noreferrer"><i class="bi bi-camera-video-fill me-2"></i>Join now</a>
+      <p class="small text-muted mt-3 mb-0">Allow the camera and microphone when asked. On a phone, the call opens in the browser; the Jitsi Meet app also works.</p>
+    </div>
+    {% endif %}
+  </section>
+  <div class="call-side">
+    {% if manage %}
+      {% include "meetings/_notes.html" %}
+      <section class="panel" id="minutes">
+        <div class="panel-header"><h2>Minutes</h2></div>
+        <form method="post" action="{{ url_for('meetings.minutes', meeting_id=m.id) }}" novalidate>{{ minutes_form.hidden_tag() }}
+          {{ field(minutes_form.minutes, label='Minutes of the meeting', attrs={'rows': 10}) }}<button class="btn btn-primary" type="submit">Save minutes</button></form>
+      </section>
+    {% else %}
+      <section class="panel">
+        <div class="panel-header"><h2>Agenda</h2></div>
+        {% if m.agenda %}<p class="prewrap mb-0" translate="no">{{ m.agenda }}</p>{% else %}<p class="text-muted mb-0">No agenda was added.</p>{% endif %}
+      </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}{{ super() }}<script src="{{ url_for('static', filename='js/notes.js') }}"></script>{% endblock %}

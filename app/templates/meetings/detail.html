@@ -5,7 +5,9 @@
 {% block content %}
 <div class="page-head"><div><h2 class="h4 mb-0" translate="no">{{ m.title }}</h2>
   <p>{{ ldt(m.starts_at, '%A %d %B %Y, %H:%M') }}{% if m.ends_at %}–{{ ldt(m.ends_at, '%H:%M') }}{% endif %} · {{ status(m.status) }}</p></div>
-  <div class="toolbar"><a class="btn btn-light" href="{{ url_for('meetings.index') }}"><i class="bi bi-arrow-left me-1"></i>Meetings</a>
+  <div class="toolbar">{% if m.video_room and m.status != 'cancelled' and video_on %}<a class="btn btn-primary" href="{{ url_for('meetings.call', meeting_id=m.id) }}"><i class="bi bi-camera-video-fill me-1"></i>Join video call</a>{% endif %}
+    {% if m.online_link and m.status != 'cancelled' %}<a class="btn btn-soft" href="{{ m.online_link }}" target="_blank" rel="noopener noreferrer"><i class="bi bi-box-arrow-up-right me-1"></i>Join on <span translate="no">{{ link_label(m.online_link) or 'the meeting link' }}</span></a>{% endif %}
+    <a class="btn btn-light" href="{{ url_for('meetings.index') }}"><i class="bi bi-arrow-left me-1"></i>Meetings</a>
     <a class="btn btn-light" href="{{ url_for('meetings.report', meeting_id=m.id) }}"><i class="bi bi-file-earmark-text me-1"></i>Report</a>
     {% if manage and m.status == 'scheduled' %}<a class="btn btn-soft" href="{{ url_for('meetings.edit', meeting_id=m.id) }}"><i class="bi bi-pencil me-1"></i>Edit</a>
       <form method="post" action="{{ url_for('meetings.cancel', meeting_id=m.id) }}" data-confirm="Cancel this meeting and notify everyone?" data-confirm-variant="btn-danger" data-confirm-label="Cancel meeting"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-danger" type="submit">Cancel meeting</button></form>{% endif %}</div></div>
@@ -25,7 +27,8 @@
     <dl class="kv">
       <dt>Type</dt><dd>{{ m.meeting_type or '—' }}</dd>
       <dt>Venue</dt><dd translate="no">{{ m.location or '—' }}</dd>
-      {% if m.online_link %}<dt>Online</dt><dd><a href="{{ m.online_link }}" target="_blank" rel="noopener noreferrer">Join link</a></dd>{% endif %}
+      {% if m.video_room and video_on %}<dt>Video call</dt><dd><a href="{{ url_for('meetings.call', meeting_id=m.id) }}">In ZENTAVA OIMS</a></dd>{% endif %}
+      {% if m.online_link %}<dt>Online</dt><dd><a href="{{ m.online_link }}" target="_blank" rel="noopener noreferrer">{{ link_label(m.online_link) or 'Join link' }}</a></dd>{% endif %}
       <dt>Organizer</dt><dd translate="no">{{ m.organizer.full_name if m.organizer else '—' }}</dd>
       <dt>Department</dt><dd translate="no">{{ m.department.name if m.department else '—' }}</dd>
     </dl>
@@ -45,6 +48,8 @@
     {% endif %}
   </section>
 </div>
+
+{% if manage and m.status != 'cancelled' and not ro %}{% include "meetings/_notes.html" %}{% endif %}
 
 <section class="panel" id="minutes">
   <div class="panel-header"><h2>Minutes</h2></div>
@@ -75,3 +80,4 @@
 
 {{ attachments(files, 'meeting', m.id, manage or (mine is not none)) }}
 {% endblock %}
+{% block extra_scripts %}{{ super() }}{% if manage and m.status != 'cancelled' and not ro %}<script src="{{ url_for('static', filename='js/notes.js') }}"></script>{% endif %}{% endblock %}

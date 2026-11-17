@@ -193,6 +193,29 @@ sent to Anthropic's API to phrase a short answer: phone numbers, emails and ID n
 question first, and no records, names or organization details are sent. Questions are not stored. Limits: 12 per
 minute and 200 per day per person.
 
+## Video calls, live notes and staff photos
+
+**Video calls** use Jitsi. Each meeting with "Video call in ZENTAVA OIMS" gets a long random room name. Only the
+person's display name is sent to the video service, never their email address.
+
+| Setting | What happens |
+|---|---|
+| nothing set (default) | Free public `meet.jit.si`. The call opens in its own tab, because meet.jit.si cuts calls shown inside other sites after a few minutes. Calls there are limited in length, and the first person may be asked to sign in. |
+| `JAAS_APP_ID`, `JAAS_API_KEY_ID`, `JAAS_PRIVATE_KEY` | 8x8 JaaS (hosted Jitsi; free for a small number of monthly users at the time of writing). The call opens inside the meeting page; each person gets a signed pass for that room only, valid 4 hours; organizers are moderators; recording and live streaming are off. Paste the private key text into `JAAS_PRIVATE_KEY` on Render (line breaks may be written as `\n`). |
+| `VIDEO_JITSI_DOMAIN` | Your own Jitsi server (e.g. `video.example.org`). The call opens inside the meeting page. |
+| `VIDEO_CALLS=false` | No video option; meetings can still carry a Google Meet, Zoom or Teams link (https only). |
+
+**Live notes** use the browser's built-in speech recognition (Chrome, Edge, Safari): no setup and no cost. The
+browser sends the sound to Google or Apple to turn it into text; ZENTAVA OIMS stores only the text, with the
+meeting, visible to people who manage it. "Draft the minutes" works without any key; with `HELP_AI_API_KEY` set,
+the transcript (phone numbers, emails and ID numbers removed first) and the agenda are sent to Anthropic's API for a
+better-written draft. Drafts are never saved on their own: a person checks them and saves the minutes. Limits: 20
+drafts per hour per person.
+
+**Staff photos** are re-drawn by the app as a 512×512 JPEG (nothing from the original file is kept, such as
+location data), stored in the database with the staff record, and shown only inside the organization. HR can set
+anyone's photo; each person can set their own.
+
 ## Capacity
 
 Measured in Phase 9 with one organization holding 16,000 beneficiaries, 20,000 enrolments, 18,000 tasks,

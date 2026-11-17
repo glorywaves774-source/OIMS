@@ -1,14 +1,14 @@
 """Meetings: scheduling, invitations, attendance, minutes, decisions and action points."""
 from datetime import timedelta
 
-from flask import abort, flash, g, redirect, render_template, request, url_for
+from flask import abort, flash, g, jsonify, make_response, redirect, render_template, request, url_for
 from flask_login import current_user
 from sqlalchemy import exists, or_, select
 
-from app import audit
+from app import audit, video
 from app.blueprints.people import department_choices
 from app.blueprints.tenant import is_member, member_choices, my_department_id, page_arg, workspace_blueprint
-from app.extensions import db
+from app.extensions import db, limiter
 from app.forms import ActionForm
 from app.forms_office import ActionPointForm, DecisionTextForm, MeetingForm, MinutesForm
 from app.models import Department, Meeting, MeetingDecision, MeetingParticipant, Task, as_aware, utcnow
@@ -96,6 +96,7 @@ def edit(meeting_id=None):
         if meeting:
             form.starts_at.data, form.ends_at.data = local_naive(meeting.starts_at), local_naive(meeting.ends_at)
             form.participants.data = [p.user_id for p in meeting.participants]
+            form.video_call.data = bool(meeting.video_room)
         else:
             form.department_id.data = my_department_id()
     if form.validate_on_submit():
@@ -109,6 +110,10 @@ def edit(meeting_id=None):
         for f in ("title", "meeting_type", "location", "online_link", "agenda", "department_id"):
             setattr(meeting, f, getattr(form, f).data or None)
         meeting.starts_at, meeting.ends_at = to_utc(form.starts_at.data), to_utc(form.ends_at.data)
+        if form.video_call.data and video.enabled():
+            meeting.video_room = meeting.video_room or video.new_room()   # the room keeps its name once made
+        elif not form.video_call.data:
+            meeting.video_room = None
         if changed_time:
             meeting.reminder_sent_at = None
         db.session.flush()
@@ -137,10 +142,88 @@ def detail(meeting_id):
     ap_form = ActionPointForm()
     ap_form.assigned_to_id.choices = [(0, "— Choose —")] + [(p.user_id, p.user.full_name) for p in m.participants]
     mine = next((p for p in m.participants if p.user_id == current_user.id), None)
-    return render_template("meetings/detail.html", m=m, actions=actions, files=attachments_for("meeting", m.id),
-                           manage=_can_manage(m), mine=mine, minutes_form=MinutesForm(obj=m),
-                           decision_form=DecisionTextForm(), ap_form=ap_form, action_form=ActionForm(),
-                           ro=g.get("support_request") is not None)
+    resp = make_response(render_template(
+        "meetings/detail.html", m=m, actions=actions, files=attachments_for("meeting", m.id),
+        manage=_can_manage(m), mine=mine, minutes_form=MinutesForm(obj=m), decision_form=DecisionTextForm(),
+        ap_form=ap_form, action_form=ActionForm(), ro=g.get("support_request") is not None,
+        video_on=video.enabled(), link_label=video.link_label))
+    # live notes listen through this device's microphone
+    resp.headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=()"
+    return resp
+
+
+def _call_headers(resp):
+    """The call page may show the video service in a frame and use the camera and microphone."""
+    from app.security import CSP
+    src = video.origin() if video.embedded() else None
+    resp.headers["Content-Security-Policy"] = CSP.replace("object-src 'none'", f"object-src 'none'; frame-src {src}") \
+        if src else CSP
+    allow = f'(self "{src}")' if src else "(self)"
+    resp.headers["Permissions-Policy"] = (f"camera={allow}, microphone={allow}, display-capture={allow}, "
+                                          f"fullscreen={allow}, geolocation=()")
+    return resp
+
+
+def _present(m):
+    people = [p for p in m.participants if p.attended] or [p for p in m.participants if p.response == "accepted"]
+    return [p.user.full_name for p in people]
+
+
+@bp.route("/<int:meeting_id>/call")
+@require_permission("meetings.view")
+def call(meeting_id):
+    """The video call (inside the page, or a button that opens it in its own tab) with the live notes beside it."""
+    from app.i18n import current_language
+    m = tenant_get_or_404(Meeting, meeting_id)
+    if not can_view_meeting(m) or not m.video_room or m.status == "cancelled" or not video.enabled():
+        abort(404)
+    manage = _can_manage(m)
+    url = video.join_url(m.video_room, f"{g.tenant.id}-{current_user.id}", current_user.full_name,
+                         moderator=manage or m.organizer_id == current_user.id, lang=current_language())
+    audit.record("meeting.call_joined", f"Joined the video call of '{m.title}'", entity=m)
+    db.session.commit()
+    resp = make_response(render_template("meetings/call.html", m=m, join_url=url, embedded=video.embedded(),
+                                         manage=manage, minutes_form=MinutesForm(obj=m)))
+    resp.headers["Cache-Control"] = "no-store"   # the page holds a personal pass to the call
+    return _call_headers(resp)
+
+
+@bp.route("/<int:meeting_id>/notes", methods=["POST"])
+@require_permission("meetings.view")
+@limiter.limit("120 per hour")
+def save_notes(meeting_id):
+    """Keeps the live notes on the server while they are being taken (so nothing is lost if a phone sleeps)."""
+    m = tenant_get_or_404(Meeting, meeting_id)
+    if not _can_manage(m):
+        abort(403)
+    text = ((request.get_json(silent=True) or {}).get("transcript") or "")[:60000]
+    m.transcript = text or None
+    m.transcript_updated_at = utcnow()
+    db.session.commit()
+    return jsonify(saved=True)
+
+
+@bp.route("/<int:meeting_id>/notes/draft", methods=["POST"])
+@require_permission("meetings.view")
+@limiter.limit("20 per hour")
+def draft_notes(meeting_id):
+    """Turns the notes into draft minutes. Nothing is saved: the draft goes into the minutes box for checking."""
+    from app.i18n import current_language
+    from app.notes import draft_minutes
+    from app.timeutil import local_naive as _local
+    m = tenant_get_or_404(Meeting, meeting_id)
+    if not _can_manage(m):
+        abort(403)
+    text = ((request.get_json(silent=True) or {}).get("transcript") or "")[:60000]
+    if not text.strip():
+        return jsonify(error="empty"), 400
+    m.transcript, m.transcript_updated_at = text, utcnow()
+    lang = current_language()
+    when = _local(m.starts_at).strftime("%d/%m/%Y %H:%M") if m.starts_at else ""
+    draft, source = draft_minutes(text, lang, title=m.title, when=when, present=_present(m), agenda=m.agenda or "")
+    audit.record("meeting.minutes_drafted", f"Minutes drafted from notes for '{m.title}' ({source})", entity=m)
+    db.session.commit()
+    return jsonify(draft=draft, source=source)
 
 
 @bp.route("/<int:meeting_id>/report")

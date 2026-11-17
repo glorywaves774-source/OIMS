@@ -1,14 +1,14 @@
 """Departments, staff & HR records, leave and attendance."""
 from datetime import date, datetime, timedelta
 
-from flask import abort, flash, g, redirect, render_template, request, url_for
+from flask import abort, flash, g, jsonify, make_response, redirect, render_template, request, url_for
 from flask_login import current_user
 from sqlalchemy import func, or_, select
 
 from app import audit
 from app.blueprints.tenant import (in_scope, member_choices, my_department_id, my_staff, page_arg,
                                    scoped, workspace_blueprint)
-from app.extensions import db
+from app.extensions import db, limiter
 from app.forms import ActionForm
 from app.forms_office import (ATTENDANCE_CHOICES, DecisionForm, DepartmentForm, ExitForm, LeaveRequestForm,
                               LeaveTypeForm, ReviewForm, StaffForm, TrainingForm, TransferForm)
@@ -203,7 +203,8 @@ def edit(staff_id=None):
 def detail(staff_id):
     staff = tenant_get_or_404(StaffProfile, staff_id)
     records = can_see_records(staff)
-    ctx = {"staff": staff, "records": records, "manage": can("staff.manage") and staff.status != "exited"}
+    ctx = {"staff": staff, "records": records, "manage": can("staff.manage") and staff.status != "exited",
+           "photo_edit": can_change_photo(staff), "action_form": ActionForm()}
     if records:
         ctx.update(
             leave=LeaveRequest.query.filter_by(staff_id=staff.id).order_by(LeaveRequest.start_date.desc()).limit(20).all(),
@@ -220,7 +221,72 @@ def detail(staff_id):
         tf = TransferForm()
         tf.to_department_id.choices = department_choices()
         ctx.update(training_form=TrainingForm(), review_form=ReviewForm(), transfer_form=tf, exit_form=ExitForm())
-    return render_template("people/staff_detail.html", **ctx)
+    resp = make_response(render_template("people/staff_detail.html", **ctx))
+    resp.headers["Permissions-Policy"] = "camera=(self), microphone=(), geolocation=()"   # profile photo camera
+    return resp
+
+
+def can_change_photo(staff):
+    """HR can set anyone's picture; each person can set their own."""
+    if g.get("support_request") is not None:
+        return False
+    return can("staff.manage") or (staff.user_id is not None and staff.user_id == current_user.id)
+
+
+@staff_bp.route("/<int:staff_id>/photo")
+@require_permission("staff.view")
+def photo(staff_id):
+    staff = tenant_get_or_404(StaffProfile, staff_id)
+    if not staff.photo_updated_at or not staff.photo_data:
+        abort(404)
+    etag = f"p{int(staff.photo_updated_at.timestamp())}"
+    if request.if_none_match.contains(etag):
+        resp = make_response("", 304)
+    else:
+        resp = make_response(staff.photo_data)
+        resp.mimetype = "image/jpeg"
+    resp.set_etag(etag)
+    resp.headers["Cache-Control"] = "private, max-age=600"
+    return resp
+
+
+@staff_bp.route("/<int:staff_id>/photo", methods=["POST"])
+@require_permission("staff.view")
+@limiter.limit("30 per hour")
+def set_photo(staff_id):
+    from app.photos import PhotoError, make_profile_photo
+    staff = tenant_get_or_404(StaffProfile, staff_id)
+    wants_json = request.accept_mimetypes.best == "application/json"
+    if not can_change_photo(staff):
+        abort(403)
+    upload = request.files.get("photo")
+    try:
+        staff.photo_data = make_profile_photo(upload.read(8 * 1024 * 1024 + 1) if upload else b"")
+    except PhotoError as exc:
+        if wants_json:
+            return jsonify(error=str(exc)), 400
+        flash(str(exc), "danger")
+        return redirect(url_for("staff.detail", staff_id=staff.id))
+    staff.photo_updated_at = utcnow()
+    audit.record("staff.photo", f"Profile photo updated for {staff.employee_number}", entity=staff)
+    db.session.commit()
+    if wants_json:
+        return jsonify(saved=True)
+    flash("Photo saved.", "success")
+    return redirect(url_for("staff.detail", staff_id=staff.id))
+
+
+@staff_bp.route("/<int:staff_id>/photo/delete", methods=["POST"])
+@require_permission("staff.view")
+def delete_photo(staff_id):
+    staff = tenant_get_or_404(StaffProfile, staff_id)
+    if not can_change_photo(staff) or not ActionForm().validate_on_submit():
+        abort(403)
+    staff.photo_data, staff.photo_updated_at = None, None
+    audit.record("staff.photo_removed", f"Profile photo removed for {staff.employee_number}", entity=staff)
+    db.session.commit()
+    flash("Photo removed.", "success")
+    return redirect(url_for("staff.detail", staff_id=staff.id))
 
 
 def _staff_for_hr_post(staff_id):

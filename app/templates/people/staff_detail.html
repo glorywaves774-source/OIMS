@@ -1,5 +1,5 @@
 {% extends "layout_app.html" %}
-{% from "macros.html" import field, status, dt %}
+{% from "macros.html" import field, status, dt, staff_avatar %}
 {% block title %}{{ staff.full_name }}{% endblock %}
 {% block page_title %}<span translate="no">{{ staff.full_name }}</span>{% endblock %}
 {% block content %}
@@ -20,6 +20,25 @@
 
 <section class="panel" id="profile">
   <div class="panel-header"><h2>Profile</h2></div>
+  <div class="profile-photo-row">
+    {{ staff_avatar(staff, 'avatar-xl') }}
+    {% if photo_edit %}
+    <div class="profile-photo-tools">
+      <div class="toolbar">
+        <button type="button" class="btn btn-primary btn-sm" data-camera-open hidden><i class="bi bi-camera me-1"></i>Take photo</button>
+        <form method="post" enctype="multipart/form-data" action="{{ url_for('staff.set_photo', staff_id=staff.id) }}" class="photo-upload" data-photo-upload>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label class="btn btn-soft btn-sm mb-0"><i class="bi bi-image me-1"></i>{{ 'Change photo' if staff.photo_updated_at else 'Upload photo' }}
+            <input type="file" name="photo" accept="image/*" class="visually-hidden" data-photo-file></label>
+          <noscript><button class="btn btn-light btn-sm" type="submit">Save photo</button></noscript>
+        </form>
+        {% if staff.photo_updated_at %}<form method="post" action="{{ url_for('staff.delete_photo', staff_id=staff.id) }}" data-confirm="Remove this photo?" data-confirm-variant="btn-danger" data-confirm-label="Remove"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-light btn-sm" type="submit"><i class="bi bi-trash me-1"></i>Remove</button></form>{% endif %}
+      </div>
+      <p class="small text-muted mb-0">A clear, front-facing photo. It is shown to colleagues in this organization only.</p>
+      <p class="small text-danger mb-0" data-photo-error role="alert" hidden></p>
+    </div>
+    {% endif %}
+  </div>
   <dl class="kv">
     <dt>Staff ID</dt><dd translate="no">{{ staff.employee_number }}</dd>
     <dt>Email</dt><dd translate="no">{% if staff.email %}<a href="mailto:{{ staff.email }}">{{ staff.email }}</a>{% else %}—{% endif %}</dd>
@@ -115,4 +134,38 @@
 </section>
 {% endif %}
 {% endif %}
+{% if photo_edit %}
+<div class="modal fade" id="camera-modal" tabindex="-1" aria-labelledby="camera-title" aria-hidden="true"
+     data-camera data-upload-url="{{ url_for('staff.set_photo', staff_id=staff.id) }}" data-csrf="{{ csrf_token() }}">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h2 class="modal-title fs-5" id="camera-title">Take a profile photo</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <div class="camera-stage">
+          <video class="camera-video" data-camera-video playsinline autoplay muted></video>
+          <canvas class="camera-shot" data-camera-shot width="720" height="720" hidden></canvas>
+          <div class="camera-guide" aria-hidden="true"></div>
+        </div>
+        <p class="small text-muted mt-2 mb-0" data-camera-hint>Face the camera in good light, then tap Take photo.</p>
+        <p class="small text-danger mt-2 mb-0" data-camera-error role="alert" hidden></p>
+      </div>
+      <div class="modal-footer camera-actions">
+        <button type="button" class="btn btn-light" data-camera-switch hidden><i class="bi bi-arrow-repeat me-1"></i>Switch camera</button>
+        <button type="button" class="btn btn-primary" data-camera-snap><i class="bi bi-camera-fill me-1"></i>Take photo</button>
+        <button type="button" class="btn btn-light" data-camera-retake hidden>Retake</button>
+        <button type="button" class="btn btn-primary" data-camera-use hidden><i class="bi bi-check-lg me-1"></i>Use photo</button>
+      </div>
+      <div hidden data-camera-msgs>
+        <span data-k="blocked">The camera is blocked. Allow it in the browser's site settings, or use Upload photo.</span>
+        <span data-k="none">No camera was found. Use Upload photo instead.</span>
+        <span data-k="insecure">The camera only works on a secure (https) address.</span>
+        <span data-k="failed">The photo could not be saved. Try again.</span>
+        <span data-k="saving">Saving…</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
+{% block extra_scripts %}{{ super() }}{% if photo_edit %}<script src="{{ url_for('static', filename='js/photo.js') }}"></script>{% endif %}{% endblock %}

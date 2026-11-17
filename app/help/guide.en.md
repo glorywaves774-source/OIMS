@@ -30,6 +30,18 @@ links: Meetings = meetings.index [meetings.view]; Calendar = comms.calendar [cal
 who: people with "schedule meetings"; minutes by the organizer or people who manage meetings
 Open Meetings and choose "Schedule a meeting". Participants get an invitation. After the meeting, record the minutes, decisions and action points; action points become tasks for the person responsible. Meetings also appear on the calendar.
 
+
+## Video calls
+keywords: video, call, video call, online meeting, jitsi, zoom, google meet, teams, camera, microphone, join, conference
+links: Meetings = meetings.index [meetings.view]
+who: anyone invited to the meeting can join; the organizer chooses video when scheduling
+When you schedule a meeting, keep "Video call in ZENTAVA OIMS" ticked. Everyone invited then sees "Join video call" on the meeting page. Allow the camera and microphone when the browser asks. With the free setup the call opens in its own tab (Jitsi Meet); keep the meeting page open to take notes. You can instead paste a Google Meet, Zoom or Teams link: the page shows "Join on Zoom" (or the service's name). On a phone, calls work in the browser; the Jitsi Meet app also works.
+
+## Automatic notes and draft minutes
+keywords: notes, automatic notes, transcript, transcribe, speech to text, dictate, draft minutes, notes maker, listen
+links: Meetings = meetings.index [meetings.view]
+who: the organizer or people who manage meetings
+Open the meeting (or its video call page) and find "Live notes". Tell everyone the meeting is being written down and tick the box, choose the language spoken, then press "Start listening". What is said appears as text; you can type and correct it. Press "Draft the minutes": the system writes a summary, the decisions, the action points and open questions. Check it, press "Put in the minutes", correct anything, then save. Listening works in Chrome, Edge and Safari and only hears this device's microphone; in an online call use the speaker, not earphones. Then add the formal decisions and action points so they become tasks.
 ## Leave
 keywords: leave, holiday, vacation, sick, annual leave, days off, absence, approve leave, balance
 links: Leave = leave.index [leave.request]; Request leave = leave.request_leave [leave.request]; Leave types = leave.types [leave.manage]
@@ -60,6 +72,12 @@ links: Staff directory = staff.index [staff.view]
 who: HR officers register and maintain staff records
 HR registers staff with their employment details, contracts and documents, training, performance reviews and transfers. Staff records are visible only to people allowed to see HR records. When someone leaves, HR records the exit and the record becomes read-only.
 
+
+## Staff photos
+keywords: photo, picture, profile picture, camera, selfie, avatar, staff photo, take photo
+links: Staff directory = staff.index [staff.view]
+who: HR can set anyone's photo; each person can set their own
+Open the staff profile and press "Take photo": allow the camera, face it in good light, press "Take photo", then "Use photo". On a phone you can switch to the back camera to photograph a colleague. "Upload photo" lets you choose a picture instead. The photo is cropped to a square and shown in the staff directory, only to colleagues in your organization.
 ## Attendance
 keywords: attendance, present, absent, register, daily attendance
 links: Attendance = attendance.register [attendance.record]

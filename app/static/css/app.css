@@ -754,3 +754,38 @@ html[data-theme="dark"] .tabs-scroll a[aria-current="page"] { color: #04201d; }
 .plan-limits .bi { color: var(--link); }
 .plan-card .btn { margin-top: auto; align-self: flex-start; }
 @media (min-width: 761px) { .plan-desc { min-height: 4.5em; } }
+
+/* Video calls and live notes */
+.call-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+.call-layout.has-frame { grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr); }
+.call-layout:not(.has-frame) { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
+.call-stage { padding: 0; overflow: hidden; }
+.call-frame { display: block; width: 100%; height: min(78vh, 760px); border: 0; background: #0b1120; }
+.call-open { padding: 36px 24px; text-align: center; }
+.call-open h2 { font-size: 1.3rem; font-weight: 700; margin: 8px 0; }
+.call-icon { font-size: 2.6rem; color: var(--link); }
+.call-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.call-side > .panel { margin-bottom: 0; }
+.notes-status { font-size: .85rem; color: var(--text-muted); }
+.notes-status.is-live { color: var(--danger, #c0392b); font-weight: 650; }
+.notes-status.is-live::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: currentColor; margin-right: 6px; vertical-align: 1px; }
+.notes-lang { width: auto; max-width: 100%; }
+.notes-interim { min-height: 1.4em; margin: 0 0 6px; color: var(--text-muted); font-style: italic; font-size: .92rem; }
+.notes-text { font-size: .95rem; line-height: 1.5; }
+.notes-draft-text { white-space: pre-wrap; word-break: break-word; font-family: inherit; font-size: .92rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; max-height: 420px; overflow: auto; }
+@media (max-width: 1100px) { .call-layout.has-frame, .call-layout:not(.has-frame) { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) { .call-frame { height: 62vh; height: 62svh; min-height: 380px; } }
+
+/* Staff photos */
+.avatar-photo { object-fit: cover; padding: 0; border: 2px solid var(--surface-solid); box-shadow: 0 1px 3px rgba(20, 33, 61, .15); }
+.avatar-xl { width: 96px; height: 96px; font-size: 1.6rem; flex: 0 0 auto; }
+.name-with-avatar { display: inline-flex; align-items: center; gap: 10px; }
+.name-with-avatar .avatar { width: 32px; height: 32px; font-size: .72rem; flex: 0 0 auto; }
+.profile-photo-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.profile-photo-tools { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 220px; }
+.photo-upload { margin: 0; }
+.camera-stage { position: relative; width: 100%; aspect-ratio: 1 / 1; border-radius: 18px; overflow: hidden; background: #0b1120; }
+.camera-video, .camera-shot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.camera-video.is-mirrored { transform: scaleX(-1); }
+.camera-guide { position: absolute; inset: 12%; border-radius: 50%; border: 2px dashed rgba(255, 255, 255, .7); box-shadow: 0 0 0 999px rgba(0, 0, 0, .28); pointer-events: none; }
+.camera-actions { flex-wrap: wrap; gap: 8px; }

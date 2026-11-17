@@ -158,3 +158,12 @@
 {% macro wordmark() -%}
 <span class="wordmark" translate="no"><span class="wm-brand">{{ brand_name }}</span> <span class="wm-product">{{ product_name }}</span></span>
 {%- endmacro %}
+
+{% macro staff_avatar(s, cls='') -%}
+  {# A staff member's photo, or their initials when there is none #}
+  {%- if s.photo_updated_at -%}
+  <img class="avatar avatar-photo {{ cls }}" src="{{ url_for('staff.photo', staff_id=s.id, v=s.photo_updated_at.timestamp()|int) }}" alt="" loading="lazy" width="36" height="36">
+  {%- else -%}
+  <span class="avatar {{ cls }}" aria-hidden="true" translate="no">{{ (s.full_name.split()|map('first')|list)[:2]|join|upper }}</span>
+  {%- endif -%}
+{%- endmacro %}

@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.9.8-video — 17 November 2026
+
+Video calls, automatic meeting notes and staff photos.
+
+- **Video calls:** a meeting can have a video call in ZENTAVA OIMS ("Join video call"). By default it uses the free
+  Jitsi Meet service and opens in its own tab; with a JaaS account or your own Jitsi server it opens inside the
+  meeting page. Only the person's name is sent to the video service, never their email. A Google Meet, Zoom or
+  Teams link can be added instead ("Join on Zoom"); links must be https.
+- **Automatic notes:** "Live notes" on the meeting and call pages write down what is said (free, in Chrome, Edge
+  and Safari; English or French), keep the notes with the meeting, and "Draft the minutes" turns them into a
+  summary, decisions, action points and open questions. Better wording with the AI key (personal details removed
+  first). Drafts are only saved after a person checks them.
+- **Staff photos:** "Take photo" on a staff profile uses the camera (front or back on phones); "Upload photo" picks
+  a picture. Photos are cropped to a square, cleaned of hidden details, and shown in the staff directory inside
+  the organization only. HR sets anyone's photo; each person can set their own.
+- Help assistant and French updated for all three.
+
 ## 0.9.7-steady — 17 November 2026
 
 Phones: English and French, Day and Night mode, no more twitching.

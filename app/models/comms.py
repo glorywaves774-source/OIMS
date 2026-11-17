@@ -84,6 +84,10 @@ class Meeting(TenantMixin, TimestampMixin, db.Model):
     minutes = db.Column(db.Text)
     minutes_recorded_by_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
     reminder_sent_at = db.Column(db.DateTime(timezone=True))
+    # Video call in ZENTAVA OIMS (an unguessable Jitsi room) and the live notes taken during the meeting
+    video_room = db.Column(db.String(80))
+    transcript = db.deferred(db.Column(db.Text))
+    transcript_updated_at = db.Column(db.DateTime(timezone=True))
 
     department = db.relationship("Department")
     organizer = db.relationship("User", foreign_keys=[organizer_id])

@@ -215,6 +215,16 @@ when there are many). Counting is done in the database. Record names in charts a
 | Updates | Stored files are tied to the release number and replaced on each deploy |
 | In the app | Back button at top-left only inside the installed app (no browser Back there) |
 
+## Video calls, live notes and staff photos ✅ complete (0.9.8-video)
+
+| Area | Result |
+|---|---|
+| Video calls | Jitsi room per meeting (random name); public meet.jit.si in its own tab by default, inside the page with JaaS (signed pass, organizer is moderator) or your own server; Google Meet / Zoom / Teams links named on the page; https only |
+| Live notes | Browser speech recognition (Chrome, Edge, Safari) in 7 English/French variants; consent box; notes saved every 20 s and when the page is left; screen kept awake while listening |
+| Draft minutes | Built-in draft (summary, decisions, action points, open questions; EN/FR) or AI draft with redaction; never saved without a person |
+| Staff photos | Camera (front/back) or upload; re-drawn as 512×512 JPEG without metadata; organization-only; HR or the person |
+| Limits | Live notes hear only the device's own microphone; Firefox cannot listen (typing still works); meet.jit.si limits call length |
+
 ## Not included (possible next steps)
 
 - Offline data collection on phones; KoBo/ODK import.

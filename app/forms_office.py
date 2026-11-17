@@ -180,13 +180,20 @@ class NoteForm(FlaskForm):
 
 # --- Meetings -----------------------------------------------------------------------
 
+def _https_only(form, field):
+    if field.data and not field.data.lower().startswith("https://"):
+        raise ValidationError("Use a secure link that starts with https://")
+
+
 class MeetingForm(FlaskForm):
     title = StringField("Title", validators=[DataRequired(), Length(max=250)], filters=[_strip])
     meeting_type = StringField("Type (e.g. Management, Staff, Board)", validators=[Optional(), Length(max=80)], filters=[_strip])
     starts_at = DateTimeLocalField("Starts", format="%Y-%m-%dT%H:%M", validators=[DataRequired()])
     ends_at = DateTimeLocalField("Ends", format="%Y-%m-%dT%H:%M", validators=[Optional(), _DateOrder("starts_at", "Must end after it starts.")])
     location = StringField("Venue", validators=[Optional(), Length(max=250)], filters=[_strip])
-    online_link = StringField("Online meeting link", validators=[Optional(), URL(), Length(max=500)], filters=[_strip])
+    video_call = BooleanField("Video call in ZENTAVA OIMS", default=True)
+    online_link = StringField("Or a Google Meet, Zoom or Teams link", validators=[Optional(), URL(), Length(max=500), _https_only],
+                              filters=[_strip])
     department_id = SelectField("Department", coerce=opt_int, validators=[Optional()])
     participants = SelectMultipleField("Participants", coerce=int, validators=[Optional()])
     agenda = TextAreaField("Agenda", validators=[Optional(), Length(max=8000)], filters=[_strip])

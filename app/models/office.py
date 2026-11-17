@@ -51,6 +51,9 @@ class StaffProfile(TenantMixin, TimestampMixin, db.Model):
     exit_type = db.Column(db.String(40))
     exit_reason = db.Column(db.Text)
     exit_clearance_done = db.Column(db.Boolean, nullable=False, default=False)
+    # Profile picture: a small square JPEG made by the app (camera or upload); loaded only when shown
+    photo_data = db.deferred(db.Column(db.LargeBinary))
+    photo_updated_at = db.Column(db.DateTime(timezone=True))
 
     user = db.relationship("User")
     department = db.relationship("Department", foreign_keys=[department_id])
